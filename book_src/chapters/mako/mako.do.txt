@@ -1,0 +1,714 @@
+Below we describe the work flow and how we can utilize many
+nice DocOnce features when writing chapters for a future, potential book
+project.
+
+!split
+======= Use of variables =======
+
+idx{variables in mako}
+idx{mako!variables}
+
+Mako is the preprocessor that is always run prior to translating DocOnce
+documents into a specific format. It means that your DocOnce source is
+actually a computer program where you can use variables and functions.
+
+Writing chapters that can both live their individual lives and be part of
+a book faces some challenges for which we have some nice solutions
+in the coming sections.
+
+The easiest way to utilize Mako is to introduce variables in the text.
+For example, one can introduce a variable `COPYRIGHT`
+for the type of copyright desired
+for authors. Most Mako variables in this text are upper case, but
+any legal variable name in Python is also a legal name in Mako.
+In the DocOnce source file we can replace the variable by its content
+by writing `${COPYRIGHT}`:
+
+!bc do
+ AUTHOR: H. P. Langtangen ${COPYRIGHT} at Simula & UiO
+!ec
+The content of the variable can either be set at the command line
+as part of the `doconce format` command,
+
+!bc sys
+Terminal> doconce format html mydoc COPYRIGHT='{copyright|CC BY}'
+!ec
+or hardcoded in the DocOnce file (as a standard Python variable) inside
+the `<%...%>` directives (before the first use of the variable):
+
+!bc do
+<%
+COPYRIGHT = '{copyright|This work is released under a BSD license.}'
+%>
+!ec
+
+By having the copyright as a variable, we can use this variable for all
+authors to ensure consistency of copyrights, and we can easily compile
+different versions of the documents with different copyrights by just
+changing `COPYRIGHT=` on the command line.
+
+Mako variables can be used in loops and if tests.
+DocOnce always defines a variable `FORMAT` holding the chosen output
+format. This variable is often used for emitting different text depending
+on the format, e.g.,
+
+!bc do
+See
+% if FORMAT in ('latex', 'pdflatex'):
+Section ref{mysec}
+% elif FORMAT == 'html':
+ref{mysec}
+% elif FORMAT == 'sphinx':
+ref{mysec}
+% else:
+the previous section
+% endif
+for more information.
+!ec
+
+===== How to speak about ``this chapter'' =====
+
+idx{`CHAPTER`}
+idx{`BOOK`}
+idx{`APPENDIX`}
+
+In a book you will often need the phrase ``this chapter'', but his is
+inappropriate if the chapter is a stand-alone document. Then you would
+rather say ``this document''. Similarly, ``this book'' must read
+``this document'' in a stand-alone chapter.
+We have resolved this issue by introducing
+Mako variables `CHAPTER`, `BOOK`, and `APPENDIX` such that you
+write
+
+!bc do
+In this ${BOOK}, the convention is to use boldface for vectors.
+!ec
+For this to work, you need to define `CHAPTER`, `BOOK`, and `APPENDIX`
+as variables on the command line as part of the `doconce format` command:
+
+!bc sys
+Terminal> doconce format pdflatex ch2 --latex_code_style=pyg \
+          CHAPTER=document BOOK=document APPENDIX=document
+!ec
+When the book is compiled, you do
+
+!bc sys
+Terminal> doconce format pdflatex ch2 --latex_code_style=pyg \
+          CHAPTER=chapter BOOK=chapter APPENDIX=appendix
+!ec
+The `make*.sh` files found in `doc/src/chapter/` and
+`doc/src/book` make proper definitions of
+`CHAPTER`, `BOOK`, and `APPENDIX`.
+
+!split
+======= How to make several variants of the text =======
+
+idx{if tests in mako}
+idx{boolean in mako}
+idx{mako!if tests}
+idx{mako!boolean}
+
+Sometimes you want to write some text slightly differently if the
+chapter is a stand-alone document compared to the case when it is
+part of a book. Mako if tests are ideal for this. Suppose you
+introduce a Mako variable `ALONE` that is true/defined if the chapter
+is a stand-alone document and false/undefined if part of a book. Then
+you can simply write
+
+!bc pycod
+In this
+% if ALONE:
+rather small
+% else:
+large
+% endif
+${BOOK}
+!ec
+Running `doconce format` with the option `-DALONE` will turn `ALONE` to
+true and the output is typically
+
+!bc
+In this rather small document
+!ec
+while for a book we skip `-DALONE` as argument to `doconce format`,
+which makes `ALONE` undefined, and we
+get the output
+
+!bc
+In this large book
+!ec
+
+Mako variables can be defined/undefined (boolean variables) or be
+standard strings:
+
+!bc pycod
+% if SOME_STRING_VARIABLE in ('value1', 'value2'):
+some running text
+% endif
+
+...
+
+% if not SOME_BOOLEAN_VARIABLE:
+some other running text
+% else:
+yet more different text
+% endif
+!ec
+
+With Mako variables, you can easily comment out large portions
+of text by testing on some variable you do not intend to define:
+
+!bc pycod
+% if EXTRA:
+This is
+text that
+will never
+appear in the
+output.
+% endif
+!ec
+
+Also, it is straightforward to write more than one version of a
+chapter. For example, you may want to produce a version of a chapter
+that is tailored to a specific course, while you for general publishing
+on the Internet want a more general version, and maybe a third version
+when the chapter is included in a book for the international market.
+All this is easily done by if tests on appropriately defined Mako
+variables
+
+!bc pycod
+% if COURSE == 'IT1713':
+# Specific text for a course IT1713
+...
+% elif COURSE == 'IT1713b':
+# Specific text for a the special IT1713b variant of the course
+...
+% elif COURSE == 'general':
+# General text when the chapter is a stand-alone document
+...
+% elif COURSE == 'book1':
+# Text when course is a part of a particular book
+...
+% elif COURSE == 'book2':
+# Text when course is a part of another book
+...
+% endif
+!ec
+
+!split
+======= Mako's Python functions =======
+
+idx{functions in mako}
+idx{mako!functions}
+
+The if tests above are fine to handle larger portions of text. What if you
+need to have four versions of just one word or very short text?
+A Mako function, defined as a standard Python function,
+is then more appropriate.
+
+===== Basics of Mako functions =====
+
+Here is a definition of a suitable Mako function, which must be
+defined inside
+`<%` and `%>` tags, using standard Python code:
+
+@@@CODE src-mako/mako_func.py
+
+In the running text you can call `chversion` with five arguments,
+corresponding to the desired text in the five cases, and when `doconce format`
+is run, the value of `COURSE` determines which of the five cases that is used.
+Here is an example on DocOnce text with a function call to `chversion`:
+
+!bc do
+It is extremely important to define the term *cure* accurately.
+Here we mean ${chversion('handle', 'handle',
+'resolve', 'treat', 'resolve')}.
+!ec
+You can easily use long multi-line strings as arguments, e.g.,
+
+!bc do
+... ${chversion("""
+Here comes
+a multi-line
+string""",
+'short string',
+'another short string',
+"""4th
+multi-line
+string""",
+'5th string')}
+...
+!ec
+
+!bnotice There are two types of Mako functions
+One type resembles Python functions, as demonstrated above. The other
+type employs a slightly different syntax and is exemplified in the file
+"`doc/src/chapters/index_files.do.txt`": "http://tinyurl.com/kukz8pt/index_files-do.txt". We refer to the "Mako syntax documentation": "http://docs.makotemplates.org/en/latest/syntax.html" for more information.
+!enotice
+
+===== How to automatically generate a DocOnce file with repetitive structure =====
+label{mako:pyscripts}
+
+To illustrate how Python and Mako can be used to efficiently
+generate repetitive structures with a minimum of manual work,
+we consider the following case. Suppose you have a DocOnce document
+made up of a number of sections, where the DocOnce source of each section
+resides in a subdirectory with name `issueX`, where `X` is an integer
+counter. You want to create a ``master'' DocOnce file that includes
+all the sections, e.g..
+
+!bc do
+======= Issue 1 =======
+
+# INCLUDE "issue1/issue.do.txt"
+
+======= Issue 2 =======
+
+# INCLUDE "issue2/issue.do.txt"
+
+======= Issue 3 =======
+
+# INCLUDE "issue3/issue.do.txt"
+!ec
+Maybe issues come and go, and so do the subdirectories, implying that
+one should automate the making of the above content of the master
+document.
+
+Generating a set of sections via Mako is easy:
+
+!bc do
+<%
+sections = range(1, 8)
+%>
+
+% for i in sections:
+======= Issue ${i} =======
+% endfor
+!ec
+Unfortunately, we cannot write
+
+!bc do
+% for i in sections:
+======= Issue ${i} =======
+
+# INCLUDE "issue${i}/issue.do.txt"
+% endfor
+!ec
+because the `#include` statement is run by Preprocess *prior* to
+Mako's interpretation of the file.
+Instead, we can generate (parts of) the master file in a separate
+Python script. This makes it also easier to check which subdirectories
+we have and set up the contents of sections based on the file
+structure:
+
+!bc pycod
+import os, glob
+outfile = open('master_section.do.txt', 'w')
+subdirs = glob.glob('issue*')
+# Run through all issue* subdirectory names in sorted sequence
+for subdir in sorted(subdirs):
+    if os.path.isdir(subdir):               # directory?
+        if os.path.isfile('issue.do.txt'):  # file?
+	    # Extract number X from "issueX" name:
+	    no = subdir[5:]
+	    outfile.write("""
+======= Issue %s =======
+
+# INCLUDE "%s/issue.do.txt"
+""" % (no, subdir))
+outfile.close()
+!ec
+The master file can now just do an include of `master_sections.do.txt`.
+If the make script for compiling DocOnce to various formats first
+runs the script above, the `master_sections.do.txt` contents are
+up-to-date with the current file structure, and the contents
+automatically propagate to the master document.
+
+There is one potential problem in the above example: the `issue.do.txt`
+files may include figures with local paths. For example,
+`issue5/issue.do.txt` contains
+
+!bc do
+FIGURE: [fig/myfig, width=500 frac=0.8] My figure. label{my:fig}
+!ec
+When compiling the master document, no `fig/myfig.png` is found because
+the correct path, relative to the master document's directory,
+is `issue5/fig/myfig.png`. The same problem arises if there are
+source code inclusion statements like `@@@CODE src/myprog.f`.
+The master document would then need `@@@CODE issue5/src/myprog.f`.
+The best way out of these problems is
+
+ o Let figure and source code directories have a unique name,
+   say `fig5` and `src5` in this example.
+ o Create links from the master document's directory to
+   all the `fig*` and `src*` subdirectories.
+
+Point 2 can be automated by a little Python script:
+
+!bc pycod
+subdirs = glob.glob('issue*')
+for subdir in sorted(subdirs):
+    if os.path.isdir(subdir):
+        no = subdir[5:]
+        figdir = 'fig' + no
+        srcdir = 'src' + no
+	if not os.path.islink(figdir):
+	   path = os.path.join(subdir, figdir)
+	       os.symlink(figdir, path)
+	if not os.path.islink(srcdir):
+	   path = os.path.join(subdir, srcdir)
+	       os.symlink(figdir, path)
+!ec
+
+This little case study shows the power of using scripts
+to assist the writing process. Although Mako is very useful,
+turning to a separate Python program that generates text is
+even more useful. It is also much easier to debug a Python
+program than Mako code.
+
+===== How to deal with almost repetitive structure =====
+label{mako:almost:repeat}
+
+Sometimes you have a text, say some introduction, that is almost equal
+in various parts of the document. Here is a very simple example:
+``This is an introduction for the institution's external users.'' versus
+``This is an introduction for the institution's internal users.''
+Just one word differs. We put the text in a separate file for inclusion
+(since real examples probably have longer texts that are more convenient
+to collect in separate files). Moreover, we parameterize the word
+that differs through a Mako variable `USER_TYPE`.
+The `intro.do.txt` file then reads
+
+!bc
+This is an introduction for the institution's ${USER_TYPE} users.
+!ec
+
+The `USER_TYPE` variable can either be set on the command line or in
+the document that includes `intro.do.txt` (prior to the include statement).
+Suppose we have a master document that needs to include `intro.do.txt`
+twice with both values of `USER_TYPE`:
+
+!bc do
+<% USER_TYPE = 'internal' %>
+
+======= Information for ${USER_TYPE} users =======
+
+# INCLUDE "intro.do.txt"
+
+...
+
+<% USER_TYPE = 'external' %>
+
+======= Information for ${USER_TYPE} users =======
+
+# INCLUDE "intro.do.txt"
+!ec
+After running Mako, this looks like
+
+!bc do
+======= Information for internal users =======
+
+This is an introduction for the institution's internal users.
+
+...
+
+======= Information for external users =======
+
+This is an introduction for the institution's external users.
+!ec
+
+Almost repetitive text can in many cases be parameterized by suitable
+Mako variables or Mako function calls to obtain the correct variations
+over a common theme that is placed in a single file (``document once'').
+
+
+===== How to treat multiple programming languages in the same text =====
+
+With these ideas, it becomes straightforward to write a book that
+has its program examples in multiple languages. Introduce `CODE`
+as the name of the language and use if tests for larger portions
+of code and text, and Mako functions for shorter inline texts,
+to handle text that depends on the value of `CODE`.
+The author has successfully co-written such a "book":
+"http://hplgit.github.io/Programming-for-Computations/pub/p4c/index.html"
+cite{Linge_Langtangen_2015}
+for mathematical programming with either Python or Matlab - the version
+is set when running `doconce format`.
+
+Here is an example of text, in the style of the mention book,
+where there are small differences
+depending on the programming language:
+
+!bc do
+The following ${CODE} function `sampler` does the job
+(see the file "${src('sampler')}":
+"https://github.com/myuser/myproject/src/${src('sampler')}"):
+
+${copyfile('sampler')}
+
+Note that in ${CODE}, arrays start at index ${text2('0', '1')}.
+Array slices like ${verb2('vec[2:8]', 'vec(2:7)')}
+go from the first index (here `2`) up to
+${text2('*but not including* the upper limit (here `8`)',
+'(including) the upper limit (here `7`)'}.
+% if CODE == 'Python':
+Also note that the file `sampler.py` is a module, meaning
+that we can call all the file's functions from other programs,
+including `sampler_vec`.
+% elif CODE == 'Matlab':
+Also note that only the `sampler` function can be called
+from other Matlab programs. If we want the alternative
+implementation in function `sampler_vec` to be reused
+by other programs, this function has to reside in a file
+`sampler_vec.py`.
+% endif
+!ec
+
+Here we have made use of a few Mako functions to easily
+choose between a Python or Matlab relevant text:
+
+ * `src` for picking a filename with the right extension (`.py` or `.m`)
+ * `copyfile` for constructing the right `@@@CODE` line for a Python or
+   Matlab source code file
+ * `text2` for picking the first (Python) or second (Matlab) argument
+ * `verb2` for picking the first (Python) or second (Matlab) argument typeset in
+   inline verbatim font
+
+The exact Mako code appears below.
+
+!bc do
+<%
+def src(filestem, url=None, verb=True):
+    """Return filstem plus .m or .py."""
+    if CODE == "Python":
+        filename = filestem + '.py'
+    else:
+        filename = filestem + '.m'
+    if verb:
+        filename = '`%s`' % filename
+    if url is not None:
+        # Make link to the file at github
+        pass
+    return filename
+
+def copyfile(filestem, from_=None, to_=None):
+    """Return @@@CODE line for copying a Python/Matlab file."""
+    r = "@@@CODE "
+    if CODE == "Python":
+        r += "py-src/" + filestem + '.py'
+    else:
+        r += "m-src/" + filestem + '.m'
+    if from_ is not None:
+        r += ' fromto: ' + from_ + '@'
+    if to_ is not None:
+        r += to_
+    return r
+
+def verb2(py_expr, m_expr):
+    """Return py_expr or m_expr in verbatim depending on CODE."""
+    if CODE == "Python":
+        expr = py_expr
+    else:
+        expr = m_expr
+    expr = '`%s`' % expr
+    return expr
+
+def text2(py_expr, m_expr):
+    """Return py_expr or m_expr depending on CODE."""
+    if CODE == "Python":
+        expr = py_expr
+    else:
+        expr = m_expr
+    return expr
+
+%>
+!ec
+
+Compiling the document with
+
+!bc sys
+Terminal> doconce format plain mydoc CODE=Python \
+          --latex_code_style=pyg
+!ec
+results in the output
+
+!bc
+The following Python function \Verb!sampler! does the job
+(see the file
+\href{{https://github.com/myuser/myproject/src/`sampler.py`}}{
+\nolinkurl{sampler.py}}):
+
+\begin{minted}[fontsize=\fontsize{9pt}{9pt},linenos=false,
+baselinestretch=1.0,fontfamily=tt,xleftmargin=2mm]{python}
+"""Sampler module."""
+
+def sampler(...):
+    ...
+\end{minted}
+
+Note that in Python, arrays start at index 0.
+Array slices like \Verb!vec[2:8]!
+go from the first index (here \Verb!2!) up to
+\emph{but not including} the upper limit (here \Verb!8!).
+Also note that the file \Verb!sampler.py! is a module, meaning
+that we can call all the file's functions from other programs,
+including \Verb!sampler_vec!.
+!ec
+Switching to `CODE=Matlab` gives
+
+!bc
+The following Matlab function \Verb!sampler! does the job
+(see the file
+\href{{https://github.com/myuser/myproject/src/`sampler.m`}}{
+\nolinkurl{sampler.m}}):
+
+\begin{minted}[fontsize=\fontsize{9pt}{9pt},linenos=false,
+baselinestretch=1.0,fontfamily=tt,xleftmargin=2mm]{matlab}
+% Sampler code
+
+function samples = sampler(...):
+    ...
+\end{minted}
+
+Note that in Matlab, arrays start at index 1.
+Array slices like \Verb!vec(2:7)!
+go from the first index (here \Verb!2!) up to
+(including) the upper limit (here \Verb!7!.
+Also note that only the \Verb!sampler! function can be called
+from other Matlab programs. If we want the alternative
+implementation in function \Verb!sampler_vec! to be reused
+by other programs, this function has to reside in a file
+\Verb!sampler_vec.py!.
+!ec
+
+=== Another example ===
+
+The manual contains a useful "example": "http://hplgit.github.io/doconce/doc/pub/manual/._manual024.html#manual:mako:nomenclature"
+on how to use Mako to implement
+the nomenclature functionality in the LaTeX package `nomencl`.
+
+=== Yet another example ===
+
+Here is a more complicated use of Mako for dealing with code files or
+strings in three different computer languages:
+
+!bc do
+Include a complete program in the language ${CODE}:
+
+${code(filename='apb')}
+
+Include a portion of this file:
+
+# Recall that + is reserved char in regex, must be escaped
+${code(filename='apb', from_regex='a =', to_regex=r'a \+ b')}
+
+Include a C++ program from file:
+
+${code(filename='demo', language='C++')}
+
+Include a C++ program from computer code in text:
+
+${code(language='C++', code="""
+#include <iostream>
+using namespace std;
+
+int main()
+{
+  a = 1;
+  b = 2;
+  cout << a + b;
+  return 0;
+}
+""")}
+!ec
+
+The point in this example is that we have a Mako variable `CODE` for
+the default language to be used, but we can also insert code in a
+specific language through the `language` argument in the Mako function
+`code`. This function can take a filename (`filename`) and include
+code from this file. We may make the convention that Python code is in
+`src/py`, C++ in `src/cpp`, and Fortran code in `src/f`.
+We just supply the filename without directory and extension, say `apb`,
+and the `code` function figures out the right directory and extension for
+us, based on the chosen default or specified language.
+Alternatively, the computer code can be supplied in a string as the
+`code` argument.
+
+What does the Mako function `code` look like? Before we show the statements,
+we remark that code of this complexity may be hard to debug inside
+DocOnce files. It is therefore better to put the code in a separate Python
+file and debug it externally. Here, we have put the code in `src/make/code.py`.
+In the DocOnce document we must include this file:
+
+!bc do
+<%
+# INCLUDE "src/mako/code.py"
+%>
+!ec
+The `code.py` file looks like
+
+!bc pycod
+import os
+src_path = 'src'
+
+def code(code='', filename='',
+         language=None,
+         from_regex=None, to_regex=None):
+    # code can be a filename or computer code
+    if language is None:
+        language = CODE  # Use global language if not specified
+    if language == 'Python':
+        if filename:
+            filename += '.py'
+            # Include from file
+            text = '@@@CODE src/py/%s' % filename
+            if from_regex is not None and to_regex is not None:
+                # Include just a portion of the file
+                text += ' fromto: %s@%s' % (from_regex, to_regex)
+            elif from_regex is not None and to_regex is None:
+                text += ' fromto: %s@' % (from_regex)
+        else:
+            # The code argumnet holds the actual computer code,
+            # assume it's just a code snippet (not complete program)
+            text = '!bc pycod\n%s\n!ec' % code.strip()
+    elif language == 'Fortran':
+        if filename:
+            for ext in '.f', '.f90':
+                if os.path.isfile(os.path.join(
+                                  src_path, 'f', filename + ext)):
+                    filename += ext
+                    break
+            # Include from file
+            text = '@@@CODE src/f/%s' % filename
+            if from_regex is not None and to_regex is not None:
+                # Include just a portion of the file
+                text += ' fromto: %s@%s' % (from_regex, to_regex)
+            elif from_regex is not None and to_regex is None:
+                text += ' fromto: %s@' % (from_regex)
+        else:
+            # The code argumnet holds the actual computer code,
+            # assume it's just a code snippet (not complete program)
+            text = '!bc fcod\n%s\n!ec' % code.strip()
+    elif language == 'C++':
+        if filename:
+            for ext in '.cpp', '.c++', '.cxx':
+                if os.path.isfile(os.path.join(
+                                  src_path, 'cpp', filename + ext)):
+
+                    filename += ext
+                    break
+            # Include from file
+            text = '@@@CODE src/cpp/%s' % filename
+            if from_regex is not None and to_regex is not None:
+                # Include just a portion of the file
+                text += ' fromto: %s@%s' % (from_regex, to_regex)
+            elif from_regex is not None and to_regex is None:
+                text += ' fromto: %s@' % (from_regex)
+        else:
+            # The code argumnet holds the actual computer code,
+            # assume it's just a code snippet (not complete program)
+            text = '!bc cppcod\n%s\n!ec' % code.strip()
+    else:
+        print 'language=%s is illegal' % language
+    return text
+!ec

@@ -1,0 +1,236 @@
+# TITLE: App.E: Programming of differential equations
+# AUTHOR: Joakim Sundnes at Simula Research Laboratory & University of Oslo, Dept. of Informatics
+# DATE: today
+
+So far we have only considered ODEs with a single solution component, often called scalar ODEs.
+Many interesting processes can be described
+by systems of ODEs, i.e., multiple ODEs where the right hand side of one equation depends on the solution of the others. Such equation
+systems are also referred to as vector ODEs. One simple example is
+!bt
+\begin{alignat*}{2}
+u' &= v, \quad &&u(0) = 1\\
+v' &= -u, \quad &&v(0) = 0.
+\end{alignat*}
+!et
+The solution of this system is $u=\cos t, v=\sin t$ which can easily be verified by insterting the solution into the equations
+and initial conditions. For more general cases, it is usually even more difficult to find analytical solutions of ODE systems
+than of scalar ODEs, and numerical methods are usually required. In this chapter we will extend the solvers introduced in
+Chapter ref{ch:ode_intro} to be able to solve systems of ODEs. We shall see that such an extension requires relatively small
+modifications of the code.
+
+We want to develop general software that can be applied to any vector ODE or scalar ODE, and for this purpose it is
+useful to introduce general mathematical notation. We have $n$ unknowns
+!bt
+\[ u^{(0)}(t), u^{(1)}(t), \ldots, u^{(n-1)}(t) \]
+!et
+in a system of $n$ ODEs:
+!bt
+\begin{align*}
+{d\over dt}u^{(0)} &= f^{(0)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t),\\
+{d\over dt}u^{(1)} &= f^{(1)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t),\\
+\vdots &=& \vdots\\
+{d\over dt}u^{(n-1)} &= f^{(n-1)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t).
+\end{align*}
+!et
+To simplify the notation (and later the implementation), we collect both the solutions $u^{(i)}(t)$
+and right-hand side functions $f^{(i)}$ in vectors;
+!bt
+\[ u = (u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}),\]
+!et
+and
+!bt
+\[ f = (f^{(0)}, f^{(1)}, \ldots, f^{(n-1)}).\]
+!et
+Note that $f$ is now a vector-valued function. It takes $n+1$ input arguments ($t$ and the $n$ components of $u$) and returns
+a vector of $n$ values.
+The ODE system can now be written
+!bt
+\[ u' = f(u, t),\quad u(0) = u_0\]
+!et
+where $u$ and $f$ are vectors and $u_0$ is a vector of initial conditions. We see that we use exactly the
+same notation as for scalar ODEs, and whether we solve a scalar or system of ODEs is determined by how we define $f$ and the initial
+condition $u_0$. This general notation is completely standard in text books on ODEs, and we can easily make the Python
+implementation just as general.
+
+
+======= An `ODESolver` class for systems of ODEs =======
+The `ODESolver` class above was written for a scalar ODE. We now want to make it work for a system
+$u'=f$, $u(0)=U_0$, where $u$, $f$ and $U_0$ are vectors (arrays). To identify how the code needs to be changed, let us start with
+the simplest method. Applying the forward Euler method to a system of ODEs yields an update formula that
+looks exactly as for the scalar case, but where all the terms are vectors:
+!bt
+\[
+\underbrace{u_{k+1}}_{\mbox{vector}} =
+\underbrace{u_k}_{\mbox{vector}} +
+\Delta t\, \underbrace{f(u_k, t_k)}_{\mbox{vector}} .
+\]
+!et
+We could also write this formula in terms of the individual components, as in
+!bt
+\[
+u^{(i)}_{k+1} = u^{(i)}_{k} + \Delta t f^{(i)}(u_{k},t_k), \mbox{ for } i = 0,\ldots , {n-1},
+\]
+!et
+but the compact vector notation is much easier to read. Fortunately, the way we write the vector
+version of the formula is also how NumPy arrays are used in calculations. The
+Python code for the formula above may therefore look idential to the version for scalar ODEs;
+!bc pycod
+u[k+1] = u[k] + dt*f(u[k], t)
+!ec
+with the important difference that both `u[k]` and `u[k+1]` are now arrays.[^numpy]
+Since these are arrays, the solution `u` must be a
+two-dimensional array, and `u[k],u[k+1]`, etc. are the rows of this array.
+The function `f` expects an array as its first argument, and must return a one-dimensional array,
+containing all the right-hand sides $f^{(0)},\ldots,f^{(n-1)}$. To get a better
+feel for how these arrays look and how they are used,
+we may compare the array holding the solution of a scalar ODE to that of a system of two ODEs.
+For the scalar equation, both `t` and `u` are one-dimensional NumPy
+arrays, and indexing into `u` gives us numbers, representing the solution at each time step:
+!bc
+t = [0.  0.4 0.8 1.2 (...) ]
+
+u = [ 1.0 1.4  1.96 2.744  (...)]
+
+u[0] = 1.0
+u[1] = 1.4
+
+(...)
+!ec
+In the case of a system of two ODEs, `t` is still a one-dimensional array, but the solution array `u` is
+now two-dimensional, with one column for each solution component. Indexing into it
+yields one-dimensional arrays of length two, which are the two solution components
+at each time step:
+!bc
+u = [[1.0 0.8][1.4 1.1] [1.9 2.7] (...)]
+
+u[0] = [1.0 0.8]
+u[1] = [1.4 1.1]
+
+(...)
+!ec
+
+[^numpy]: This compact notation requires that the solution vector `u` is represented by
+a NumPy array. We could also, in principle, use lists to hold the solution components, but
+the resulting code would need to loop over the components and be far less elegant and readable.
+
+To make a generic `ODESolver` class that works both with scalars and systems, we need to make the
+following changes to the class from the previous chapter:
+ * Ensure that `f(u,t)` always returns an array.
+ * Inspect $U_0$ to see if it is a single number or a list/array/tuple and
+   make the corresponding `u` a one-dimensional or two-dimensional  array
+If these two items are handled and initialized correctly, the rest of the code from
+Chapter ref{ch:ode_intro} will work with no modifications.
+The extended superclass implementation may look like:
+!bc pycod
+class ODESolver:
+    def __init__(self, f):
+        # Wrap user's f in a new function that always
+        # converts list/tuple to array (or let array be array)
+        self.f = lambda u, t: np.asarray(f(u, t), float)
+
+    def set_initial_condition(self, U0):
+        if isinstance(U0, (float,int)):  # scalar ODE
+            self.neq = 1                 # no of equations
+            U0 = float(U0)
+        else:                            # system of ODEs
+            U0 = np.asarray(U0)
+            self.neq = U0.size           # no of equations
+        self.U0 = U0
+
+    def solve(self, time_points):
+        self.t = np.asarray(time_points)
+        N = len(self.t)
+        if self.neq == 1:  # scalar ODEs
+            self.u = np.zeros(N)
+        else:              # systems of ODEs
+            self.u = np.zeros((N,self.neq))
+
+        # Assume that self.t[0] corresponds to self.U0
+        self.u[0] = self.U0
+
+        # Time loop
+        for n in range(N-1):
+            self.n = n
+            self.u[n+1] = self.advance()
+        return self.u, self.t
+!ec
+It is worth commenting on some parts of this code. First, the constructor looks
+almost identical to the scalar case, but we use a lambda function and
+`asarray` to convert any `f` that returns a list or tuple to a function
+returning a NumPy array. This modification is not strictly
+needed, since we could just assume that the user implements `f` so that it returns
+an array, but it makes the class more robust and flexible. Similar tests are
+included in the `set_initial_condition`, to make sure that `U0` is either a single
+number (`float`) or a NumPy array, and to set the attribute `self.neq` to
+hold the number of equations.
+The final modification is found in the method `solve`, where
+the `self.neq` attribute is inspected and `u` is
+initialized to a one- or two-dimensional array of the correct size. The
+actual for-loop, as well the implementation of the `advance` method in the
+subclasses, can be left unchanged.
+
+=== Example: ODE model for throwing a ball. ===
+To demonstrate the use of
+the extended `ODESolver` hierarchy, let us consider a system of ODEs
+describing the trajectory of a ball.
+We define $x(t),y(t)$ to be the position of the ball, $v_x$ and $v_y$ the velocity components,
+and $a_x,a_y$ the acceleration components. From the definition of velocity and acceleration, we
+have $v_x = dx/dt, v_y = dy/dt, a_x = dv_x/dt$, and $a_y = dv_y/dt$. If we neglect air resistance there are no
+forces acting on the ball in the $x$-direction, so from Newton's second law $a_x = 0$,
+while the acceleration in the $y$-direction must be equal to the acceleration of gravity.
+We get
+!bt
+\begin{alignat*}{2}
+a_x &= 0 \Rightarrow &\frac{dv_x}{dt} = 0, \\
+a_y &= -g \Rightarrow \mbox{\ \ }&\frac{dv_y}{dt} = -g\mbox{\ } .
+\end{alignat*}
+!et
+We can easily add air resistance or other additional physics to these equations
+later if needed. The complete ODE system can be written as
+!bt
+\begin{align*}
+{dx\over dt} &= v_x,\\
+{dv_x\over dt} &= 0,\\
+{dy\over dt} &= v_y,\\
+{dv_y\over dt} &= -g,
+\end{align*}
+!et
+and solve the system we need to define initial conditions for all these
+variables, i.e., we need to know the initial position and velocity of the ball.
+We want to use the `ODESolver` class hierarchy to solve the system, and
+first need to implement the right hand side as a Python function:
+!bc pycod
+def f(u, t):
+    x, vx, y, vy = u
+    g = 9.81
+    return [vx, 0, vy, -g]
+!ec
+We see that the function here returns a list, but this will automatically
+be converted to an array by the solver class' constructor,
+as mentioned above. The main program is not very different
+from the examples of the previous chapter, except that we need to define an
+initial condition with four components:
+!bc pycod
+from ODESolver import ForwardEuler
+
+# Initial condition, start at the origin:
+x = 0; y = 0
+# velocity magnitude and angle:
+v0 = 5; theta = 80*np.pi/180
+vx = v0*np.cos(theta); vy = v0*np.sin(theta)
+
+U0 = [x, vx, y, vy]
+
+solver= ForwardEuler(f)
+solver.set_initial_condition(U0)
+time_points = np.linspace(0, 1.0, 101)
+u, t = solver.solve(time_points)
+# u is an array of [x,vx,y,vy] arrays, plot y vs x:
+x = u[:,0];  y = u[:,2]
+
+plt.plot(x, y)
+plt.show()
+!ec
+Notice that since `u` is a two-dimensional array, we use array slicing to extract and plot the individual components.
+A call like `plt.plot(t,u)` will also work, but it will plot all the solution
+components in the same window, which is not very useful in this case.

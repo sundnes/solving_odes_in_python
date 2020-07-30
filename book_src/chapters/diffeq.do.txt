@@ -1,0 +1,617 @@
+# TITLE: App. A: Sequences and difference equations
+# AUTHOR: Joakim Sundnes at Simula Research Laboratory & University of Oslo, Dept. of Informatics
+# DATE: today
+
+Although the main focus of these notes is on solvers for *differential equations*, this first
+chapter is devoted to the closely related class of problems known as *difference equations*. The
+main motivation for introducing this topic first is that the mathematical formulation of
+difference equations is very easy to translate into a computer program.
+When we move on to ODEs in the next chapter, we shall
+see that such equations are typically solved by applying some numerical scheme to turn the
+differential equation into a difference equation, which is then solved. Knowing how to program
+difference equations is therefore an essential part of solving ODEs.
+
+
+======= Sequences and Difference Equations =======
+Sequences is a central topic in mathematics, which has important applications in numerical analysis
+and scientific computing. In the most general sense, a sequence is simply a collection of numbers:
+!bt
+\[ x_0,\ x_1,\ x_2,\ \ldots,\ x_n,\ldots . \]
+!et
+For some sequences we can derive a formula that gives the the $n$-th number $x_n$
+as a function of $n$. For instance, all the odd numbers form a sequence
+!bt
+\[ 1, 3, 5, 7, \dots \]
+!et
+and for this sequence we can write a simple formula for the $n$-th term;
+!bt
+\[ x_n = 2n+1 .\]
+!et
+With this formula at hand, the complete sequence can be written on a compact form;
+!bt
+\[ (x_n)_{n=0}^\infty,\quad x_n = 2n+1 .\]
+!et
+Other examples of sequences include
+!bt
+\begin{align*}
+& 1,\ 4,\ 9,\ 16,\ 25,\ \ldots\quad (x_n)_{n=0}^\infty,\ x_n=n^2 , \\
+&1,\ {1\over 2},\ {1\over3},\ {1\over4},\ \ldots\quad (x_n)_{n=0}^\infty,\ x_n={1\over {n+1}} ,\\
+&1,\ 1,\ 2,\ 6,\ 24,\ \ldots\quad (x_n)_{n=0}^\infty,\ x_n=n! ,\\
+& 1,\ 1+x,\ 1+x+{1\over2}x^2,\ 1+x+{1\over2}x^2+{1\over6}x^3,\ \ldots\quad (x_n)_{n=0}^\infty,\ x_n=\sum_{j=0}^n {x^j\over j!} .
+\end{align*}
+!et
+These are all formulated as inifite sequences, which is common in mathematics, but
+in real-life applications sequences are usually finite: $(x_n)_{n=0}^N$.
+Some familiar examples include the annual value of a loan or an investment.
+
+In many cases it is impossible to derive an explicit formula for the
+entire sequence, and $x_n$ is instead
+given by a relation involving $x_{n-1}$ and possibly $x_{n-2}$. Such equations
+are called *difference equations*, and they
+can be challenging to solve with analytical methods, since in order to compute the $n$-th term of a sequence
+we need to compute the entire sequence $x_0, x_1, \ldots, x_{n-1}$. This can be very tedious to do by hand or using
+a calculator, but on a computer the equation is easy to solve with a for-loop. Combining sequences and difference
+equations with programming therefore enables us to consider far more interesting and useful cases.
+
+=== A difference equation for computing interest. ===
+To start with a simple example, consider the problem of computing how an invested sum of money grows over time.
+In its simplest form, this problem can be written as putting $x_0$ money in a bank at year 0, with interest rate
+$p$ percent per year. What is then the value after $N$ years? You may recall from earlier in IN1900
+(and from high school mathematics) that the solution to this problem is given by the simple
+formula
+$$x_n = x_0 (1 + p/100)^n,$$
+so there is really no need to formulate and solve the problem as
+a difference equation. However, very simple generalizations, such as a non-constant interest rate,
+makes this formula difficult to apply, while a formulation based on a
+difference equation will still be applicable. To formulate the problem as a
+difference equation, we use the fact that the amount $x_n$ at year $n$ is simply the
+amount at year $n-1$ plus the interest for year $n-1$. This gives the following
+relation between $x_n$ and $x_{n-1}$:
+!bt
+\[ x_{n} = x_{n-1} + {p\over 100}x_{n-1} . \]
+!et
+If we want to compute $x_n$, we can now simply start with the known $x_0$, and compute $x_1, x_2, \ldots, x_n$.
+The procedure involves repeating a simple calculation many times, which is tedious to do by
+hand but very well suited for a computer. The complete program for solving this
+difference equation may look like:
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+x0 = 100                      # initial amount
+p = 5                         # interest rate
+N = 4                         # number of years
+index_set = range(N+1)
+x = np.zeros(len(index_set))
+
+x[0] = x0
+for n in index_set[1:]:
+    x[n] = x[n-1] + (p/100.0)*x[n-1]
+
+plt.plot(index_set, x, 'ro')
+plt.xlabel('years')
+plt.ylabel('amount')
+plt.show()
+!ec
+This code only involves tools that we have introduced earlier in the course. %IN1900
+Notice that we store the result of the call to `range` in a variable
+`index_set`, which will be a list-like object of numbers from 0 to $N$ (representing the years). We could
+also have called `range` directly everywhere we need it, but since we use it in
+three places in the code it is more convenient
+to use a variable. The core of the program is the three lines
+starting with `x[0] = x0`. We here initialize the
+first element in our solution array with the known `x0`, and then step into the for-loop to compute the rest.
+The loop variable `n` runs from 1 to $N (=4)$, and the formula inside the loop computes `x[n]` from the known `x[n-1]`.
+
+An alternative
+formulation of the for-loop would be
+!bc pycod-t
+for n in index_set[:-1]:
+    x[n+1] = x[n] + (p/100.0)*x[n]
+!ec
+Here `n` runs from 0 to 3, and all the indices inside the loop have been increased by one so that the
+end result is the same. In this case it is easy to verify that the two loops give the same result,
+but mixing up the two formulations will easily lead to a loop that runs out of bounds (an `IndexError`)
+or a loop where some of the sequence elements are never computed. Such mistakes are probably the
+most common type of programming error when solving difference
+equations, and it is a good habit to always examine the loop formulation carefully.
+If an `IndexError` (or another suspected loop error)
+occurs, a good debugging strategy is to look at the loop definition to find the lower and upper
+value of the loop variable (here `n`), and insert both by hand into
+the formulas inside the loop to check that they make sense. As an example, consider the deliberately wrong code
+!bc pycod-t
+for n in index_set[1:]:
+    x[n+1] = x[n] + (p/100.0)*x[n]
+!ec
+Assuming that the rest of the code is unchanged from the example above,
+the loop variable `n` will run from 1 to 4. If we first insert the lower bound `n=1`
+into the formula, we find that the first pass of the loop
+will try to compute `x[2]` from `x[1]`. However, we have only initialized `x[0]`,
+so `x[1]` is zero, and therefore `x[2]` and all subsequent values will be
+set to zero. Furthermore, if we insert the upper bound `n=4` we see that the formula will
+try to access `x[5]`, but this does not exist and we get an `IndexError`.
+Performing such simple analysis of a for-loop is often a good way to reveal the source of the error
+and give an idea of how it can be fixed.
+
+=== Solving a difference equation without using arrays. ===
+The program above stored the sequence as an array,
+which is a convenient way to program the solver and enables us to plot the
+entire sequence. However, if we are only interested in the solution at a single
+point, i.e., $x_n$, there is no need to store the entire sequence. Since
+each $x_n$ only depends on the previous value $x_{n-1}$, we only need to
+store the last two values in memory. A complete loop can look like this:
+!bc pycod
+x_old = x0
+for n in index_set[1:]:
+    x_new = x_old + (p/100.)*x_old
+    x_old = x_new  # x_new becomes x_old at next step
+!ec
+For this simple case we can actually make the code even shorter, since `x_old` is only used
+in a single line and we can just as well overwrite it once it has been used:
+!bc
+x = x0			#x is here a single number, not array
+for n in index_set[1:]:
+    x = x + (p/100.)*x
+!ec
+We see that these codes store just one or two numbers, and for each pass through the loop we simply update these and overwrite
+the values we no longer need. Although this approach is quite simple, and we obviously save some memory since we do not store the
+complete array, programming with an array `x[n]` is usually safer, and we are often interested in plotting the entire sequence.
+We will therefore mostly use arrays in the subsequent examples.
+
+=== Extending the solver for the growth of money. ===
+Say we are interested in changing our model for interest rate, to a model
+where the interest is added every day instead of every year. The interest rate per day is $r=p/D$ if $p$ is the
+annual interest rate and $D$ is the number of days in a year. A common model in business applies $D=360$,
+but $n$ counts exact (all) days. The difference equation relating one day's amount to the previous is the same as above
+!bt
+\[x_{n} = x_{n-1} + {r\over 100}x_{n-1} ,\]
+!et
+except that the yearly interest rate has been replaced by the daily ($r$). If we are interested in how much the money grows from
+a given date to another we also need to find the number of days between those dates. This calculation could of course be done
+by hand, but Python has a convenient module named `datetime` for this purpose. The following session
+illustrates how it can be used:
+!bc pyshell
+>>> import datetime
+>>> date1 = datetime.date(2017, 9, 29)  # Sep 29, 2017
+>>> date2 = datetime.date(2018, 8, 4)  # Aug 4, 2018
+>>> diff = date2 - date1
+>>> print diff.days
+309
+!ec
+Putting these tools together, a complete program for daily interest rates may look like
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+import datetime
+
+x0 = 100                           # initial amount
+p = 5                              # annual interest rate
+r = p/360.0                        # daily interest rate
+
+date1 = datetime.date(2017, 9, 29)
+date2 = datetime.date(2018, 8, 4)
+diff = date2 - date1
+N = diff.days
+index_set = range(N+1)
+x = np.zeros(len(index_set))
+
+x[0] = x0
+for n in index_set[1:]:
+    x[n] = x[n-1] + (r/100.0)*x[n-1]
+
+plt.plot(index_set, x, 'ro')
+plt.xlabel('days')
+plt.ylabel('amount')
+plt.show()
+!ec
+This program is slightly more sophisticated than the first one, but one may still argue that solving this problem with a difference
+equation is unnecessarily complex, since we could just apply
+the well-known formula $x_n =x_0(1+\frac{r}{100})^n$
+to compute any $x_n$ we want. However, we know that interest rates change quite often, and
+the formula is only valid for a constant $r$. For the program based on solving the
+difference equation, on the other hand, only minor changes are
+needed in the program to handle a varying interest rate.
+The simplest approach is to let `p` be an array of the same length as the number of days, and fill
+it with the correct interest rates for each day. The modifications to the program above may look like this:
+!bc pycod
+p = np.zeros(len(index_set))
+# fill p[n] with correct values
+
+r = p/360.0                      # daily interest rate
+x = np.zeros(len(index_set))
+
+x[0] = x0
+for n in index_set[1:]:
+    x[n] = x[n-1] + (r[n-1]/100.0)*x[n-1]
+!ec
+The only real difference from the previous example is that we initialize `p` as an array,
+and then `r = p/360.0` becomes an array of the same length. In
+the formula inside the for-loop we then look up the correct value `r[n-1]` for
+each iteration  of the loop. Filling `p`
+with the correct values can be non-trivial, but many cases can be
+handled quite easily. For instance, say the interest rate
+is piecewise constant and increases from 4.0% to 5.0% on a given date.
+Code for filling the array with values may then
+look like this
+!bc pycod-t
+date0 = datetime.date(2017, 9, 29)
+date1 = datetime.date(2018, 2, 6)
+date2 = datetime.date(2018, 8, 4)
+Np = (date1-date0).days
+N = (date2-date0).days
+
+p = np.zeros(len(index_set))
+p[:Np] = 4.0
+p[Np:] = 5.0
+!ec
+
+
+
+======= Systems of Difference Equations  =======
+To consider a related example to the one above, assume that we have a fortune $F$ invested with an
+annual interest rate of $p$ percent. Every year we plan to consume an amount $c_n$, where $n$ counts years,
+and we want to compute our fortune $x_n$ at year $n$. The problem can be formulated as a difference equation,
+where the fundamental relation from one year to the next is
+!bt
+\[ x_n = x_{n-1} + {p\over 100}x_{n-1} - c_{n-1} \]
+!et
+In the simplest case $c_n$ is constant, but inflation demands $c_n$ to increase. To solve this problem, we assume that
+$c_n$ should grow with a rate of $I$ percent per year, and in the first year we want to consume $q$ percent of first year's
+interest. The extension of the difference equation above becomes
+!bt
+\begin{align*}
+x_n &= x_{n-1} + {p\over 100}x_{n-1} - c_{n-1}, \\
+c_n &= c_{n-1} + {I\over 100}c_{n-1} .
+\end{align*}
+!et
+with initial conditions $x_0=F$ and $c_0 = (pF/100)(q/100)  = \frac{pFq}{10000}$. This is a coupled system of two
+difference equations, but the programming is not much more difficult than for the
+single equation above. We simply create two arrays `x` and `c`, initialize `x[0]`
+and `c[0]` to the given initial conditions, and then update `x[n]` and `c[n]`
+inside the loop. A complete code may look like
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+F = 1e7                      # initial amount
+p = 5                         # interest rate
+I = 3
+q = 75
+N = 40                         # number of years
+index_set = range(N+1)
+x = np.zeros(len(index_set))
+c = np.zeros_like(x)
+
+x[0] = F
+c[0] = q*p*F*1e-4
+
+for n in index_set[1:]:
+    x[n] = x[n-1] + (p/100.0)*x[n-1] - c[n-1]
+    c[n] = c[n-1] + (I/100.0)*c[n-1]
+
+plt.plot(index_set, x, 'ro',label = 'Fortune')
+plt.plot(index_set, c, 'go', label = 'Yearly consume')
+plt.xlabel('years')
+plt.ylabel('amounts')
+plt.legend()
+plt.show()
+!ec
+
+
+======= More Examples of Difference Equations =======
+As noted above, sequences and difference have countless applications
+in mathematics, science, and engineering. Here we present a selection of well known examples.
+
+=== Fibonacci numbers as a difference equation ===
+No programming or math course is complete without an example on Fibonacci numbers:
+!bt
+\[ x_n = x_{n-1} + x_{n-2},\quad x_0=1,\ x_1=1\]
+!et
+This sequence was originally derived by Fibonacci for modeling rat populations, but it has a range of
+peculiar mathematical properties and has therefore attracted much attention from mathematicians.
+The equation differs from the previous ones, since $x_n$ depends on the two previous values ($n-1$, $n-2$), which
+makes this a *second order difference equation*. This classification is important for mathematical
+solution techniques, but in a program the difference between first and second order equations is small.
+The complete code to solve this difference equation and generate the Fibonacci numbers can be written as
+!bc pycod
+import sys
+from numpy import zeros
+
+N = int(sys.argv[1])
+x = zeros(N+1, int)
+x[0] = 1
+x[1] = 1
+for n in range(2, N+1):
+    x[n] = x[n-1] + x[n-2]
+    print(n, x[n])
+!ec
+Notice that in this case we need to initialize both `x[0]` and `x[1]` before starting
+the loop, since the update formula involves both `x[n-1]` and `x[n-2]`. This is the
+main difference between this second order equation and the programs for first order
+equations considered above.
+The Fibonacci numbers grow quickly and running this program for large $N$ (try for instance $N = 100$) will
+lead to problems with overflow. The NumPy `int` type supports up to 9223372036854775807 (almost
+$10^{19}$, so it is very rarely a problem). We can fix the problem by avoiding NumPy arrays and instead use
+the standard Python `int` type, but we will not go into these details here.
+
+=== Logistic growth ===
+If we return to the initial problem of calculating growth of money in a bank, we can write the
+classical solution formula more compactly as
+!bt
+\[ x_n = x_0 (1 + p/100)^n = x_0C^n \quad (= x_0e^{n\ln C}) .
+\]
+!et
+Since $n$ counts years, this is an example of exponential growth in time, with
+the general formula $x= x_0e^{\lambda t}$.
+Populations of humans, animals, and other organisms also exhibit the same type
+of growth when there are unlimited resources
+(space and food), and the model for exponential growth therefore has many applications in biology.[^expo]
+However, most environments can only support a finite number $R$ of individuals, while in the exponential growth model
+the population will continue to grow indefinitely. How can we alter the equation to be a more realistic model for growing populations?
+
+[^expo]: The formula $x= x_0e^{\lambda t}$ is the solution of the *differential equation* $dx/dt = \lambda x$, and
+this formulation may be more familiar to some readers. As mentioned at the start of the chapter,
+differential equations and difference equations are closely related, and these relations are
+discussed in more detail in Chapter ref{ch:ode_intro}.
+
+Initially, when resources are abundant, we want the growth to be exponential,
+i.e., to grow with a given rate $r$\% per year according to the difference
+equation introduced above:
+!bt
+\[ x_n = x_{n-1} + (r/100) x_{n-1} .\]
+!et
+To enforce the growth limit as $x_n \rightarrow R$,
+$r$ must decay to zero as $x_n$ approaches $R$. The simplest
+variation of $r(n)$ is linear:
+!bt
+\[   r(n) = \varrho \left(1 - {x_n\over R}\right) \]
+!et
+We observe that $r(n)\approx \varrho$ for small $n$, when $x_n\ll R$, and
+$r(n) \rightarrow 0$ as $n$ grows and $x_n\rightarrow R$. This formulation of
+the growth rate leads to the logistic growth model:
+!bt
+\[ x_n = x_{n-1} + \frac{\varrho}{100} x_{n-1}\left(1 - {x_{n-1}\over R}\right) .\]
+!et
+This is a *nonlinear* difference equation, while all the examples considered above were linear.
+The distinction between linear and non-linear equations is very important for
+mathematical analysis of the equations, but it does not make much difference when solving the equation
+in a program. To modify the interest rate program above to describe logistic growth, we can simply replace
+the line
+!bc pycod
+x[n] = x[n-1] + (p/100.0)*x[n-1]
+!ec
+by
+!bc pycod
+x[n] = x[n-1] + (rho/100)*x[n-1]*(1 - x[n-1]/R)
+!ec
+A complete program may look like
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+x0 = 100                      # initial population
+rho = 5                       # growth rate in %
+R = 500                       # max population (carrying capacity)
+N = 200                       # number of years
+
+index_set = range(N+1)
+x = np.zeros(len(index_set))
+
+x[0] = x0
+for n in index_set[1:]:
+    x[n] = x[n-1] + (rho/100) *x[n-1]*(1 - x[n-1]/R)
+
+plt.plot(index_set, x, 'ro')
+plt.xlabel('years')
+plt.ylabel('amount')
+plt.show()
+!ec
+Note that the logistic growth model is more commonly formulated as an
+ordinary differential equation (ODE), and we will consider this formulation in
+the next chapter. For certain choices of numerical method and discretization
+parameters, the program for solving the ODE is identical to the program
+for the difference equation considered here.
+
+# #if FORMAT in ("latex", "pdflatex")
+FIGURE: [../chapters/fig-diffeq/logistic_growth1, width=400 frac=0.7] Solution of the logistic growth model for $x_0 = 100, \rho = 5.0, R = 500$.
+# #endif
+
+=== The factorial as a difference equation. ===
+The factorial $n!$ is defined as
+!bt
+\begin{equation}
+n! = n(n-1)(n-2)\cdots 1,\quad 0!=1
+label{factorial}
+\end{equation}
+!et
+The following difference equation has $x_n=n!$ as solution and can be used to compute the factorial:
+!bt
+\[ x_n = nx_{n-1},\quad x_0 = 1 \]
+!et
+As above, a natural question to ask is whether such a difference equation is
+very useful, when we can simply use (ref{factorial}) to compute
+the factorial for any value of $n$. One answer to this question is that in
+many applications, some of which will be considered below,
+we need to compute the
+entire sequence of factorials $x_n=n!$ for $n=0, \ldots N$.
+We could still apply (ref{factorial}) to compute each one, but it
+involves a lot of redundant computations, since we perform $n$ multiplications
+for each new $x_n$. When solving the difference equation, each
+new $x_n$ requires only a single multiplication, and for large values of $n$
+this may speed up the program considerably.
+
+
+=== Newton's method as a difference equation  ===
+Earlier in the course %IN1900
+we introduced Newton's method for solving non-linear equations on the form
+!bt
+\[
+f(x)=0
+\]
+!et
+Starting from some initial guess $x_0$, Newton's method
+gradually improves the approximation by iterations
+!bt
+\[
+x_n = x_{n-1} - {f(x_{n-1})\over f'(x_{n-1})} .
+\]
+!et
+We may now recognize this as nonlinear first-order difference equation.
+As $n\rightarrow\infty$, we hope that $x_n\rightarrow x_s$, where $x_s$ is
+the solution to $f(x_s)=0$. In practice we solve the equation for $n\leq N$,
+for some finite $N$, just as for the difference equations considered earlier.
+But how do we choose $N$ so that $x_N$ is sufficiently close to the true solution
+$x_s$? Since we want to solve $f(x)=0$, the best approach is to solve the equation
+until $f(x)\leq \epsilon$, where $\epsilon$ is a small tolerance. In practice, Newton's
+method will usually converge rather quickly, or not converge at all, so setting
+some upper bound on the number of iterations
+is a good idea. A simple program implementing Newton's method may look like
+!bc pycod
+def Newton(f, dfdx, x, epsilon=1.0E-7, max_n=100):
+    n = 0
+    while abs(f(x)) > epsilon and n <= max_n:
+        x = x - f(x)/dfdx(x)
+        n += 1
+    return x, n, f(x)
+!ec
+The arguments to the function are Python functions `f` and `dfdx` implementing
+$f(x)$ and its derivative. Both of these arguments are called inside the function
+and both must therefore be callable. The `x` argument is the initial guess for the solution $x$,
+and the two optional arguments at the end are the tolerance and the maximum
+number of iteration. Although the method is implemented as a while-loop rather
+than a for-loop, the main structure of the algorithm is exactly the same as for the
+other difference equations considered earlier.
+
+======= Taylor Series and Approximations =======
+One extremely important use of sequences and series is for approximating
+other functions. For instance, commonly used functions such as
+$\sin x, \ln x$, or $e^x$ have been defined to have some desired mathematical
+properties, but we need some kind of algorithm to evaluate the function values.
+A convenient approach is to approximate $\sin x$, etc. by polynomials, since
+they are easy to calculate. It turns out that such approximations
+exist, for example this result by Gregory from 1667:
+!bt
+\[ \sin x = \sum_{k=0}^\infty (-1)^k\frac{x^{2k+1}}{(2k+1)!}\]
+!et
+and an even more amazing result discovered by Taylor in 1715:
+!bt
+\[ f(x) = \sum_{k=0}^\infty \frac{1}{k!}(\frac{d^kf(0)}{dx^k})x^k .\]
+!et
+Here, the notation $d^kf(0)/dx^k$ means the $k$-th derivative of $f$ evaluated
+at $x=0$. Taylor's result means that for any function $f(x)$, if we can compute the
+function value and its derivatives for $x=0$, we can approximate the function
+value at any $x$ by evaluating a polynomial. For practical applications, we always work
+with a truncated version of the Taylor series:
+!bt
+\begin{equation}
+f(x) \approx \sum_{k=0}^{N}
+\frac{1}{k!}(\frac{d^kf(0)}{dx^k} )x^k .
+\label{taylor0}\end{equation}
+!et
+The approximation improves as $N$ is increased, but the most popular
+choice is actually $N=1$, which gives a reasonable approximation close to $x=0$ and
+has been essential in developing physics and technology.
+
+As an example, consider the Taylor approximation to the exponential function.
+For this function we have that $d^k e^x/dx^k = e^x$ for all $k$, and $e^0 = 1$,
+and inserting this into (ref{taylor0}) yields
+we have
+!bt
+\begin{align*}
+e^x &= \sum_{k=0}^\infty \frac{x^k}{k!} \\
+    &\approx \sum_{k=0}^N \frac{x^k}{k!} .
+\end{align*}
+!et
+Choosing, for instance, $N=1$ and $N=4$, we get
+!bt
+\begin{align*}
+e^x&\approx 1 + x , \\
+e^x&\approx 1 + x + \frac{1}{2}x^2 + \frac{1}{6}x^3,
+\end{align*}
+!et
+respectively.
+These approximations are obviously not very accurate for large $x$,
+but close to $x=0$ they are sufficiently accurate for many
+applications. By a shift of variables we can also make the Taylor
+polynomials accurate around any point  $x=a$:
+!bt
+\[ f(x) \approx \sum_{k=0}^N \frac{1}{k!}(\frac{d^k}{dx^k} f(a))(x-a)^k .\]
+!et
+
+
+=== Taylor series formulated as a difference equation. ===
+label{diffeq:Taylor:exp:1}
+
+We consider again the Taylor series for $e^x$ around $x=0$, given by
+!bt
+\[  e^x= \sum_{k=0}^\infty {x^k\over k!} .\]
+!et
+If we now define $e_n$ as the approximation with $n$ terms, i.e. for $k=0,\ldots, n-1$,
+we have
+!bt
+\[ e_{n}=\sum_{k=0}^{n-1} \frac{x^k}{k!} =
+\sum_{k=0}^{n-2} \frac{x^k}{k!} + \frac{x^{n-1}}{(n-1)!},\]
+!et
+and we can formulate the sum in $e_n$ as the difference equation
+!bt
+\begin{equation}
+e_n = e_{n-1} + \frac{x^{n-1}}{(n-1)!},\quad e_0=0 .
+label{taylor_diffeq0}
+\end{equation}
+!et
+We see that this difference equation involves $(n-1)!$, and computing
+the complete factorial for every iteration involves a large number of redundant
+multiplications. Above we introduced a difference equation for the factorial, and
+this idea can be utilized to formulate a more efficient computation of the
+Taylor polynomial. We have that
+!bt
+\[ \frac{x^n}{n!} = \frac{x^{n-1}}{(n-1)!}\cdot \frac{x}{n}, \]
+!et
+and if we let $a_n = x^n/n!$ it can be computed efficiently by solving
+!bt
+\[ a_n = a_{n-1}\frac{x}{n},\quad a_0 = 1 .\]
+!et
+Now we can formulate a system of two difference equations for the Taylor polynomial, where we update each term via
+the $a_n$ equation and sum the terms via the $e_n$ equation:
+!bt
+\begin{align*}
+e_n &= e_{n-1} + a_{n-1},\quad e_0 = 0, \\
+a_n &= \frac{x}{n} a_{n-1} , \quad a_0 = 1.
+\end{align*}
+!et
+Although we are here solving a system of two difference equations, the computation
+is far more efficient than solving the single equation in (ref{taylor_diffeq0})
+directly, since we avoid the repeated multiplications involved in the factorial computation.
+
+A complete Python code for solving the difference equation to compute the Taylor approximation
+to the exponential function may look like
+!bc pycod
+import numpy as np
+
+x = 0.5 #approximate exp(x) for x = 0.5
+
+N = 5
+index_set = range(N+1)
+a = np.zeros(len(index_set))
+e = np.zeros(len(index_set))
+a[0] = 1
+
+print(f'Exact: exp({x}) = {np.exp(x)}')
+for n in index_set[1:]:
+    e[n] = e[n-1] + a[n-1]
+    a[n] = x/n*a[n-1]
+    print(f'n = {n}, approx. {e[n]}, error = {np.abs(e[n]-np.exp(x)):4.5f}')
+!ec
+
+# #if FORMAT != 'ipynb'
+!bc dat
+Exact: exp(0.5) = 1.64872
+n = 1, approx. 1.00000, error = 0.64872
+n = 2, approx. 1.50000, error = 0.14872
+n = 3, approx. 1.62500, error = 0.02372
+n = 4, approx. 1.64583, error = 0.00289
+n = 5, approx. 1.64844, error = 0.00028
+!ec
+# #endif
+This small program first prints the exact value $e^x$ for $x=0.5$, and then
+the Taylor approximation and associated error for $n=1$ to $n=5$. The Taylor series
+approximation is most accurate close to $x=0$, so choosing a larger value
+of $x$ leads to larger errors, and we need to also increase $n$ for the appoximation
+to be accurate.

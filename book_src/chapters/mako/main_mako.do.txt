@@ -1,0 +1,17 @@
+TITLE: Use of Mako to aid book writing
+AUTHOR: Hans Petter Langtangen at Center for Biomedical Computing, Simula Research Laboratory & Department of Informatics, University of Oslo
+DATE: today
+
+TOC: on
+
+
+# No common Mako variables and functions here since we cannot run mako
+### #include "../mako_code.txt"
+
+
+# Running text
+# #include "mako.do.txt"
+
+======= References =======
+
+BIBFILE: ../papers.pub

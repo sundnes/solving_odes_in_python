@@ -1,0 +1,52 @@
+These lecture notes are based on the book *A Primer on Scientific Programming with Python* by
+Hans Petter Langtangen[^primer], and primarily cover topics from Appendix A, C,
+and E. The notes are intended as a brief and gentle introduction to solving
+differential equations in Python, for use in the course
+*Introduction to programming for scientific applications* (IN1900) at the
+University of Oslo. To read these notes one should have basic knowledge of Python
+and NumPy[^intro_book], and it is also useful to have a fundamental understanding
+of ordinary differential equations (ODEs).
+
+[^primer]: Hans Petter Langtangen, *A Primer on Scientific Programming with Python*,
+5th edition, Springer-Verlag, 2016.
+
+[^intro_book]: See for instance Joakim Sundnes, *Introduction to Scientific Programming with Python*,
+Springer-Verlag, 2020.
+
+The purpose of these notes is to provide a foundation for writing your own ODE solvers
+in Python. One may ask why this is useful, since there are already
+multiple such solvers available, for instance in the *SciPy* library. However, no single ODE
+solver is the best and most efficient tool for all possible ODE problems, and the choice
+of solver should always based on the characteristics of the problem. To make such choices
+it is extremely useful to know the strengths and weaknesses of the different solvers,
+and the best way to learn this is to program your own collection of ODE solvers.
+Different ODE solvers are also conveniently grouped into families and hierarchies of solvers,
+and provide an excellent example of how object oriented programming (OOP) can be
+used to maximize code reuse and minimize duplication.
+
+Although the main purpose of these notes is to solve differential equations,
+the topic of the first chapter is *difference equations*. The motivation for this
+somewhat unusual approach is that, from a programming perspective, difference
+equations are easier to solve, and a natural step on the way towards solving ODEs.
+The standard formulation of difference equations in mathematical textbooks is
+already in a "computer-friendly" form, and is very easy to translate into a
+Python program using for-loops and arrays. Furthermore, as we shall see in Chapter
+ref{ch:ode_intro}, applying a numerical method such as the
+Forward Euler scheme to an ODE effectively turns the differential equation
+into a difference equation. If we already know how to program difference equations
+it is therefore very easy to solve an ODE,
+by simply adding one extra step at the start of the process. However, although this
+structure provides a fairly natural step-by-step introduction to ODE programming, it
+is entirely possible to skip Chapter ref{ch:diff_eq} completely and jump straight into the
+programming of ODE solvers in Chapter ref{ch:ode_intro}.
+
+
+
+
+# #if FORMAT in ("latex", "pdflatex")
+## Just dump native latex
+\noindent
+{\it July 2020}  \hfill  {\it Joakim Sundnes}
+# #else
+*Joakim Sundnes*, July 2020
+# #endif

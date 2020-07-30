@@ -1,0 +1,44 @@
+# Note on the Springer T4 style: here we use the modifications
+# introduced in t4do.sty and svmonodo.sty (both are bundled with DocOnce).
+
+TITLE:  Solving Ordinary Differential Equations in  Python
+AUTHOR: Joakim Sundnes at Simula Research Laboratory & Department of Informatics, University of Oslo
+DATE: today
+
+## Handy mako variables and functions for the preprocessing step
+# #include "../chapters/mako_code.txt"
+
+## Externaldocuments: ../chapters/fake/main_fake
+
+
+========= Preface  =========
+label{ch:preface}
+# #include "../chapters/preface_ode.do.txt"
+
+TOC: on
+
+!split
+========= Programming of difference equations =========
+label{ch:diff_eq}
+# #include "../chapters/diffeq.do.txt"
+
+!split
+========= Solving ordinary differential equations =========
+label{ch:ode_intro}
+# #include "../chapters/ode_intro.do.txt"
+
+!split
+========= Solving systems of ODEs =========
+label{ch:ode_sys}
+# #include "../chapters/ode_systems.do.txt"
+
+!split
+========= Modeling infectious diseases =========
+label{ch:disease_models}
+# #include "../chapters/disease_modeling.do.txt"
+
+
+
+# !split
+# ========= References =========
+# BIBFILE: ../chapters/papers.pub
