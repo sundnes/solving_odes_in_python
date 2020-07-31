@@ -7,6 +7,7 @@ which was written for the introductory programming course "IN1900 – Introducti
 
 The purpose of the notes is to explain how to write generic and usable
 ODE solvers in Python. Parts of the notes are based on ["A Primer on Scientific Programming with Python"](https://link.springer.com/book/10.1007/978-3-662-49887-3).
+A complete pdf version of the notes can be found [here](./ode_book.pdf).
 
 ## Source code for code examples
 Most of the code examples are available for download as regular .py files:
