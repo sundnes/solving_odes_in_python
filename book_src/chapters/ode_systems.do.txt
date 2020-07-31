@@ -181,10 +181,10 @@ forces acting on the ball in the $x$-direction, so from Newton's second law $a_x
 while the acceleration in the $y$-direction must be equal to the acceleration of gravity.
 We get
 !bt
-\begin{alignat*}{2}
-a_x &= 0 \Rightarrow &\frac{dv_x}{dt} = 0, \\
-a_y &= -g \Rightarrow \mbox{\ \ }&\frac{dv_y}{dt} = -g\mbox{\ } .
-\end{alignat*}
+\begin{align*}
+a_x &= 0 \quad \Rightarrow \quad \frac{dv_x}{dt} = 0, \\
+a_y &= -g \quad \Rightarrow \quad \frac{dv_y}{dt} = -g\mbox{\ } .
+\end{align*}
 !et
 We can easily add air resistance or other additional physics to these equations
 later if needed. The complete ODE system can be written as
