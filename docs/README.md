@@ -1,4 +1,4 @@
-# Introduction to Scientific Programming with Python
+# Solving ODEs in Python
 
 This repository contains source code and Jupyter notebooks for the lecture notes ["Solving Ordinary Differential Equations in Python"](./ode_book.pdf),
 which was written for the introductory programming course "IN1900 – Introduction to Programming with Scientific Applications" at the University of Oslo.
