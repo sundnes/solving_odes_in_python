@@ -2,7 +2,6 @@
 ========= Solving systems of ODEs =========
 # #endif
 
-
 So far we have only considered ODEs with a single solution component, often called scalar ODEs.
 Many interesting processes can be described
 by systems of ODEs, i.e., multiple ODEs where the right hand side of one equation depends on the solution of the others. Such equation

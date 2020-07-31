@@ -33,7 +33,7 @@ else
 fi
 
 cd ../chapters
-for name in diffeq ode_intro ode_systems disease_models
+for name in diffeq ode_intro ode_systems disease_modeling
 do
   cp $name.do.txt tmp.do.txt
   #doconce subst 'FIGURE: +\[fig-(.+?)/(.+?),' 'FIGURE: [https://raw.githubusercontent.com/hplgit/scipro-primer/master/slides/\g<1>/html/fig-\g<1>/\g<2>.png,' tmp.do.txt

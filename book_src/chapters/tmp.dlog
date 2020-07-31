@@ -108,3 +108,157 @@ translating doconce text in tmp.do.txt to ipynb
     environments in math environments.
 
 output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+figure file ./fig-ode2/logistic_func_mpl:
+    can use ./fig-ode2/logistic_func_mpl.png for format ipynb
+figure file ./fig-ode2/FE_n_10_20:
+    can use ./fig-ode2/FE_n_10_20.png for format ipynb
+collected all required additional files in ipynb-tmp-src.tar.gz which must be distributed with the notebook
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+*** warning: latex envir \begin{alignat*} does not work well in Markdown.
+    Stick to \[ ... \], equation, equation*, align, or align*
+    environments in math environments.
+
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+*** warning: latex envir \begin{alignat*} does not work well in Markdown.
+    Stick to \[ ... \], equation, equation*, align, or align*
+    environments in math environments.
+
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+figure file ./fig-ode2/FE_n_10_20:
+    can use ./fig-ode2/FE_n_10_20.png for format ipynb
+figure file ./fig-ode2/logistic_func_mpl:
+    can use ./fig-ode2/logistic_func_mpl.png for format ipynb
+collected all required additional files in ipynb-tmp-src.tar.gz which must be distributed with the notebook
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+*** warning: latex envir \begin{alignat*} does not work well in Markdown.
+    Stick to \[ ... \], equation, equation*, align, or align*
+    environments in math environments.
+
+output in tmp.ipynb
+translating doconce text in tmp.do.txt to ipynb
+found ./fig-ode2/SIR1.pdf
+figure ./fig-ode2/SIR1.pdf must have extension(s) .png, .gif, .jpg, .jpeg, .tif, .tiff
+....image conversion: convert ./fig-ode2/SIR1.pdf ./fig-ode2/SIR1.png
+found ./fig-ode2/SIR0.pdf
+figure ./fig-ode2/SIR0.pdf must have extension(s) .png, .gif, .jpg, .jpeg, .tif, .tiff
+....image conversion: convert ./fig-ode2/SIR0.pdf ./fig-ode2/SIR0.png
+figure ./fig-ode2/SEEIIR.pdf must have extension(s) .png, .gif, .jpg, .jpeg, .tif, .tiff
+....image conversion: convert ./fig-ode2/SEEIIR.pdf ./fig-ode2/SEEIIR.png
+figure ./fig-ode2/SEIR.pdf must have extension(s) .png, .gif, .jpg, .jpeg, .tif, .tiff
+....image conversion: convert ./fig-ode2/SEIR.pdf ./fig-ode2/SEIR.png
+collected all required additional files in ipynb-tmp-src.tar.gz which must be distributed with the notebook
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+figure file ./fig-ode2/FE_n_10_20:
+    can use ./fig-ode2/FE_n_10_20.png for format ipynb
+figure file ./fig-ode2/logistic_func_mpl:
+    can use ./fig-ode2/logistic_func_mpl.png for format ipynb
+collected all required additional files in ipynb-tmp-src.tar.gz which must be distributed with the notebook
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+*** warning: latex envir \begin{alignat*} does not work well in Markdown.
+    Stick to \[ ... \], equation, equation*, align, or align*
+    environments in math environments.
+
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+ERROR: 5 !bc do not match 4 !ec directives
+Missing !ec after final !bc
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+figure file ./fig-ode2/FE_n_10_20:
+    can use ./fig-ode2/FE_n_10_20.png for format ipynb
+figure file ./fig-ode2/logistic_func_mpl:
+    can use ./fig-ode2/logistic_func_mpl.png for format ipynb
+collected all required additional files in ipynb-tmp-src.tar.gz which must be distributed with the notebook
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+*** warning: latex envir \begin{alignat*} does not work well in Markdown.
+    Stick to \[ ... \], equation, equation*, align, or align*
+    environments in math environments.
+
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+ERROR: 6 !bc do not match 4 !ec directives
+
+
+Two !bc after each other!
+
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+from ODESolver import *
+
+S_0 = 5e6
+E1_0 = 0
+E2_0 = 100
+I_0 = 0
+Ia_0 = 0
+R0 = 0
+U0 = [S0, E1_0, E2_0, I_0, Ia_0, R_0]
+
+model = SEEIIR(beta=0.001, mu=1.0/5,nu=1.0/7,gamma=1.0/50)
+
+solver = RungeKutta4(model)
+solver.set_initial_condition(U0)
+time_points = np.linspace(0, 100, 101)
+u, t = solver.solve(time_points)
+S = u[:,0]; E1 = u[:,1]; E2 = u[:,2];
+I = u[:,3]; Ia = u[:,4]; R = u[:,5]
+
+plt.plot(t,S,t,I,t,Ia,t,R)
+plt.show()
+!bc
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+figure file ./fig-ode2/logistic_func_mpl:
+    can use ./fig-ode2/logistic_func_mpl.png for format ipynb
+figure file ./fig-ode2/FE_n_10_20:
+    can use ./fig-ode2/FE_n_10_20.png for format ipynb
+collected all required additional files in ipynb-tmp-src.tar.gz which must be distributed with the notebook
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+*** warning: latex envir \begin{alignat*} does not work well in Markdown.
+    Stick to \[ ... \], equation, equation*, align, or align*
+    environments in math environments.
+
+output in tmp.ipynb
+running preprocess -DFORMAT=ipynb -DDEVICE=screen  tmp.do.txt > tmp_preprocess__tmp.do.txt
+translating doconce text in tmp_preprocess__tmp.do.txt to ipynb
+figure file ./fig-ode2/SIR1:
+    can use ./fig-ode2/SIR1.png for format ipynb
+figure file ./fig-ode2/SIR0:
+    can use ./fig-ode2/SIR0.png for format ipynb
+collected all required additional files in ipynb-tmp-src.tar.gz which must be distributed with the notebook
+output in tmp.ipynb
