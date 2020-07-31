@@ -1,6 +1,7 @@
-# TITLE: App.E: Programming of differential equations
-# AUTHOR: Joakim Sundnes at Simula Research Laboratory & University of Oslo, Dept. of Informatics
-# DATE: today
+# #if FORMAT == 'ipynb'
+========= Solving systems of ODEs =========
+# #endif
+
 
 So far we have only considered ODEs with a single solution component, often called scalar ODEs.
 Many interesting processes can be described
@@ -212,6 +213,8 @@ from the examples of the previous chapter, except that we need to define an
 initial condition with four components:
 !bc pycod
 from ODESolver import ForwardEuler
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Initial condition, start at the origin:
 x = 0; y = 0

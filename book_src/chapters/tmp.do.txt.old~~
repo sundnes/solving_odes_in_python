@@ -2,533 +2,149 @@
 # AUTHOR: Joakim Sundnes at Simula Research Laboratory & University of Oslo, Dept. of Informatics
 # DATE: today
 
-
-Ordinary differential equations (ODEs) are widely used in science and engineering, in particular for modeling dynamic
-processes. While simple ODEs can be solved with analytical methods, non-linear ODEs are generally not possible
-to solve in this way, and we need to apply numerical methods. In this chapter we will see how we can program
-general numerical solvers that can be applied to any ODE. We will first consider scalar ODEs, i.e., ODEs with a single
-equation and a single unknown, and in Chapter 3 we will
-extend the ideas to systems of coupled ODEs. Understanding the concepts
-of this chapter is useful not only for programming your own ODE solvers, but also for using a wide variety of
-general-purpose ODE solvers available both in Python and other programming languages.
-
-
-======= Creating a general-purpose ODE solver =======
-When solving ODEs analytically one will typically consider a specific ODE or a class of ODEs, and try to derive
-a formula for the solution. In this chapter we want to implement numerical solvers that can be applied to any ODE,
-not restricted to a single example or a particular class of equations. For this purpose, we need a general abstract
-notation for an arbitrary ODE. We will write the ODEs on the following form:
+So far we have only considered ODEs with a single solution component, often called scalar ODEs.
+Many interesting processes can be described
+by systems of ODEs, i.e., multiple ODEs where the right hand side of one equation depends on the solution of the others. Such equation
+systems are also referred to as vector ODEs. One simple example is
 !bt
-\begin{equation}
-u^{\prime}(t) = f(u(t), t),
-label{ode0}
-\end{equation}
+\begin{alignat*}{2}
+u' &= v, \quad &&u(0) = 1\\
+v' &= -u, \quad &&v(0) = 0.
+\end{alignat*}
 !et
-which means that the ODE is fully specified by the definition of the right hand side function $f(u,t)$. Examples of this
-function may be:
+The solution of this system is $u=\cos t, v=\sin t$ which can easily be verified by insterting the solution into the equations
+and initial conditions. For more general cases, it is usually even more difficult to find analytical solutions of ODE systems
+than of scalar ODEs, and numerical methods are usually required. In this chapter we will extend the solvers introduced in
+Chapter 2 to be able to solve systems of ODEs. We shall see that such an extension requires relatively small
+modifications of the code.
+
+We want to develop general software that can be applied to any vector ODE or scalar ODE, and for this purpose it is
+useful to introduce general mathematical notation. We have $n$ unknowns
+!bt
+\[ u^{(0)}(t), u^{(1)}(t), \ldots, u^{(n-1)}(t) \]
+!et
+in a system of $n$ ODEs:
 !bt
 \begin{align*}
-f(u,t) &= \alpha u,\quad\hbox{exponential growth}\\
-f(u,t) &= \alpha u\left(  1-\frac{u}{R}\right),\quad\hbox{logistic growth}\\
-f(u,t) &= -b|u|u + g,\quad\hbox{falling body in a fluid}
+{d\over dt}u^{(0)} &= f^{(0)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t),\\
+{d\over dt}u^{(1)} &= f^{(1)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t),\\
+\vdots &=& \vdots\\
+{d\over dt}u^{(n-1)} &= f^{(n-1)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t).
 \end{align*}
 !et
-Notice that for generality we write all these right hand sides as functions of both $u$ and $t$, although the
-mathematical formulations only involve $u$. It will become clear later why such a general formulation is useful.
-Our aim is now to write functions and classes that take $f$ as input, and solve the corresponding ODE to produce
-$u$ as output.
-
-=== The Euler method turns an ODE into a difference equation. ===
-All the numerical methods we will considered in this chapter are based on approximating the derivatives
-in the equation $u'=f(u,t)$ by finite differences. This step transforms the ODE into
-a difference equation, which can be solved with the tools presented in Chapter 1.
-To introduce the idea, assume that we have computed $u$ at discrete time points
-$t_0,t_1,\ldots,t_n$. At time $t_n$ we have the ODE
+To simplify the notation (and later the implementation), we collect both the solutions $u^{(i)}(t)$
+and right-hand side functions $f^{(i)}$ in vectors;
 !bt
-\[ u'(t_n) = f(u(t_n),t_n), \]
+\[ u = (u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}),\]
 !et
-and we can now approximate $u'(t_n)$ by a forward finite difference;
+and
 !bt
-\[ u'(t_n)\approx \frac{u(t_{n+1})-u(t_n)}{\Delta t} .\]
+\[ f = (f^{(0)}, f^{(1)}, \ldots, f^{(n-1)}).\]
 !et
-Inserting this approximation into the ODE at $t=t_n$ yields the following equation
+Note that $f$ is now a vector-valued function. It takes $n+1$ input arguments ($t$ and the $n$ components of $u$) and returns
+a vector of $n$ values.
+The ODE system can now be written
 !bt
-\[ \frac{u(t_{n+1})-u(t_n)}{\Delta t} = f(u(t_n),t_n), \]
+\[ u' = f(u, t),\quad u(0) = u_0\]
 !et
-which we may recognize as a difference equation for computing $u(t_{n+1})$ from the known value
-$u(t_n)$. We can rearrange the terms to obtain an explicit formula for $u(t_{n+1})$:
-!bt
-\[ u(t_{n+1}) = u(t_n) + \Delta t f(u(t_n), t_n) .\]
-!et
-This is known as the *Forward Euler (FE) method*, and is the simplest numerical method for solving
-and ODE. We can simplify the
-formula by using the notation for difference equations introduced in Chapter 1.
-If we let $u_n$ denote the numerical approximation to the exact solution $u(t)$
-at $t=t_n$, the difference equation can be written as
-!bt
-\begin{equation} u_{n+1} = u_n + \Delta t f(u_n,t_n) .
-label{forw_euler}
-\end{equation}
-!et
-This is a regular difference equation which can be solved using arrays and a for-loop, just as we did for the
-other difference equations in Chapter 1. We
-start from the known initial condition  $u_0$, and apply the formula repeatedly
-to compute $u_1$, $u_2$, $u_3$ and so forth.
-
-=== An ODE needs an initial condition. ===
-In mathematics, an initial condition for $u$ must be specified to have a unique solution of equation
-(ref{ode0}). When solving the equation numerically, we need to set $u_0$ in order to start our method and
-compute a solution at all. As an example, consider the very simple ODE
-!bt
-\[ u'=u .\]
-!et
-This equation has the general solution $u=Ce^t$ for any constant $C$, so it has an infinite number of solutions.
-Specifying an initial condition $u(0)=u_0$ gives $C=u_0$, and we get the unique solution $u=u_0e^t$. When solving the
-equation numerically, we start from our known $u_0$, and apply formula (ref{forw_euler}) repeatedly:
-!bt
-\begin{align*}
-u_1 &= u_0 + \Delta t u_0, \\
-u_2 &= u_1 + \Delta t u_1, \\
-u_3 &= u_2 + \ldots .
-\end{align*}
-!et
-Just as for the difference equations solved in the previous chapter, this repeated application
-of the same formula is conveniently implemented in a for-loop. For a given time
-step $\Delta t$ (`dt`) and number of time steps $n$, we perform the following steps:
- o Create arrays `t` and `u` of length $n+1$
- o Set initial condition: `u[0]` = $U_0$, `t[0]=0`
- o For $k=0,1,2,\ldots,n-1$:
-  * `t[n+1] = t[n] + dt`
-  * `u[n+1] = (1 + dt)*u[n]`
-
-A complete Python implementation of this algorithm may look like
-!bc pycod
-import numpy as np
-import matplotlib.pyplot as plt
-
-dt = 0.2
-u0 = 1
-T = 4
-N = int(T/dt)
-
-t = np.zeros(n+1)
-u = np.zeros(n+1)
-
-t[0] = 0
-u[0] = 0
-for n in range(N):
-    t[n+1] = t[n] + dt
-    u[n+1] = (1 + dt)*u[n]
-
-plt.plot(t,u)
-plt.show()
-!ec
-The solution is shown in Figure ref{fig:ode0}, for two different choices of the time step $\Delta t$. We see that the
-approximate solution improves as $\Delta t$ is reduced, although both the solutions are quite inaccurate. However, reducing the
-time step further will easily create a solution that cannot be distinguished from the exact solution.
-
-FIGURE: [./fig-ode2/FE_n_10_20, width=600 frac=1] Solution of $u' = u, u(0) = 1$ with $\Delta t = 0.4$ and $\Delta t=0.2$. label{fig:ode0}
+where $u$ and $f$ are vectors and $u_0$ is a vector of initial conditions. We see that we use exactly the
+same notation as for scalar ODEs, and whether we solve a scalar or system of ODEs is determined by how we define $f$ and the initial
+condition $u_0$. This general notation is completely standard in text books on ODEs, and we can easily make the Python
+implementation just as general.
 
 
-=== Extending the solver to a general ODE. ===
-As stated above, the purpose of this chapter is to create general-purpose ODE solvers, that can solve any ODE written
-on the form $u'=f(u,t)$. This requires a very small modification of the algorithm above;
- o Create arrays `t` and `u` of length $n+1$
- o Set initial condition: `u[0]` = $u_0$, `t[0]=0`
- o For $k=0,1,2,\ldots,n-1$:
-  * `u[n+1] = u[n] + dt*f(u[n], t[n])`
-  * `t[n+1] = t[n] + dt`
-
-The only change of the algorithm is in the formula for computing `u[n+1]` from `u[n]`.
-In the previous case we had $f(u,t) = u$, and to create a
-general-purpose ODE solver we simply replace `u[n]` with the more general `f(u[n],t[n])`.
-The following Python function implements this generic version of the FE method:
-!bc pycod
-def ForwardEuler(f, U0, T, N):
-    """Solve u'=f(u,t), u(0)=U0, with n steps until t=T."""
-    import numpy as np
-    t = np.zeros(n+1)
-    u = np.zeros(n+1)  # u[n] is the solution at time t[n]
-
-    u[0] = U0
-    t[0] = 0
-    dt = T/N
-
-    for n in range(N):
-        t[n+1] = t[n] + dt
-        u[n+1] = u[n] + dt*f(u[n], t[n])
-
-    return u, t
-!ec
-This simple function can solve any ODE written on the form (ref{ode0}). The right
-hand side function $f(u,t)$ needs to be implemented as a Python function, and
-then passed as an argument to `ForwardEuler` together with the initial condition, the
-stop time `T` and the number of time steps. The two latter arguments are then used
-to calculate the time step `dt` inside the function.
-
-To illustrate how the function is used, let us apply it to solve the same problem as above;
-$u'=u$, $u(0)=1$, for $t\in [0,4]$. The following code uses the `ForwardEuler` function to solve this problem:
-!bc pycod
-def f(u, t):
-    return u
-
-U0 = 1
-T = 3
-N = 30
-u, t = ForwardEuler(f, U0, T, N)
-!ec
-The `ForwardEuler` function returns the two arrays `u` and `t`, which we can
-plot or process further as we want. One thing worth noticing in this code is the definition of the
-right hand side function `f`. As we mentioned above, this function should always be written
-with two arguments `u` and `t`, although in this case only `u` is used inside the function.
-The two arguments are needed because we want our solver to work for all ODEs on the
-form $u' = f(u,t)$, and the function is therefore called as `f(u[n], t[n])` inside
-`ForwardEuler`. If our right
-hand side function was defined as `def f(u):` we would get an error message when the
-function was called inside `ForwardEuler`. This problem is solved by simply writing
-`def f(u,t):` even if `t` is never used inside the function.[^rhs_note]
-
-[^rhs_note]: This way of defining the right hand side is a standard used by most
-available ODE solver libraries, both in Python and other languages. The right hand
-side function always takes two arguments `u` and `t`, but, annoyingly, the order of the
-two arguments varies between different solver libraries. Some expect the `t` argument first,
-while others expect `u` first.
-
-For being only 15 lines of Python code, the capabilities of the `ForwardEuler`
-function above are quite remarkable. Using this function, we can solve any
-kind of linear or non-linear ODE, most of which would be impossible to solve
-using analytical techniques. The general recipe goes as follows:
- o Identify $f(u,t)$ in your ODE
- o Make sure you have an initial condition $u_0$
- o Implement the $f(u,t)$ formula in a Python function `f(u, t)`
- o Choose the number of time steps `N`
- o Call `u, t = ForwardEuler(f, U0, T, N)`
- o Plot the solution
-
-It is worth mentioning that the FE method is the simplest of all
-ODE solvers, and many will argue that it is not very good. This is partly true,
-since there are many other methods that are more accurate and more stable when applied to
-challenging ODEs. We shall look at a few examples of such methods later in this
-chapter. However, the FE method is quite suitable for solving most ODEs.
-If we are not happy with the accuracy we can simply reduce the time step, and
-in most cases this will give the accuracy we need with a negligible increase in computing time.
-
-
-
-======= The ODE solver implemented as a class =======
-We can increase the flexibility of the `ForwardEuler`
-solver function by implementing it as a class. The usage of the class
-may for instance be as follows:
-!bc pycod-t
-method = ForwardEuler_v1(f, U0=0.0, T=40, N=400)
-u, t = method.solve()
-plot(t, u)
-!ec
-The benefits of using a class instead of a function may not be obvious at this
-point, but it will become clear later. For now,
-let us just look at how such a solver class can be implemented:
-  * We need a constructor (`__init__`) which takes $f$, `T`, `N`, and `U0` as arguments
-  and stores them as attributes.
-  * The time step $\Delta t$ and the sequences $u_n$, $t_n$ must be
-  initalized and stored as attributes. These tasks are also natural to handle in the constructor.
-  * The class needs a `solve`-method, which implements the for-loop and returns
-  the solution, similar to the `ForwardEuler` function considered above.
-
-In addition to these methods, it may be convenient to implement the formula for
-advancing the solution one step as a separate method `advance`. In this way it
-becomes very easy to implement new numerical methods, since we typically only
-need to change the `advance` method. A first version of the solver class may
-look as follows:
-!bc pycod
-import numpy as np
-
-class ForwardEuler_v1:
-    def __init__(self, f, U0, T, N):
-        self.f, self.U0, self.T, self.N = f, U0, T, N
-        self.dt = T/float(n)
-        self.u = np.zeros(self.N+1)
-        self.t = np.zeros(self.N+1)
-
-    def solve(self):
-        """Compute solution for 0 <= t <= T."""
-        self.u[0] = float(self.U0)
-        self.t[0] = float(0)
-
-        for n in range(self.N):
-            self.n = n
-            self.t[n+1] = self.t[n] + self.dt
-            self.u[n+1] = self.advance()
-        return self.u, self.t
-
-    def advance(self):
-        """Advance the solution one time step."""
-        # Create local variables to get rid of "self." in
-        # the numerical formula
-        u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
-
-        unew = u[n] + dt*f(u[n], t[n])
-        return unew
-!ec
-This class does essentially the same tasks as the `ForwardEuler` function above.
-The main advantage of the class implementation is
-the increased flexibility that comes with the `advance` method. As we shall see
-later, implementing a different numerical method typically only requires
-implementing a new version of this method, while all the other code can be left unchanged.
-
-We can also use a class to hold the right-hand side $f(u,t)$, which is
-particularly convenient for functions with parameters.
-Consider for instance the model for logistic growth;
-!bt
-\[ u^{\prime}(t)=\alpha u(t)\left(  1-\frac{u(t)}{R}\right),\quad u(0)=U_0,\quad t\in [0,40],\]
-!et
-which is the ODE version of the difference equation considered in Chapter 1.
-The right hand side function has two parameters $\alpha$ and $R$, but if we
-want to solve it using our `ForwardEuler` function or class, it must be implemented
-as a function of $u$ and $t$ only. As we have discussed earlier in the course, %IN1900
-a class with a call method provides a very flexible implementation of such a
-function, since we can set the parameters as attributes in the constructor and
-use them inside the `__call__` method:
-!bc pycod
-class Logistic:
-    def __init__(self, alpha, R, U0):
-        self.alpha, self.R, self.U0 = alpha, float(R), U0
-
-    def __call__(self, u, t):   # f(u,t)
-        return self.alpha*u*(1 - u/self.R)
-!ec
-The main program for solving the logistic growth problem may now look like:
-!bc pycod
-problem = Logistic(0.2, 1, 0.1)
-method = ForwardEuler_v1(problem,problem.U0,40,401)
-u, t = method.solve()
-!ec
-
-FIGURE: [./fig-ode2/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model.
-
-=== An alternative class implementation of the FE method. ===
-As always in programming, there are multiple ways to perform the same task, and
-the `ForwardEuler_v1` class presented above is by no means the only possible class implementation of the
-FE method. A possible alternative implementation is
-!bc pycod
-import numpy as np
-
-class ForwardEuler_v2:
-    def __init__(self, f):
-        self.f = f
-
-    def set_initial_condition(self,U0):
-        self.U0 = float(U0)
-
-    def solve(self, time_points):
-        """Compute solution for array of time points"""
-        self.t = np.asarray(time_points)
-        self.u = np.zeros(len(self.t))
-        self.u[0] = self.U0
-
-        # Time loop
-        for k in range(n-1):
-            self.n = k
-            self.u[n+1] = self.advance()
-        return self.u, self.t
-
-    def advance(self):
-        """Advance the solution one time step."""
-        # Create local variables to get rid of "self." in
-        # the numerical formula
-        u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
-
-        unew = u[n] + dt*f(u[n], t[n])
-        return unew
-!ec
-This class is quite similar to the one above, but we have simplified the
-constructor considerably, introduced a separate method for setting the initial
-condition, and changed the `solve` method to take an array of time points
-as argument. The latter gives a bit more flexibility than the version in
-`ForwardEuler_v1`, where the stop time and number of time points were passed
-as arguments to the constructor and used to compute a (constant) time step `dt`.
-The `ForwardEuler_v2` version does not require the time step to be constant, and
-the method will work fine if we pass it a `time_points` array with varying
-distance between the time points. This can be useful if we know that the solution
-varies rapidly in some time intervals and more slowly in others. However, in most cases
-we will use an evenly spaced array for the `time_points` argument, for instance created using
-NumPy's `linspace`, and in such cases there is not much difference between the two
-FE classes. To consider a concrete example, the solution of the same logistic
-growth problem as above using the new class may look as follows:
-!bc pycod
-problem = Logistic(0.2, 1, 0.1)
-time = np.linspace(0,40,401)
-
-method = ForwardEuler_v2(problem)
-method.set_initial_condition(problem.U0)
-u, t = method.solve(time)
-!ec
-
-======= Alternative ODE solvers =======
-As mentioned above, the FE method is not the most sophisticated ODE solver,
-although it is sufficiently accurate
-for most of the applications we will consider here. Many alternative methods exist, with better accuracy and stability than
-FE. One very popular class of ODE solvers is known as Runge-Kutta methods. The simplest example of a Runge-Kutta method
-is in fact the FE method;
-!bt
-     \[ u_{n+1} = u_n + \Delta t\, f(u_n, t_n), \]
-!et
-which is an example of a one-stage, first-order, explicit Runge-Kutta method.
-Being a first-order method, the error in the approximate solution produced by
-FE is proportional to $\Delta t$. We can easily improve the accuracy to
-second order, i.e., error proportional to $\Delta t^2$, by taking one additional step:
-!bt
-\begin{align*}
-k_1 & = f(u_n, t_n), \\
-k_2 & = f(u_n+\frac{\Delta t}{2} k_1, t_n+\frac{\Delta t}{2}), \\
-u_{n+1} &= u_n + \Delta t\, k_2 .
-\end{align*}
-!et
-This method is known as the explicit midpoint method or the modified Euler method. We
-see that we first compute an intermediate value, often referred to as a *stage derivative*,
-which is an approximation of the derivative at time $t_n$. Then, instead of using this
-value to advance the solution to the next step, which we did in the FE method,
-we use it to approximate the solution at time $t_n+\Delta t/2$, evaluate the
-right hand side function again at this midpoint, and use the result ($k_2$) to
-advance the solution to $t_{n+1}$. An alternative second order method is Heun's method,
-also referred to as the explicit trapezoidal method:
-!bt
-\begin{align*}
-k_1 & = f(u_n, t_n), \\
-k_2 & = f(u_n+\Delta t k_1, t_n+\Delta t), \\
-u_{n+1} &= u_n + \Delta t\, (k_1/2 + k_2/2)
-\end{align*}
-!et
-This method first approximates the derivative at $t_n$ and $t_{n=1}$, and then
-advances the solution using the average of these two.
-
-All Runge-Kutta methods follow the same recipe as the two second order methods considered
-above; we compute one or more intermediate values (stage derivatives), and advance the
-solution using a combination of these stage derivatives. The accuracy of the method can
-be improved by adding more stages. A general RK method with $s$ stages
-can be written as
-!bt
-\begin{align}
-k_i &= f(t_n+c_i\Delta t,y_n+\Delta t
-\sum_{j=1}^s a_{ij}k_j),  \mbox{\  for } i = 1,\ldots ,s \label{genrk0}\\
-u_{n+1} &= u_0 + \Delta t \sum_{i=1}^s b_i k_i .\label{genrk1}
-\end{align}
-!et
-Here $c_i, b_i, a_{ij}$, for $i,j, = 1,\ldots ,s$ are
-method-specific, given coefficients. All RK methods can be written
-in this form, and a method is uniquely determined by the
-number of stages $s$ and the values of the coefficients. In the
-ODE literature one often sees these coefficients specified in the
-form of a *Butcher tableau*, which offers a compact definition of any RK method.
-The Butcher tableau is simply a specification of all the method coefficients, and
-for a general RK method it is written as
+======= An `ODESolver` class for systems of ODEs =======
+The `ODESolver` class above was written for a scalar ODE. We now want to make it work for a system
+$u'=f$, $u(0)=U_0$, where $u$, $f$ and $U_0$ are vectors (arrays). To identify how the code needs to be changed, let us start with
+the simplest method. Applying the forward Euler method to a system of ODEs yields an update formula that
+looks exactly as for the scalar case, but where all the terms are vectors:
 !bt
 \[
-\begin{array}{c|ccc}
-c_i & a_{11} & \cdots & a_{1s}\\
-\vdots & \vdots & & \vdots \\
-c_s & a_{s1} & \cdots & a_{ss} \\ \hline
- & b_1 & \cdots & b_s
-\end{array} .
+\underbrace{u_{k+1}}_{\mbox{vector}} =
+\underbrace{u_k}_{\mbox{vector}} +
+\Delta t\, \underbrace{f(u_k, t_k)}_{\mbox{vector}} .
 \]
 !et
-The Butcher tableaus of the three methods considered above; FE, explicit midpoint, and Heun's method, are
+We could also write this formula in terms of the individual components, as in
 !bt
 \[
-\begin{array}{c|cc}
-0 & 0 \\ \hline
- & 1
-\end{array} \hspace{1cm}
-\begin{array}{c|cc}
-0 & 0& 0 \\
-1/2 & 1/2 & 0 \\ \hline
- & 0 & 1
-\end{array} \hspace{1cm}
-\begin{array}{c|cc}
-0 & 0& 0 \\
-1 & 1 & 0 \\ \hline
- & 1/2 & 1/2
-\end{array} ,
+u^{(i)}_{k+1} = u^{(i)}_{k} + \Delta t f^{(i)}(u_{k},t_k), \mbox{ for } i = 0,\ldots , {n-1},
 \]
 !et
-respectively. To grasp the concept of Butcher tableaus, it is a good exercise to
-insert the coefficients from these three tableaus into (ref{genrk0})-(ref{genrk1})
-and verify that the you arrive at the correct formulae for the three methods.
-As an example of a method of higher order, we may consider the the
-fourth order, four-stage method defined by the Butcher tableau
-!bt
-\[
-\begin{array}{c|cccc}
-0 & 0& 0 & 0 & 0\\
-1/2 & 1/2 & 0 & 0 & 0\\
-1/2 & 0 & 1/2 & 0 & 0 \\
-1  & 0 & 0 & 1 & 0 \\ \hline
- & 1/6 & 1/3 & 1/3 & 1/6
-\end{array}
-\]
-!et
-which gives the formulas
-!bt
-\begin{align*}
-k_1 &= f(u_n, t_n) ,\\
-k_2 &= f(u_n + {1\over2}k_1, t_n + {1\over2}\Delta t),\\
-k_3 &= f(u_n + {1\over2}k_2, t_n + {1\over2}\Delta t),\\
-k_4 &= f(u_n + k_3, t_n + \Delta t),
-u_{n+1} = u_n + \frac{\Delta t}{6} \left( k_1 + 2k_2 + 2k_3 + k_4\right).
-\end{align*}
-!et
-All the RK methods we will consider in this course are explicit methods, %IN1900
-which means that $a_{ij} = 0$ for $j\geq i$. If we examine the formula in (ref{genrk0}),
-we see that the expression for computing each stage derivative $k_i$ then only includes
-previously computed stage derivatives, and they can be computed sequentially
-from explicit formulas. For implicit RK methods, on the other hand, we
-we have $a_{ij} \neq 0$ for some $j\geq i$, and we see in (ref{genrk0}) that the
-formula for computing $k_i$ will then include $k_i$ on the right hand side. We
-therefore need to solve equations to compute the stage derivatives, and for non-linear
-ODEs these will be non-linear equations that are typically solved using Newton's method.
-This makes implicit
-RK methods more complex to implement and more computationally expensive per time step,
-but they are also more stable than explicit methods and perform much better
-for certain classes of ODEs. We will not consider implicit RK methods in this course. %IN1900
+but the compact vector notation is much easier to read. Fortunately, the way we write the vector
+version of the formula is also how NumPy arrays are used in calculations. The
+Python code for the formula above may therefore look idential to the version for scalar ODEs;
+!bc pycod
+u[k+1] = u[k] + dt*f(u[k], t)
+!ec
+with the important difference that both `u[k]` and `u[k+1]` are now arrays.[^numpy]
+Since these are arrays, the solution `u` must be a
+two-dimensional array, and `u[k],u[k+1]`, etc. are the rows of this array.
+The function `f` expects an array as its first argument, and must return a one-dimensional array,
+containing all the right-hand sides $f^{(0)},\ldots,f^{(n-1)}$. To get a better
+feel for how these arrays look and how they are used,
+we may compare the array holding the solution of a scalar ODE to that of a system of two ODEs.
+For the scalar equation, both `t` and `u` are one-dimensional NumPy
+arrays, and indexing into `u` gives us numbers, representing the solution at each time step:
+!bc
+t = [0.  0.4 0.8 1.2 (...) ]
 
-======= A class hierarchy of ODE solvers =======
-We now want to implement some of the Runge-Kutta methods as classes,
-similar to the FE classes introduced above. When inspecting the `ForwardEuler_v2`
-class, we quickly observe that most of the code is common to all ODE solvers, and
-not specific to the FE method. For instance, we
-always need to create an array for holding the solution,
-and the general solution method using a for-loop is always the same. In fact, the only
-difference between the different methods is how the solution is advanced from one
-step to the next. Recalling the ideas of Object-Oriented Programming, it becomes
-obvious that a class hierarchy is very convenient for implementing such a collection
-of ODE solvers. In this way we can collect all common code in a superclass, and rely on
-inheritance to avoid code duplication. The superclass can handle most of the
-more "administrative" steps of the ODE solver, such as
-  * Storing the solution $u_n$ and the corresponding time levels $t_n$, $k=0,1,2,\ldots,n$
-  * Storing the right-hand side function $f(u,t)$
-  * Storing and applying initial condition
-  * Running the loop over all time steps
+u = [ 1.0 1.4  1.96 2.744  (...)]
 
-We can introduce a superclass `ODESolver` to handle these parts, and implement
-the method-specific details in sub-classes. It should now become quite obvious why
-we chose to isolate the code to perform a single step in the `advance` method,
-since this will then be the only method we need to implement in the subclasses.
-The implementation of the superclass may look like
+u[0] = 1.0
+u[1] = 1.4
+
+(...)
+!ec
+In the case of a system of two ODEs, `t` is still a one-dimensional array, but the solution array `u` is
+now two-dimensional, with one column for each solution component. Indexing into it
+yields one-dimensional arrays of length two, which are the two solution components
+at each time step:
+!bc
+u = [[1.0 0.8][1.4 1.1] [1.9 2.7] (...)]
+
+u[0] = [1.0 0.8]
+u[1] = [1.4 1.1]
+
+(...)
+!ec
+
+[^numpy]: This compact notation requires that the solution vector `u` is represented by
+a NumPy array. We could also, in principle, use lists to hold the solution components, but
+the resulting code would need to loop over the components and be far less elegant and readable.
+
+To make a generic `ODESolver` class that works both with scalars and systems, we need to make the
+following changes to the class from the previous chapter:
+ * Ensure that `f(u,t)` always returns an array.
+ * Inspect $U_0$ to see if it is a single number or a list/array/tuple and
+   make the corresponding `u` a one-dimensional or two-dimensional  array
+If these two items are handled and initialized correctly, the rest of the code from
+Chapter 2 will work with no modifications.
+The extended superclass implementation may look like:
 !bc pycod
 class ODESolver:
     def __init__(self, f):
-        self.f = f
-
-    def advance(self):
-        """Advance solution one time step."""
-        raise NotImplementedError  # implement in subclass
+        # Wrap user's f in a new function that always
+        # converts list/tuple to array (or let array be array)
+        self.f = lambda u, t: np.asarray(f(u, t), float)
 
     def set_initial_condition(self, U0):
-        self.U0 = float(U0)
+        if isinstance(U0, (float,int)):  # scalar ODE
+            self.neq = 1                 # no of equations
+            U0 = float(U0)
+        else:                            # system of ODEs
+            U0 = np.asarray(U0)
+            self.neq = U0.size           # no of equations
+        self.U0 = U0
 
     def solve(self, time_points):
         self.t = np.asarray(time_points)
         N = len(self.t)
-        self.u = np.zeros(N)
+        if self.neq == 1:  # scalar ODEs
+            self.u = np.zeros(N)
+        else:              # systems of ODEs
+            self.u = np.zeros((N,self.neq))
+
         # Assume that self.t[0] corresponds to self.U0
         self.u[0] = self.U0
 
@@ -537,79 +153,84 @@ class ODESolver:
             self.n = n
             self.u[n+1] = self.advance()
         return self.u, self.t
-
 !ec
-Notice that the `ODESolver` is meant to be a pure superclass, and we have therefore
-implemented the `advance`-method to raise an exception if the class is used on its own.
-We could also have omitted the `advance`-method from the superclass altogether, but the
-chosen implementation makes it clearer to users of the class that `ODESolver`
-is a pure superclass.
+It is worth commenting on some parts of this code. First, the constructor looks
+almost identical to the scalar case, but we use a lambda function and
+`asarray` to convert any `f` that returns a list or tuple to a function
+returning a NumPy array. This modification is not strictly
+needed, since we could just assume that the user implements `f` so that it returns
+an array, but it makes the class more robust and flexible. Similar tests are
+included in the `set_initial_condition`, to make sure that `U0` is either a single
+number (`float`) or a NumPy array, and to set the attribute `self.neq` to
+hold the number of equations.
+The final modification is found in the method `solve`, where
+the `self.neq` attribute is inspected and `u` is
+initialized to a one- or two-dimensional array of the correct size. The
+actual for-loop, as well the implementation of the `advance` method in the
+subclasses, can be left unchanged.
 
-With the `ODESolver` superclass at hand, the implementation of a `ForwardEuler` class becomes very simple:
+=== Example: ODE model for throwing a ball. ===
+To demonstrate the use of
+the extended `ODESolver` hierarchy, let us consider a system of ODEs
+describing the trajectory of a ball.
+We define $x(t),y(t)$ to be the position of the ball, $v_x$ and $v_y$ the velocity components,
+and $a_x,a_y$ the acceleration components. From the definition of velocity and acceleration, we
+have $v_x = dx/dt, v_y = dy/dt, a_x = dv_x/dt$, and $a_y = dv_y/dt$. If we neglect air resistance there are no
+forces acting on the ball in the $x$-direction, so from Newton's second law $a_x = 0$,
+while the acceleration in the $y$-direction must be equal to the acceleration of gravity.
+We get
+!bt
+\begin{alignat*}{2}
+a_x &= 0 \Rightarrow &\frac{dv_x}{dt} = 0, \\
+a_y &= -g \Rightarrow \mbox{\ \ }&\frac{dv_y}{dt} = -g\mbox{\ } .
+\end{alignat*}
+!et
+We can easily add air resistance or other additional physics to these equations
+later if needed. The complete ODE system can be written as
+!bt
+\begin{align*}
+{dx\over dt} &= v_x,\\
+{dv_x\over dt} &= 0,\\
+{dy\over dt} &= v_y,\\
+{dv_y\over dt} &= -g,
+\end{align*}
+!et
+and solve the system we need to define initial conditions for all these
+variables, i.e., we need to know the initial position and velocity of the ball.
+We want to use the `ODESolver` class hierarchy to solve the system, and
+first need to implement the right hand side as a Python function:
 !bc pycod
-class ForwardEuler(ODESolver):
-    def advance(self):
-        u, f, n, t = self.u, self.f, self.n, self.t
-
-        dt = t[n+1] - t[n]
-        unew = u[n] + dt*f(u[n], t)
-        return unew
-!ec
-
-Similarly, the explicit midpoint method and the fourth-order RK method can be subclasses, each
-with a single method:
-!bc pycod
-class ExplicitMidpoint(ODESolver):
-    def advance(self):
-        u, f, n, t = self.u, self.f, self.n, self.t
-        dt = t[n+1] - t[n]
-        dt2 = dt/2.0
-        k1 = f(u[n], t)
-        k2 = f((u[n] + dt2*k1, t + dt2))
-        unew = u[n] + dt*k2
-        return unew
-
-
-class RungeKutta4(ODESolver):
-    def advance(self):
-        u, f, n, t = self.u, self.f, self.n, self.t
-        dt = t[n+1] - t[n]
-        dt2 = dt/2.0
-        k1 = f(u[n], t)
-        k2 = f(u[n] + dt2*k1, t + dt2)
-        k3 = f(u[n] + dt2*k2, t + dt2)
-        k4 = f(u[n] + k3, t + dt)
-        unew = u[n] + (dt/6.0)*(k1 + 2*k2 + 2*k3 + k4)
-        return unew
-!ec
-
-The use of these classes is nearly identical to the second version of the FE class introduced
-earlier.
-Considering
-the same simple ODE used above; $u'= u$, $u(0)=1$, $t\in [0,3]$, $\Delta t=0.1$,
-the code looks like:
-!bc pycod
-import numpy as np
-import matplotlib.pyplot as plt
-
-from ODESolver import ForwardEuler, RungeKutta4
 def f(u, t):
-    return u
+    x, vx, y, vy = u
+    g = 9.81
+    return [vx, 0, vy, -g]
+!ec
+We see that the function here returns a list, but this will automatically
+be converted to an array by the solver class' constructor,
+as mentioned above. The main program is not very different
+from the examples of the previous chapter, except that we need to define an
+initial condition with four components:
+!bc pycod
+from ODESolver import ForwardEuler
 
-time_points = np.linspace(0, 3, 31)
+# Initial condition, start at the origin:
+x = 0; y = 0
+# velocity magnitude and angle:
+v0 = 5; theta = 80*np.pi/180
+vx = v0*np.cos(theta); vy = v0*np.sin(theta)
 
-method1 = ForwardEuler(f)
-method1.set_initial_condition(U0=1)
-u1, t1 = method1.solve(time_points)
-plt.plot(t1, u1)
+U0 = [x, vx, y, vy]
 
-method2 = RungeKutta4(test)
-method2.set_initial_condition(U0=1)
-u2, t2 = method2.solve(time_points)
-plt.plot(t2, u2)
+solver= ForwardEuler(f)
+solver.set_initial_condition(U0)
+time_points = np.linspace(0, 1.0, 101)
+u, t = solver.solve(time_points)
+# u is an array of [x,vx,y,vy] arrays, plot y vs x:
+x = u[:,0];  y = u[:,2]
 
+plt.plot(x, y)
 plt.show()
 !ec
-This code will solve the same equation using both methods, and plot the solutions
-in the same window. Experimenting with different step sizes should reveal the
-difference in accuracy between the two methods.
+Notice that since `u` is a two-dimensional array, we use array slicing to extract and plot the individual components.
+A call like `plt.plot(t,u)` will also work, but it will plot all the solution
+components in the same window, which is not very useful in this case.
