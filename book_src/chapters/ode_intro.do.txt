@@ -1,7 +1,6 @@
-# TITLE: App.E: Programming of differential equations
-# AUTHOR: Joakim Sundnes at Simula Research Laboratory & University of Oslo, Dept. of Informatics
-# DATE: today
-
+# #if FORMAT == 'ipynb'
+========= Solving ordinary differential equations =========
+# #endif
 
 Ordinary differential equations (ODEs) are widely used in science and engineering, in particular for modeling dynamic
 processes. While simple ODEs can be solved with analytical methods, non-linear ODEs are generally not possible
@@ -107,15 +106,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 dt = 0.2
-u0 = 1
+U0 = 1
 T = 4
 N = int(T/dt)
 
-t = np.zeros(n+1)
-u = np.zeros(n+1)
+t = np.zeros(N+1)
+u = np.zeros(N+1)
 
 t[0] = 0
-u[0] = 0
+u[0] = U0
 for n in range(N):
     t[n+1] = t[n] + dt
     u[n+1] = (1 + dt)*u[n]
@@ -147,8 +146,8 @@ The following Python function implements this generic version of the FE method:
 def ForwardEuler(f, U0, T, N):
     """Solve u'=f(u,t), u(0)=U0, with n steps until t=T."""
     import numpy as np
-    t = np.zeros(n+1)
-    u = np.zeros(n+1)  # u[n] is the solution at time t[n]
+    t = np.zeros(N+1)
+    u = np.zeros(N+1)  # u[n] is the solution at time t[n]
 
     u[0] = U0
     t[0] = 0
@@ -176,6 +175,8 @@ U0 = 1
 T = 3
 N = 30
 u, t = ForwardEuler(f, U0, T, N)
+plt.plt(t,u)
+plt.show()
 !ec
 The `ForwardEuler` function returns the two arrays `u` and `t`, which we can
 plot or process further as we want. One thing worth noticing in this code is the definition of the
@@ -245,7 +246,7 @@ import numpy as np
 class ForwardEuler_v1:
     def __init__(self, f, U0, T, N):
         self.f, self.U0, self.T, self.N = f, U0, T, N
-        self.dt = T/float(n)
+        self.dt = T/float(N)
         self.u = np.zeros(self.N+1)
         self.t = np.zeros(self.N+1)
 
@@ -301,6 +302,8 @@ The main program for solving the logistic growth problem may now look like:
 problem = Logistic(0.2, 1, 0.1)
 method = ForwardEuler_v1(problem,problem.U0,40,401)
 u, t = method.solve()
+plt.plot(t,u)
+plt.show()
 !ec
 
 FIGURE: [../chapters/fig-ode2/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model.
@@ -322,12 +325,13 @@ class ForwardEuler_v2:
     def solve(self, time_points):
         """Compute solution for array of time points"""
         self.t = np.asarray(time_points)
-        self.u = np.zeros(len(self.t))
+        N = len(self.t)
+        self.u = np.zeros(N)
         self.u[0] = self.U0
 
         # Time loop
-        for k in range(n-1):
-            self.n = k
+        for n in range(N-1):
+            self.n = n
             self.u[n+1] = self.advance()
         return self.u, self.t
 
@@ -335,8 +339,9 @@ class ForwardEuler_v2:
         """Advance the solution one time step."""
         # Create local variables to get rid of "self." in
         # the numerical formula
-        u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
-
+        u, f, n, t = self.u, self.f, self.n, self.t
+        #dt is not necessarily constant:
+        dt = t[n+1]-t[n]
         unew = u[n] + dt*f(u[n], t[n])
         return unew
 !ec
@@ -514,6 +519,8 @@ we chose to isolate the code to perform a single step in the `advance` method,
 since this will then be the only method we need to implement in the subclasses.
 The implementation of the superclass may look like
 !bc pycod
+import numpy as np
+
 class ODESolver:
     def __init__(self, f):
         self.f = f
@@ -537,7 +544,6 @@ class ODESolver:
             self.n = n
             self.u[n+1] = self.advance()
         return self.u, self.t
-
 !ec
 Notice that the `ODESolver` is meant to be a pure superclass, and we have therefore
 implemented the `advance`-method to raise an exception if the class is used on its own.
@@ -552,7 +558,7 @@ class ForwardEuler(ODESolver):
         u, f, n, t = self.u, self.f, self.n, self.t
 
         dt = t[n+1] - t[n]
-        unew = u[n] + dt*f(u[n], t)
+        unew = u[n] + dt*f(u[n], t[n])
         return unew
 !ec
 
@@ -565,10 +571,9 @@ class ExplicitMidpoint(ODESolver):
         dt = t[n+1] - t[n]
         dt2 = dt/2.0
         k1 = f(u[n], t)
-        k2 = f((u[n] + dt2*k1, t + dt2))
+        k2 = f(u[n] + dt2*k1, t[n] + dt2)
         unew = u[n] + dt*k2
         return unew
-
 
 class RungeKutta4(ODESolver):
     def advance(self):
@@ -576,9 +581,9 @@ class RungeKutta4(ODESolver):
         dt = t[n+1] - t[n]
         dt2 = dt/2.0
         k1 = f(u[n], t)
-        k2 = f(u[n] + dt2*k1, t + dt2)
-        k3 = f(u[n] + dt2*k2, t + dt2)
-        k4 = f(u[n] + k3, t + dt)
+        k2 = f(u[n] + dt2*k1, t[n] + dt2)
+        k3 = f(u[n] + dt2*k2, t[n] + dt2)
+        k4 = f(u[n] + dt*k3, t[n] + dt)
         unew = u[n] + (dt/6.0)*(k1 + 2*k2 + 2*k3 + k4)
         return unew
 !ec
@@ -591,25 +596,35 @@ the code looks like:
 !bc pycod
 import numpy as np
 import matplotlib.pyplot as plt
+from ODESolver import ForwardEuler, ExplicitMidpoint, RungeKutta4
 
-from ODESolver import ForwardEuler, RungeKutta4
 def f(u, t):
     return u
 
-time_points = np.linspace(0, 3, 31)
+time_points = np.linspace(0, 3, 11)
 
-method1 = ForwardEuler(f)
-method1.set_initial_condition(U0=1)
-u1, t1 = method1.solve(time_points)
-plt.plot(t1, u1)
+fe = ForwardEuler(f)
+fe.set_initial_condition(U0=1)
+u1, t1 = fe.solve(time_points)
+plt.plot(t1, u1, label='Forward Euler')
 
-method2 = RungeKutta4(test)
-method2.set_initial_condition(U0=1)
-u2, t2 = method2.solve(time_points)
-plt.plot(t2, u2)
+em = ExplicitMidpoint(f)
+em.set_initial_condition(U0=1)
+u2, t2 = em.solve(time_points)
+plt.plot(t2, u2, label='Explicit Midpoint')
 
+rk4 = RungeKutta4(f)
+rk4.set_initial_condition(U0=1)
+u3, t3 = rk4.solve(time_points)
+plt.plot(t3, u3, label='RungeKutta 4')
+
+#plot the exact solution in the same plot
+time_exact = np.linspace(0,3,301) #more points to improve the plot
+plt.plot(time_exact,np.exp(time_exact),label='Exact')
+
+plt.legend()
 plt.show()
 !ec
-This code will solve the same equation using both methods, and plot the solutions
+This code will solve the same equation using three different methods, and plot the solutions
 in the same window. Experimenting with different step sizes should reveal the
 difference in accuracy between the two methods.

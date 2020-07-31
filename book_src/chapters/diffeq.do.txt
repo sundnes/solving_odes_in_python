@@ -1,6 +1,6 @@
-# TITLE: App. A: Sequences and difference equations
-# AUTHOR: Joakim Sundnes at Simula Research Laboratory & University of Oslo, Dept. of Informatics
-# DATE: today
+# #if FORMAT == 'ipynb'
+========= Programming of difference equations =========
+# #endif
 
 Although the main focus of these notes is on solvers for *differential equations*, this first
 chapter is devoted to the closely related class of problems known as *difference equations*. The
@@ -144,13 +144,15 @@ x_old = x0
 for n in index_set[1:]:
     x_new = x_old + (p/100.)*x_old
     x_old = x_new  # x_new becomes x_old at next step
+print('Final amount: ', x_new)
 !ec
 For this simple case we can actually make the code even shorter, since `x_old` is only used
 in a single line and we can just as well overwrite it once it has been used:
-!bc
+!bc pycod
 x = x0			#x is here a single number, not array
 for n in index_set[1:]:
     x = x + (p/100.)*x
+print('Final amount: ', x)
 !ec
 We see that these codes store just one or two numbers, and for each pass through the loop we simply update these and overwrite
 the values we no longer need. Although this approach is quite simple, and we obviously save some memory since we do not store the
@@ -174,7 +176,7 @@ illustrates how it can be used:
 >>> date1 = datetime.date(2017, 9, 29)  # Sep 29, 2017
 >>> date2 = datetime.date(2018, 8, 4)  # Aug 4, 2018
 >>> diff = date2 - date1
->>> print diff.days
+>>> print(diff.days)
 309
 !ec
 Putting these tools together, a complete program for daily interest rates may look like
@@ -198,7 +200,7 @@ x[0] = x0
 for n in index_set[1:]:
     x[n] = x[n-1] + (r/100.0)*x[n-1]
 
-plt.plot(index_set, x, 'ro')
+plt.plot(index_set, x)
 plt.xlabel('days')
 plt.ylabel('amount')
 plt.show()
@@ -212,7 +214,7 @@ difference equation, on the other hand, only minor changes are
 needed in the program to handle a varying interest rate.
 The simplest approach is to let `p` be an array of the same length as the number of days, and fill
 it with the correct interest rates for each day. The modifications to the program above may look like this:
-!bc pycod
+!bc pycod-t
 p = np.zeros(len(index_set))
 # fill p[n] with correct values
 
@@ -375,11 +377,11 @@ The distinction between linear and non-linear equations is very important for
 mathematical analysis of the equations, but it does not make much difference when solving the equation
 in a program. To modify the interest rate program above to describe logistic growth, we can simply replace
 the line
-!bc pycod
+!bc pycod-t
 x[n] = x[n-1] + (p/100.0)*x[n-1]
 !ec
 by
-!bc pycod
+!bc pycod-t
 x[n] = x[n-1] + (rho/100)*x[n-1]*(1 - x[n-1]/R)
 !ec
 A complete program may look like
@@ -398,7 +400,7 @@ x[0] = x0
 for n in index_set[1:]:
     x[n] = x[n-1] + (rho/100) *x[n-1]*(1 - x[n-1]/R)
 
-plt.plot(index_set, x, 'ro')
+plt.plot(index_set, x)
 plt.xlabel('years')
 plt.ylabel('amount')
 plt.show()

@@ -33,21 +33,16 @@ else
 fi
 
 cd ../chapters
-for name in ode_intro ode_sys disease_models
+for name in diffeq ode_intro ode_systems disease_models
 do
   cp $name.do.txt tmp.do.txt
   #doconce subst 'FIGURE: +\[fig-(.+?)/(.+?),' 'FIGURE: [https://raw.githubusercontent.com/hplgit/scipro-primer/master/slides/\g<1>/html/fig-\g<1>/\g<2>.png,' tmp.do.txt
   doconce replace "../chapters/" "./" tmp.do.txt
   #hacks to fix references to other chapters
-  doconce replace ref{ch:intro} 1 tmp.do.txt
-  doconce replace ref{ch:formulas} 2 tmp.do.txt
-  doconce replace ref{ch:looplist} 3 tmp.do.txt
-  doconce replace ref{ch:funcif} 4 tmp.do.txt
-  doconce replace ref{ch:input} 5 tmp.do.txt
-  doconce replace ref{ch:array_plot} 6 tmp.do.txt
-  doconce replace ref{ch:dictstring} 7 tmp.do.txt
-  doconce replace ref{ch:class} 8 tmp.do.txt
-  doconce replace ref{ch:oo} 9 tmp.do.txt
+  doconce replace ref{ch:diff_eq} 1 tmp.do.txt
+  doconce replace ref{ch:ode_intro} 2 tmp.do.txt
+  doconce replace ref{ch:ode_sys} 3 tmp.do.txt
+  doconce replace ref{ch:ch:disease_models} 4 tmp.do.txt
 
   #more hacks to remove footnote labels, not supported by notebook format
   #footnote bodies should be removed by preprocessor if statements

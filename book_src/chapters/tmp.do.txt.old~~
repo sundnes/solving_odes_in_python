@@ -7,7 +7,7 @@ Ordinary differential equations (ODEs) are widely used in science and engineerin
 processes. While simple ODEs can be solved with analytical methods, non-linear ODEs are generally not possible
 to solve in this way, and we need to apply numerical methods. In this chapter we will see how we can program
 general numerical solvers that can be applied to any ODE. We will first consider scalar ODEs, i.e., ODEs with a single
-equation and a single unknown, and in Chapter ref{ch:ode_sys} we will
+equation and a single unknown, and in Chapter 3 we will
 extend the ideas to systems of coupled ODEs. Understanding the concepts
 of this chapter is useful not only for programming your own ODE solvers, but also for using a wide variety of
 general-purpose ODE solvers available both in Python and other programming languages.
@@ -41,7 +41,7 @@ $u$ as output.
 === The Euler method turns an ODE into a difference equation. ===
 All the numerical methods we will considered in this chapter are based on approximating the derivatives
 in the equation $u'=f(u,t)$ by finite differences. This step transforms the ODE into
-a difference equation, which can be solved with the tools presented in Chapter ref{ch:diff_eq}.
+a difference equation, which can be solved with the tools presented in Chapter 1.
 To introduce the idea, assume that we have computed $u$ at discrete time points
 $t_0,t_1,\ldots,t_n$. At time $t_n$ we have the ODE
 !bt
@@ -62,7 +62,7 @@ $u(t_n)$. We can rearrange the terms to obtain an explicit formula for $u(t_{n+1
 !et
 This is known as the *Forward Euler (FE) method*, and is the simplest numerical method for solving
 and ODE. We can simplify the
-formula by using the notation for difference equations introduced in Chapter ref{ch:diff_eq}.
+formula by using the notation for difference equations introduced in Chapter 1.
 If we let $u_n$ denote the numerical approximation to the exact solution $u(t)$
 at $t=t_n$, the difference equation can be written as
 !bt
@@ -71,7 +71,7 @@ label{forw_euler}
 \end{equation}
 !et
 This is a regular difference equation which can be solved using arrays and a for-loop, just as we did for the
-other difference equations in Chapter ref{ch:diff_eq}. We
+other difference equations in Chapter 1. We
 start from the known initial condition  $u_0$, and apply the formula repeatedly
 to compute $u_1$, $u_2$, $u_3$ and so forth.
 
@@ -281,7 +281,7 @@ Consider for instance the model for logistic growth;
 !bt
 \[ u^{\prime}(t)=\alpha u(t)\left(  1-\frac{u(t)}{R}\right),\quad u(0)=U_0,\quad t\in [0,40],\]
 !et
-which is the ODE version of the difference equation considered in Chapter ref{ch:diff_eq}.
+which is the ODE version of the difference equation considered in Chapter 1.
 The right hand side function has two parameters $\alpha$ and $R$, but if we
 want to solve it using our `ForwardEuler` function or class, it must be implemented
 as a function of $u$ and $t$ only. As we have discussed earlier in the course, %IN1900
