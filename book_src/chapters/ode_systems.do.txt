@@ -12,7 +12,7 @@ u' &= v, \quad &&u(0) = 1\\
 v' &= -u, \quad &&v(0) = 0.
 \end{alignat*}
 !et
-The solution of this system is $u=\cos t, v=\sin t$ which can easily be verified by insterting the solution into the equations
+The solution of this system is $u=\cos t, v=\sin t$, which can easily be verified by insterting the solution into the equations
 and initial conditions. For more general cases, it is usually even more difficult to find analytical solutions of ODE systems
 than of scalar ODEs, and numerical methods are usually required. In this chapter we will extend the solvers introduced in
 Chapter ref{ch:ode_intro} to be able to solve systems of ODEs. We shall see that such an extension requires relatively small
@@ -28,7 +28,7 @@ in a system of $n$ ODEs:
 \begin{align*}
 {d\over dt}u^{(0)} &= f^{(0)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t),\\
 {d\over dt}u^{(1)} &= f^{(1)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t),\\
-\vdots &=& \vdots\\
+\vdots &= \vdots\\
 {d\over dt}u^{(n-1)} &= f^{(n-1)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t).
 \end{align*}
 !et
@@ -51,7 +51,6 @@ where $u$ and $f$ are vectors and $u_0$ is a vector of initial conditions. We se
 same notation as for scalar ODEs, and whether we solve a scalar or system of ODEs is determined by how we define $f$ and the initial
 condition $u_0$. This general notation is completely standard in text books on ODEs, and we can easily make the Python
 implementation just as general.
-
 
 ======= An `ODESolver` class for systems of ODEs =======
 The `ODESolver` class above was written for a scalar ODE. We now want to make it work for a system
@@ -109,17 +108,22 @@ u[1] = [1.4 1.1]
 (...)
 !ec
 
+# #if FORMAT  != ipynb
 [^numpy]: This compact notation requires that the solution vector `u` is represented by
 a NumPy array. We could also, in principle, use lists to hold the solution components, but
 the resulting code would need to loop over the components and be far less elegant and readable.
+# #endif
 
-To make a generic `ODESolver` class that works both with scalars and systems, we need to make the
-following changes to the class from the previous chapter:
+The similarity of the generic notation for vector and scalar ODEs, and the
+convenient algebra of NumPy arrays, indicate that the solver
+implementation for scalar and system ODEs can also be very similar. This is indeed true,
+and the `ODESolver` class from the previous chapter can be made to work for ODE
+systems by a few minor modifactions:
  * Ensure that `f(u,t)` always returns an array.
  * Inspect $U_0$ to see if it is a single number or a list/array/tuple and
-   make the corresponding `u` a one-dimensional or two-dimensional  array
+   make the `u` either a one-dimensional or two-dimensional  array
 If these two items are handled and initialized correctly, the rest of the code from
-Chapter ref{ch:ode_intro} will work with no modifications.
+Chapter ref{ch:ode_intro} will in fact work with no modifications.
 The extended superclass implementation may look like:
 !bc pycod
 class ODESolver:
@@ -156,49 +160,62 @@ class ODESolver:
 !ec
 It is worth commenting on some parts of this code. First, the constructor looks
 almost identical to the scalar case, but we use a lambda function and
-`asarray` to convert any `f` that returns a list or tuple to a function
+`np.asarray` to convert any `f` that returns a list or tuple to a function
 returning a NumPy array. This modification is not strictly
-needed, since we could just assume that the user implements `f` so that it returns
-an array, but it makes the class more robust and flexible. Similar tests are
-included in the `set_initial_condition`, to make sure that `U0` is either a single
-number (`float`) or a NumPy array, and to set the attribute `self.neq` to
+needed, since we could just assume that the user implements `f` to return
+an array, but it makes the class more robust and flexible. We have also included
+tests in the `set_initial_condition` method, to check if `U0` is a single
+number (`float`) or a NumPy array, and define the attribute `self.neq` to
 hold the number of equations.
 The final modification is found in the method `solve`, where
 the `self.neq` attribute is inspected and `u` is
 initialized to a one- or two-dimensional array of the correct size. The
-actual for-loop, as well the implementation of the `advance` method in the
+actual for-loop, as well as the implementation of the `advance` method in the
 subclasses, can be left unchanged.
 
 === Example: ODE model for throwing a ball. ===
 To demonstrate the use of
-the extended `ODESolver` hierarchy, let us consider a system of ODEs
+the extended `ODESolver` hierarchy, let us derive and solve a system of ODEs
 describing the trajectory of a ball.
-We define $x(t),y(t)$ to be the position of the ball, $v_x$ and $v_y$ the velocity components,
-and $a_x,a_y$ the acceleration components. From the definition of velocity and acceleration, we
-have $v_x = dx/dt, v_y = dy/dt, a_x = dv_x/dt$, and $a_y = dv_y/dt$. If we neglect air resistance there are no
-forces acting on the ball in the $x$-direction, so from Newton's second law $a_x = 0$,
-while the acceleration in the $y$-direction must be equal to the acceleration of gravity.
-We get
+We first define $x(t),y(t)$ to be the position of the ball, $v_x$ and $v_y$ the velocity components,
+and $a_x,a_y$ the acceleration components. From the definition of velocity and acceleration,
+we have $v_x = dx/dt, v_y = dy/dt, a_x = dv_x/dt$, and $a_y = dv_y/dt$.
+If we neglect air resistance there are no forces acting on the ball in the $x$-direction,
+so from Newton's second law we have $a_x = 0$. In the $y$-direction the acceleration
+must be equal to the acceleration of gravity, which yields $a_y = -g$.
+In terms of the velocities, we have
 !bt
 \begin{align*}
 a_x &= 0 \quad \Rightarrow \quad \frac{dv_x}{dt} = 0, \\
-a_y &= -g \quad \Rightarrow \quad \frac{dv_y}{dt} = -g\mbox{\ } .
+a_y &= -g \quad \Rightarrow \quad \frac{dv_y}{dt} = -g\mbox{\ } ,
 \end{align*}
 !et
-We can easily add air resistance or other additional physics to these equations
-later if needed. The complete ODE system can be written as
+and the complete ODE system can be written as
 !bt
-\begin{align*}
-{dx\over dt} &= v_x,\\
-{dv_x\over dt} &= 0,\\
-{dy\over dt} &= v_y,\\
-{dv_y\over dt} &= -g,
-\end{align*}
+\begin{align}
+{dx\over dt} &= v_x, label{vx} \\
+{dv_x\over dt} &= 0,label{ax} \\
+{dy\over dt} &= v_y,label{vy} \\
+{dv_y\over dt} &= -g.label{ay}
+\end{align}
 !et
-and solve the system we need to define initial conditions for all these
-variables, i.e., we need to know the initial position and velocity of the ball.
-We want to use the `ODESolver` class hierarchy to solve the system, and
-first need to implement the right hand side as a Python function:
+To solve the system we need to define initial conditions for all four unknowns,
+i.e., we need to know the initial position and velocity of the ball.
+
+A closer inspection of the system (ref{vx})-(ref{ay}) will reveal that although
+this is a coupled system of ODEs, the coupling is in fact quite weak and the system is
+easy to solve analytically. There is essentially a one-way coupling between equations
+(ref{ax}) and (ref{vx}), the same between (ref{ay}) and (ref{vy}), and no other coupling
+between the equations. We can easily solve (ref{ax}) to conclude that $v_x$ is a constant,
+and inserting a constant on the right hand side of (ref{vx}) yields that $x$ must be a linear
+function of $t$. Similarly, we can solve (ref{ay}) to find that $v_y$ is a linear function, and then
+insert this into (ref{vy}) to find that $y$ is a quadratic function of $t$. The functions
+$x(t)$ and $y(t)$ will contain four unknown coefficients that must be determined from the
+initial conditions.
+
+Although the analytical solution is available, we want to use the `ODESolver`
+class hierarchy presented above to solve this system. The first step is then to
+implement the right hand side as a Python function:
 !bc pycod
 def f(u, t):
     x, vx, y, vy = u
@@ -235,4 +252,10 @@ plt.show()
 !ec
 Notice that since `u` is a two-dimensional array, we use array slicing to extract and plot the individual components.
 A call like `plt.plot(t,u)` will also work, but it will plot all the solution
-components in the same window, which is not very useful in this case.
+components in the same window, which for this particular model is not very useful.
+A very useful exercise is to extend this code to plot the analytical solution of the system in the
+same window as the numerical solution. The system can be solved as outlined above, and the
+unknown coefficients in the solution formulas can be determined from the given initial conditions.
+With the chosen number of time steps there will be a visible difference between the numerical
+solution and the analytical solution, but this can easily be removed
+by reducing the time step or choosing a more accurate solver.
