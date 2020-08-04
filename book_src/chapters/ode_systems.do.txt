@@ -108,7 +108,7 @@ u[1] = [1.4 1.1]
 (...)
 !ec
 
-# #if FORMAT  != ipynb
+# #if FORMAT  != 'ipynb'
 [^numpy]: This compact notation requires that the solution vector `u` is represented by
 a NumPy array. We could also, in principle, use lists to hold the solution components, but
 the resulting code would need to loop over the components and be far less elegant and readable.

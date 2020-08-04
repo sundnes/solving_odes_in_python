@@ -24,7 +24,7 @@ function system {
   fi
 }
 
-rm tmp_*
+#rm tmp_*
 
 if [ $# -ge 1 ]; then
   spellcheck=$1

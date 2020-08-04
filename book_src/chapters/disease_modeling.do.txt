@@ -130,7 +130,7 @@ phases of the disease outbreak.[^sir0]
 
 # #if FORMAT != 'ipynb'
 [^sir0]: A simpler version of the SIR model is also quite common, where the disease transmission term
-is not scaled with $N$. Eq. (ref{sir_ode1}) then reads $S' &= - \beta S I$, and (ref{sir_ode1})
+is not scaled with $N$. Eq. (ref{sir_ode1}) then reads $S' = - \beta S I$, and (ref{sir_ode1})
 is modified similarly. Since $N$ is constant the two models are equivalent,
 but the version in (ref{sir_ode0})-(ref{sir_ode2}) is more common in real-world applications
 and gives a closer relation between $\beta$ and key epidemic parameters.
@@ -440,8 +440,8 @@ we are mostly interested in the early epidemic spread, we neglect the loss of im
 To summarize, the complete ODE system of the SEEIIR model can be written as
 !bt
 \begin{align*}
-\frac{dS}{dt} &= - \beta \frac{SI}{N}- r_{ia} \beta \fac{S I_a}{N} - r_{e2} \beta \frac{S E_2}{N}, \\
-\frac{dE_1}{dt} &= \beta \fac{S I}{N} + r_{ia} \beta \frac{S I_a}{N} + r_{e2} \beta \frac{S E_2}{N}- \lambda_1 E_1, \\
+\frac{dS}{dt} &= - \beta \frac{SI}{N}- r_{ia} \beta \frac{S I_a}{N} - r_{e2} \beta \frac{S E_2}{N}, \\
+\frac{dE_1}{dt} &= \beta \frac{S I}{N} + r_{ia} \beta \frac{S I_a}{N} + r_{e2} \beta \frac{S E_2}{N}- \lambda_1 E_1, \\
 \frac{dE_2}{dt}  &= \lambda_1(1-p_a)E_1 - \lambda_2E_2, \\
 \frac{dI}{dt} &= \lambda_2E_2 - \mu I, \\
 \frac{dI_a}{dt} &= \lambda_1  p_a E_1 - \mu I_a, \\

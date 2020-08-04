@@ -1,261 +1,520 @@
 # #if FORMAT == 'ipynb'
-========= Solving systems of ODEs =========
+========= Modelling infectious diseases =========
 # #endif
 
-So far we have only considered ODEs with a single solution component, often called scalar ODEs.
-Many interesting processes can be described
-by systems of ODEs, i.e., multiple ODEs where the right hand side of one equation depends on the solution of the others. Such equation
-systems are also referred to as vector ODEs. One simple example is
-!bt
-\begin{alignat*}{2}
-u' &= v, \quad &&u(0) = 1\\
-v' &= -u, \quad &&v(0) = 0.
-\end{alignat*}
-!et
-The solution of this system is $u=\cos t, v=\sin t$, which can easily be verified by insterting the solution into the equations
-and initial conditions. For more general cases, it is usually even more difficult to find analytical solutions of ODE systems
-than of scalar ODEs, and numerical methods are usually required. In this chapter we will extend the solvers introduced in
-Chapter 2 to be able to solve systems of ODEs. We shall see that such an extension requires relatively small
-modifications of the code.
+In this chapter we will look at a particular family of ODE systems
+that describe the spread of infectious diseases. Athough the spread of infections
+is a very complex physical and biological process, we shall see that it can be modeled
+with fairly simple systems of ODEs, which we can solve using the tools from the
+previous chapters.
 
-We want to develop general software that can be applied to any vector ODE or scalar ODE, and for this purpose it is
-useful to introduce general mathematical notation. We have $n$ unknowns
-!bt
-\[ u^{(0)}(t), u^{(1)}(t), \ldots, u^{(n-1)}(t) \]
-!et
-in a system of $n$ ODEs:
-!bt
-\begin{align*}
-{d\over dt}u^{(0)} &= f^{(0)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t),\\
-{d\over dt}u^{(1)} &= f^{(1)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t),\\
-\vdots &= \vdots\\
-{d\over dt}u^{(n-1)} &= f^{(n-1)}(u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}, t).
-\end{align*}
-!et
-To simplify the notation (and later the implementation), we collect both the solutions $u^{(i)}(t)$
-and right-hand side functions $f^{(i)}$ in vectors;
-!bt
-\[ u = (u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}),\]
-!et
-and
-!bt
-\[ f = (f^{(0)}, f^{(1)}, \ldots, f^{(n-1)}).\]
-!et
-Note that $f$ is now a vector-valued function. It takes $n+1$ input arguments ($t$ and the $n$ components of $u$) and returns
-a vector of $n$ values.
-The ODE system can now be written
-!bt
-\[ u' = f(u, t),\quad u(0) = u_0\]
-!et
-where $u$ and $f$ are vectors and $u_0$ is a vector of initial conditions. We see that we use exactly the
-same notation as for scalar ODEs, and whether we solve a scalar or system of ODEs is determined by how we define $f$ and the initial
-condition $u_0$. This general notation is completely standard in text books on ODEs, and we can easily make the Python
-implementation just as general.
+======= Derivation of the SIR model =======
 
-======= An `ODESolver` class for systems of ODEs =======
-The `ODESolver` class above was written for a scalar ODE. We now want to make it work for a system
-$u'=f$, $u(0)=U_0$, where $u$, $f$ and $U_0$ are vectors (arrays). To identify how the code needs to be changed, let us start with
-the simplest method. Applying the forward Euler method to a system of ODEs yields an update formula that
-looks exactly as for the scalar case, but where all the terms are vectors:
-!bt
-\[
-\underbrace{u_{k+1}}_{\mbox{vector}} =
-\underbrace{u_k}_{\mbox{vector}} +
-\Delta t\, \underbrace{f(u_k, t_k)}_{\mbox{vector}} .
-\]
-!et
-We could also write this formula in terms of the individual components, as in
-!bt
-\[
-u^{(i)}_{k+1} = u^{(i)}_{k} + \Delta t f^{(i)}(u_{k},t_k), \mbox{ for } i = 0,\ldots , {n-1},
-\]
-!et
-but the compact vector notation is much easier to read. Fortunately, the way we write the vector
-version of the formula is also how NumPy arrays are used in calculations. The
-Python code for the formula above may therefore look idential to the version for scalar ODEs;
-!bc pycod
-u[k+1] = u[k] + dt*f(u[k], t)
-!ec
-with the important difference that both `u[k]` and `u[k+1]` are now arrays.
-Since these are arrays, the solution `u` must be a
-two-dimensional array, and `u[k],u[k+1]`, etc. are the rows of this array.
-The function `f` expects an array as its first argument, and must return a one-dimensional array,
-containing all the right-hand sides $f^{(0)},\ldots,f^{(n-1)}$. To get a better
-feel for how these arrays look and how they are used,
-we may compare the array holding the solution of a scalar ODE to that of a system of two ODEs.
-For the scalar equation, both `t` and `u` are one-dimensional NumPy
-arrays, and indexing into `u` gives us numbers, representing the solution at each time step:
-!bc
-t = [0.  0.4 0.8 1.2 (...) ]
+In order to derive a model we need to make a number of simplifying assumptions. The
+most important one is that we do not consider individuals, just populations. The
+population is assumed to be perfectly mixed in a confined area, which means that we
+do not consider spatial transport of the disease, just temporal evolution. The first
+model we will derive is very simple, but we shall see that it can easily be extended to
+models that are used world-wide by health authorities to predict the
+spread of diseases such as Covid19, flu, ebola, HIV, etc.
 
-u = [ 1.0 1.4  1.96 2.744  (...)]
+In the first version of the model we will keep track of three categories of people:
+ * _S_: susceptibles - who can get the disease
+ * _I_: infected - who have developed the disease and can infect susceptibles
+ * _R_: recovered - who have recovered and become immune
+We represent these as mathematical quantities
+$S(t)$, $I(t)$, $R(t)$,  which represent the number of people in each category.
+The goal is now to derive a set of equations for $S(t)$, $I(t)$, $R(t)$, and then
+solve these equations to predict the spread of the disease.
 
-u[0] = 1.0
-u[1] = 1.4
-
-(...)
-!ec
-In the case of a system of two ODEs, `t` is still a one-dimensional array, but the solution array `u` is
-now two-dimensional, with one column for each solution component. Indexing into it
-yields one-dimensional arrays of length two, which are the two solution components
-at each time step:
-!bc
-u = [[1.0 0.8][1.4 1.1] [1.9 2.7] (...)]
-
-u[0] = [1.0 0.8]
-u[1] = [1.4 1.1]
-
-(...)
-!ec
-
-# #if FORMAT  != ipynb
-: This compact notation requires that the solution vector `u` is represented by
-a NumPy array. We could also, in principle, use lists to hold the solution components, but
-the resulting code would need to loop over the components and be far less elegant and readable.
-# #endif
-
-The similarity of the generic notation for vector and scalar ODEs, and the
-convenient algebra of NumPy arrays, indicate that the solver
-implementation for scalar and system ODEs can also be very similar. This is indeed true,
-and the `ODESolver` class from the previous chapter can be made to work for ODE
-systems by a few minor modifactions:
- * Ensure that `f(u,t)` always returns an array.
- * Inspect $U_0$ to see if it is a single number or a list/array/tuple and
-   make the `u` either a one-dimensional or two-dimensional  array
-If these two items are handled and initialized correctly, the rest of the code from
-Chapter 2 will in fact work with no modifications.
-The extended superclass implementation may look like:
-!bc pycod
-class ODESolver:
-    def __init__(self, f):
-        # Wrap user's f in a new function that always
-        # converts list/tuple to array (or let array be array)
-        self.f = lambda u, t: np.asarray(f(u, t), float)
-
-    def set_initial_condition(self, U0):
-        if isinstance(U0, (float,int)):  # scalar ODE
-            self.neq = 1                 # no of equations
-            U0 = float(U0)
-        else:                            # system of ODEs
-            U0 = np.asarray(U0)
-            self.neq = U0.size           # no of equations
-        self.U0 = U0
-
-    def solve(self, time_points):
-        self.t = np.asarray(time_points)
-        N = len(self.t)
-        if self.neq == 1:  # scalar ODEs
-            self.u = np.zeros(N)
-        else:              # systems of ODEs
-            self.u = np.zeros((N,self.neq))
-
-        # Assume that self.t[0] corresponds to self.U0
-        self.u[0] = self.U0
-
-        # Time loop
-        for n in range(N-1):
-            self.n = n
-            self.u[n+1] = self.advance()
-        return self.u, self.t
-!ec
-It is worth commenting on some parts of this code. First, the constructor looks
-almost identical to the scalar case, but we use a lambda function and
-`np.asarray` to convert any `f` that returns a list or tuple to a function
-returning a NumPy array. This modification is not strictly
-needed, since we could just assume that the user implements `f` to return
-an array, but it makes the class more robust and flexible. We have also included
-tests in the `set_initial_condition` method, to check if `U0` is a single
-number (`float`) or a NumPy array, and define the attribute `self.neq` to
-hold the number of equations.
-The final modification is found in the method `solve`, where
-the `self.neq` attribute is inspected and `u` is
-initialized to a one- or two-dimensional array of the correct size. The
-actual for-loop, as well as the implementation of the `advance` method in the
-subclasses, can be left unchanged.
-
-=== Example: ODE model for throwing a ball. ===
-To demonstrate the use of
-the extended `ODESolver` hierarchy, let us derive and solve a system of ODEs
-describing the trajectory of a ball.
-We first define $x(t),y(t)$ to be the position of the ball, $v_x$ and $v_y$ the velocity components,
-and $a_x,a_y$ the acceleration components. From the definition of velocity and acceleration,
-we have $v_x = dx/dt, v_y = dy/dt, a_x = dv_x/dt$, and $a_y = dv_y/dt$.
-If we neglect air resistance there are no forces acting on the ball in the $x$-direction,
-so from Newton's second law we have $a_x = 0$. In the $y$-direction the acceleration
-must be equal to the acceleration of gravity, which yields $a_y = -g$.
-In terms of the velocities, we have
+To derive the model equations, we first consider the dynamics in a time interval
+$\Delta t$, and our goal is to derive mathematical expressions for how many
+people that move between the three categories in this time interval. The key part of
+the model is the description of how people move from $S$ to $I$, i.e., how
+susceptible individuals get the infection from those already infected.
+Infectious diseases are (mainly) transferred by direct interactions between
+people, so we need mathematical descriptions of the number of interactions
+between susceptible and infected individuals. We make the following assumptions:
+* An individual in the $S$ category interacts with an approximately constant
+  number of people each day, so the number of interactions in a
+  time interval $\Delta t$ is proportional to $\Delta t$.
+* The probability of one of these interactions being with an infected person is
+  proportional to the ratio of infected individuals to the total population, i.e.,
+  to $I/N$, with $N=S+I+R$.
+Based on these assumptions, the probability that a single susceptible person
+gets infected is proportional to $\Delta t I/N$. The total number of
+infections can be written as $\beta SI/N$, for some constant $\beta$. The infection
+of new individuals represents a reduction in $S$ and a corresponding gain in $I$: , so we have
 !bt
 \begin{align*}
-a_x &= 0 \quad \Rightarrow \quad \frac{dv_x}{dt} = 0, \\
-a_y &= -g \quad \Rightarrow \quad \frac{dv_y}{dt} = -g\mbox{\ } ,
+S(t+\Delta t) &= S(t) - \Delta t \beta \frac{S(t)I(t)}{N} ,\\
+I(t+\Delta t) &= I(t) + \Delta t\,\beta \frac{S(t)I(t)}{N} .
 \end{align*}
 !et
-and the complete ODE system can be written as
+These two equations represent the key component of all the models considered
+in this chapter. More advanced models are typically derived by adding more
+categories and more transitions between them, but the individual transitions are
+very similar to the ones presented here.
+
+FIGURE: [./fig-ode2/SIR0, width=800 frac=0.8] Graphical representation of the simplest SIR-model, where people move from being susceptible ($S$) to being infected ($I$) and then reach the recovered ($R$) category with immunity against the disease.
+
+We also need to model the transition of people from the $I$ to the $R$ catogory.
+Again considering a small time interval $\Delta t$, it is natural to assume that
+a fraction $\Delta t\,\nu$ of the infected recover and move to the $R$ category.
+Here $\nu$ is a constant describing the time dynamics of the disease.
+The increase in $R$ is given by
+!bt
+\[ R(t+\Delta t) = R(t) + \Delta t\,\nu I(t),
+\]
+!et
+and we also need to subtract the same term in the balance equation for $I$, since
+the people move from $I$ to $R$. We get
+!bt
+\[ I(t+\Delta t) = I(t) + \Delta t\,\beta S(t)I(t) -\Delta t\,\nu I(t) .
+\]
+!et
+
+We now have three equations for $S$, $I$, and $R$:
 !bt
 \begin{align}
-{dx\over dt} &= v_x, label{vx} \\
-{dv_x\over dt} &= 0,label{ax} \\
-{dy\over dt} &= v_y,label{vy} \\
-{dv_y\over dt} &= -g.label{ay}
+S(t+\Delta t) &= S(t) - \Delta t\,\beta \frac{S(t)I(t)}{N}
+label{SIR1:S}\\
+I(t+\Delta t) &= I(t) + \Delta t\,\beta \frac{S(t)I(t)}{N} - \Delta t\nu I(t)
+label{SIR1:I}\\
+R(t+\Delta t) &= R(t) + \Delta t\,\nu I(t) .
+label{SIR1:R}
 \end{align}
 !et
-To solve the system we need to define initial conditions for all four unknowns,
-i.e., we need to know the initial position and velocity of the ball.
+Although the notation is slightly different, we may recognize these equations
+as a system of difference equations of the same kind that we solved in Chapter
+1. We could easily solve the equations as such, using techniques from
+Chapter 1, but models of this kind are more commonly formulated
+as systems of ODEs, which can be solved with the tools we developed in Chapter 3.
 
-A closer inspection of the system (ref{vx})-(ref{ay}) will reveal that although
-this is a coupled system of ODEs, the coupling is in fact quite weak and the system is
-easy to solve analytically. There is essentially a one-way coupling between equations
-(ref{ax}) and (ref{vx}), the same between (ref{ay}) and (ref{vy}), and no other coupling
-between the equations. We can easily solve (ref{ax}) to conclude that $v_x$ is a constant,
-and inserting a constant on the right hand side of (ref{vx}) yields that $x$ must be a linear
-function of $t$. Similarly, we can solve (ref{ay}) to find that $v_y$ is a linear function, and then
-insert this into (ref{vy}) to find that $y$ is a quadratic function of $t$. The functions
-$x(t)$ and $y(t)$ will contain four unknown coefficients that must be determined from the
-initial conditions.
+To turn the difference equations into ODEs, we first divide all equations
+by $\Delta t$ and rearrange, to get
+!bt
+\begin{align}
+\frac{S(t+\Delta t) - S(t)}{\Delta t} &= - \beta \frac{S(t)I(t)}{N}, label{sir_diffeq0} \\
+\frac{I(t+\Delta t) - I(t)}{\Delta t} &= \beta t \frac{S(t)I(t)}{N} -\nu I(t), label{sir_diffeq1} \\
+\frac{R(t+\Delta t) - R(t)}{\Delta t} &= \nu I(t) . label{sir_diffeq2}
+\end{align}
+!et
+We see that by letting $\Delta t\rightarrow 0$, we get
+derivatives on the left-hand side:
+!bt
+\begin{align}
+S'(t) &= - \beta \frac{S I}{N}, label{sir_ode0}\\
+I'(t) &= \beta \frac{S I}{N}, -\nu I  label{sir_ode1}\\
+R'(t) &= \nu I label{sir_ode2},
+\end{align}
+!et
+where as above $N=S+I+R$. Adding the equations together we see that
+$N'(t) = S'(t)+I'(t)+R'(t)= 0$, so the total population $N$ is constant.
+The equations (ref{sir_ode0})-(ref{sir_ode2}) is a system of three ODEs,
+which we will solve for the unknown
+functions $S(t)$, $I(t)$, $R(t)$. To solve the equations we need
+to specify initial conditions $S(0)$ (many), $I(0)$ (few), and
+$R(0)$ (=0?), as well as the parameters $\beta$ and $\nu$.
+For practical applications of the model, estimating the parameters is
+usually a major challenge. We can estimate
+$\nu$ from the fact that $1/\nu$ is the average recovery time for the disease,
+which is usually possible to determine from early cases.
+The infection rate $\beta$, on the other hand, lumps a lot of biological and
+sociological factors into a single number, and it is usually very difficult to estimate for a new disease.
+It depends both the biology of the disease itself, essentially how infectious it is,
+and on the interactions of the population. In a global pandemic the
+behavior of the population varies between different countries, and it will typically
+change with time, so $\beta$ must usually be adapted to different regions and different
+phases of the disease outbreak.
 
-Although the analytical solution is available, we want to use the `ODESolver`
-class hierarchy presented above to solve this system. The first step is then to
-implement the right hand side as a Python function:
+# #if FORMAT != 'ipynb'
+: A simpler version of the SIR model is also quite common, where the disease transmission term
+is not scaled with $N$. Eq. (ref{sir_ode1}) then reads $S' = - \beta S I$, and (ref{sir_ode1})
+is modified similarly. Since $N$ is constant the two models are equivalent,
+but the version in (ref{sir_ode0})-(ref{sir_ode2}) is more common in real-world applications
+and gives a closer relation between $\beta$ and key epidemic parameters.
+# #endif
+
+Although the system (ref{sir_ode0})-(ref{sir_ode2}) looks quite simple, analytical solutions
+cannot easily be derived.  For particular applications
+it is common to make simplifications that allow simple analytical solutions. For instance,
+when studying the early phase of an epidemic one is mostly interested in the $I$
+category, and since the number of infected cases in this phase is low compared with
+the entire population we may assume that $S$ is approximately constant and equal to $N$.
+Inserting $S\approx N$ turns (ref{sir_ode1}) into a simple equation describing exponential growth, with solution
+!bt
+\begin{equation}
+I(t) = I_0 e^{(\beta -\nu)} .
+\label{sir_exp0} \end{equation}
+!et
+Such an approximate formula may be very useful, in particular for estimating the
+parameters of the model. In the early phase of an epidemic the number of infected
+people typically follows an exponential curve, and we can fit the parameters of the model
+so that (ref{sir_exp0}) fits the observed dynamics. However, if we want to describe the
+full dynamics of the epidemic we need to solve the complete system of ODEs, and
+in this case numerical solvers are needed.
+
+=== Solving the SIR model with the `ODESystem` class hierarchy. ===
+We could of course implement a numerical solution of the SIR equations directly, for
+instance by applying the forward Euler method to (ref{sir_ode0})-(ref{sir_ode2}), which
+will simply give us back the original difference equations in
+(ref{sir_diffeq0})-(ref{sir_diffeq2}). However, since the ODE solver
+tools we developed in Chapter 3 are completely
+general, they can easily be used to solve the SIR model. To solve the system using the
+fourth-order RK method of the ODESolver hierarchy, the Python implementation
+may look as follows:
 !bc pycod
-def f(u, t):
-    x, vx, y, vy = u
-    g = 9.81
-    return [vx, 0, vy, -g]
-!ec
-We see that the function here returns a list, but this will automatically
-be converted to an array by the solver class' constructor,
-as mentioned above. The main program is not very different
-from the examples of the previous chapter, except that we need to define an
-initial condition with four components:
-!bc pycod
-from ODESolver import ForwardEuler
+from ODESolver import RungeKutta4
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Initial condition, start at the origin:
-x = 0; y = 0
-# velocity magnitude and angle:
-v0 = 5; theta = 80*np.pi/180
-vx = v0*np.cos(theta); vy = v0*np.sin(theta)
+def SIR_model(u,t):
+    beta = 0.001
+    nu = 1/7.0
+    S, I, R = u[0], u[1], u[2]
+    N = S+I+R
+    dS = -beta*S*I/N
+    dI = beta*S*I/N - nu*I
+    dR = nu*I
+    return [dS,dI,dR]
 
-U0 = [x, vx, y, vy]
+S0 = 1000
+I0 = 1
+R0 = 0
 
-solver= ForwardEuler(f)
-solver.set_initial_condition(U0)
-time_points = np.linspace(0, 1.0, 101)
+solver= RungeKutta4(SIR_model)
+solver.set_initial_condition([S0,I0,R0])
+time_points = np.linspace(0, 100, 101)
 u, t = solver.solve(time_points)
-# u is an array of [x,vx,y,vy] arrays, plot y vs x:
-x = u[:,0];  y = u[:,2]
+S = u[:,0];  I = u[:,1]; R = u[:,2]
 
-plt.plot(x, y)
+plt.plot(t,S,t,I,t,R)
 plt.show()
 !ec
-Notice that since `u` is a two-dimensional array, we use array slicing to extract and plot the individual components.
-A call like `plt.plot(t,u)` will also work, but it will plot all the solution
-components in the same window, which for this particular model is not very useful.
-A very useful exercise is to extend this code to plot the analytical solution of the system in the
-same window as the numerical solution. The system can be solved as outlined above, and the
-unknown coefficients in the solution formulas can be determined from the given initial conditions.
-With the chosen number of time steps there will be a visible difference between the numerical
-solution and the analytical solution, but this can easily be removed
-by reducing the time step or choosing a more accurate solver.
+
+=== A class implementation of the SIR model. ===
+As noted above, estimating the parameters in the model is often challenging.
+In fact, the most important application of models of this kind is to
+predict the dynamics of new diseases, for instance the global Covid19 pandemic.
+Accurate predictions of the number of disease cases can be extremely important
+in planning the response to the epidemic, but the challenge is that for a new
+disease all the parameters are largely unknown. Although there are ways to
+estimate the parameters from the early disease dynamics, the estimates will contain
+a large degree of uncertainty, and a common strategy is then to run the
+model for multiple parameters to get an idea of what disease outbreak
+scenarios to expect. We can easily run the code above for multiple values of
+`beta` and `nu`, but it is inconvenient that both parameters are hardcoded as local
+variables in the `SIR_model` function, so we need to edit the code for each new parameter value
+we want. As we have seen earlier, it is much better to represent such a parameterized
+function as a class, where the parameters can be set in the constructor and the
+function itself is implemented in a `__call__` method. A class for the SIR model
+could look like:
+!bc pycod
+class SIR:
+    def __init__(self, beta, nu):
+        self.beta = beta
+        self.nu = nu
+
+    def __call__(self,u,t):
+        S, I, R = u[0], u[1], u[2]
+        N = S+I+R
+        dS = -self.beta*S*I/N
+        dI = self.beta*S*I/N - self.nu*I
+        dR = self.nu*I
+        return [dS,dI,dR]
+
+!ec
+The use of the class is very similar to the use of the `SIR_model` function above.
+We need to create an instance of the class with given values of `beta` and `nu`, and
+then this instance can be passed to the ODE solver just as any regular Python function.
+
+======= Extending the SIR model =======
+
+The SIR model itself is rarely used for predictive simulations of real-world diseases,
+but various extensions of the model are used to a large extent. Many such extensions
+have been derived, in order to best fit the dynamics of different infectious diseases.
+We will here consider a few such extensions, which are all based on the building
+blocks of the simple SIR model.
+
+=== A SIR model without life-long immunity. ===
+One very simple modification of the model above is to remove the assumption of
+life-long immunity. The model (ref{sir_ode0})-(ref{sir_ode2}) describes a one-directional
+flux towards the R category, and if we solve the model for a sufficiently
+long time interval the entire population will end up in R. This situation is not
+realistic for many diseases, since immunity is often lost or reduced with time.
+In the model this loss can be described by a leakage of people from the R category back
+to S. If we introduce the parameter $\gamma$ to describe this flux
+($1/\gamma$ being the mean time for immunity), the modified equation system looks like
+!bt
+\begin{align*}
+S'(t) &= - \beta S I/N +\gamma R,\\
+I'(t) &= \beta S I/N -\nu I,  \\
+R'(t) &= \nu I -\gamma R.
+\end{align*}
+!et
+As above, we see that the reduction in $R$ is matched by an increase in $S$ of
+exactly the same magnitude. The total population $S+I+R$ remains constant.
+The model can be implemented by a trivial extension of the `SIR` class shown above,
+by simply adding one additional parameter to the constructor and the extra terms
+in the `dS` and `dR` equations. Depending on the choice of the parameters, the model
+may show far more interesting dynamics than the simplest SIR model.
+
+FIGURE: [./fig-ode2/SIR1, width=800 frac=0.8] Illustration of a SIR model without lifelong immunity, where people move from the R category back to S after a given time.
+
+=== A SEIR model to capture the incubation period. ===
+For many important infections, there is a significant incubation period during
+which individuals have been infected, but they are not yet infectious themselves. To
+capture these dynamics in the model, we may add an
+additional category E (for exposed). When people are infected they will then move
+into the E category rather than directly to I, and then gradually move over
+to the infected state where they can also infect others. The model for how susceptible
+people get infected is kept exactly as in the ordinary SIR model. Such a SEIR model
+is illustrated in Figure ref{fig:seir}, and the ODEs may look like
+!bt
+\begin{align*}
+S'(t) &= - \beta S I/N +\gamma R,\\
+E'(t) &= \beta S I/N - \mu E, \\
+I'(t) &= \mu E -\nu I,  \\
+R'(t) &= \nu I -\gamma R.
+\end{align*}
+!et
+
+FIGURE: [./fig-ode2/SEIR.pdf, width=800 frac=0.8] Illustration of the SEIR model, without life-long immunity.  label{fig:seir}
+
+
+Again, this small extension of the model does not make it much more
+difficult to solve. The following code shows an example of how the SEIR model
+can be implemented as a class and solved with the `ODESolver` hierarchy:
+!bc pycod
+from ODESolver import RungeKutta4
+import numpy as np
+import matplotlib.pyplot as plt
+
+class SEIR:
+    def __init__(self, beta, mu, nu, gamma):
+        self.beta = beta
+        self.mu = mu
+        self.nu = nu
+        self.gamma = gamma
+
+
+    def __call__(self,u,t):
+        S, E, I, R = u
+        N = S+I+R+E
+        dS = -self.beta*S*I/N + self.gamma*R
+        dE  = self.beta*S*I/N - self.mu*E
+        dI =  self.mu*E - self.nu*I
+        dR = self.nu*I - self.gamma*R
+        return [dS,dE,dI,dR]
+
+
+
+S0 = 1000
+E0 = 0
+I0 = 1
+R0 = 0
+model = SEIR(beta=0.001, mu=1.0/5,nu=1.0/7,gamma=1.0/50)
+
+solver= RungeKutta4(model)
+solver.set_initial_condition([S0,E0,I0,R0])
+time_points = np.linspace(0, 100, 101)
+u, t = solver.solve(time_points)
+S = u[:,0]; E = u[:,1]; I = u[:,2]; R = u[:,3]
+
+plt.plot(t,S,t,E,t,I,t,R)
+plt.show()
+!ec
+
+======= A model of the Covid19 pandemic =======
+The models considered above can typically be adapted to describe more complex
+disease behavior by adding more categories of people and possibly more interactions
+between the different categories. We will now consider an extension of the
+SEIR model above into a model that has been used by Norwegian health authorities
+to predict the spread of the 2020 Covid19 pandemic. We will here derive the model
+as a system of ODEs, just like the models considered above, while the real
+model that is used to provide Covid19 predictions for health authorities is a stochastic model.
+A stochastic model is somewhat more flexible than the deterministic ODE version,
+and can more easily incorporate dynamics such as model parameters that vary with
+time after infection. For instance, the infectiousness ($\beta$) should typically
+follow a bell-shaped curve that increases gradually after infection, reaches a peak after
+a few days, and is then reduced. Such behavior is easier to incorporate in a stochastic
+model than in the deterministic ODE model considered here, which
+essentially assumes a constant $\beta$ for everyone in the $I$ category. However,
+the overall structure and dynamics of the two model types are exactly the same, and
+for certain choices of the model parameters the stochastic and deterministic
+models become equivalent.
+
+# #if FORMAT != 'ipynb'
+: See https://github.com/folkehelseinstituttet/spread
+# #endif
+
+To describe Covid19, the SEIR model introduced above is modified to incorporate
+two important disease characteristics:
+ * A certain number of people infected with Covid19 have no symptoms. These asymptomatic
+   people can still infect other, but with a lower infectiousness than the symptomatic group, and
+   they need to be treated as a separate category.
+ * A large number of infections occur before the infector experiences symptoms, which suggests
+   an additional *exposed* category where people are infectious but do not yet experience
+   symptoms.
+
+These characteristics can be modeled by adding more categories to the SEIR model introduced
+earlier. We include two exposed categories $E_1$ and $E_2$, with the first being non-infectious and
+the second being able to infect others. The I category is also divided in two; a symptomatic $I$
+and an asymptomatic $I_a$. The flux from $S$ to $E_1$ will be similar to the SEIR model, but from $E_1$
+people will follow one of two possible trajectories. Some will move on to $E_2$ and then
+into $I$ and finally $R$, while others move directly into $I_a$ and then to $R$.
+The model is illustrated in Figure ref{fig:covid19}.
+
+FIGURE: [./fig-ode2/SEEIIR.pdf, width=800 frac=0.8] Illustration of the Covid19 epidemic model, with two alternative disease trajectories. label{fig:covid19}
+
+The derivation of the model equations is similar to the simpler models
+considered above, but there will be more equations as well as more terms in each equation.
+The most important extension from the models above is that the SEEIIR model has
+three categories of infectious people; $E_2, I$, and $I_a$. All of these
+interact with the $S$ category to create new infections, and we model each
+of these interactions exactly as we did above. In a time
+interval $\Delta t$, we have the following three contributions to the flux from
+$S$ to $E_1$:
+* Infected by people in $I$: $\Delta t\beta SI/N$.
+* Infected by people in $I_a$: $\Delta t r_{ia} \beta S I_a/N $
+* Infected by people in $E_2$: $\Delta t r_{e2} \beta S E_2/N $
+We allow the infectiousness to be different between the three categories,
+incorporated through a main infectiousness parameter $\beta$ and
+two parameters $r_{ia}, r_{e2}$ that scale the infectiousness for the two respective groups.
+Considering all three contributions, and following the same steps as above
+to construct a difference equation and then a ODE, we get the following equation
+for the $S$ category:
+!bt
+\begin{equation} \label{eq:1}
+\frac{dS}{dt} = - \beta \frac{SI}{N}- r_{ia} \beta \frac{S I_a}{N} - r_{e2} \beta \frac{S E_2}{N}.
+\end{equation}
+!et
+When people get infected they move from $S$ to $E_1$, so the same three terms
+must appear in the equation for $E_1$, with opposite signs. Furthermore,
+people in $E_1$ will move either to $E_2$ or $I_a$. We have
+!bt
+\begin{align*}
+    \frac{dE_1}{dt} & = \beta \frac{S I}{N} + r_{ia} \beta \frac{S I_a}{N} + r_{e2} \beta \frac{S E_2}{N}
+    - \lambda_1(1-p_a)E_1 - \lambda_1 p_a E_1 \nonumber \\
+    & = \beta \frac{S I}{N} + r_{ia} \beta \frac{S I_a}{N} + r_{e2} \beta \frac{S E_2}{N} - \lambda_1 E_1.
+\end{align*}
+!et
+Here, $p_a$ is a parameter describing the proportion of infected people that never develop symptoms, while
+$1/\lambda_1$ is the mean duration of the non-infectious incubation period. The term $\lambda_1(1-p_a)E_1$
+represents people moving to $E_2$, and $\lambda_1p_aE_1$ are people moving to $I_a$.
+In the equation for
+$E_1$ we can combine these two fluxes into a single term, but they must be considered
+separately in the equations for $E_2$ and $I_a$.
+
+The $E_2$ category will get an influx of people from $E_1$, and an outflux of people moving on to
+the infected $I$ category, while $I$ gets an influx from $E_2$ and an outflux to $R$. The ODEs for
+these two categories become
+!bt
+\begin{align*}
+    \frac{dE_2}{dt} &= \lambda_1(1-p_a)E_1 - \lambda_2E_2, \\
+    \frac{dI}{t} &= \lambda_2E_2 - \mu I,
+\end{align*}
+!et
+where $1/\lambda_2$ and $1/\mu$ are the mean durations of the $E_2$ and $I$ phases, respectively.
+
+The model for the asymptomatic disease trajectory is somewhat simpler, with $I_a$ receiving an
+influx from $E_1$ and losing people directly to $R$. We have
+!bt
+\[
+    \frac{I_a}{dt} = \lambda_1  p_a E_1 - \mu I_a,
+\]
+!et
+where we have assumed that the duration of the $I_a$ period is the same as for $I$, i.e. $1/\mu$.
+Finally, the dynamics of the recovered category are governed by
+!bt
+\[
+\frac{dR}{dt} = \mu I + \mu I_a.
+\]
+!et
+Notice that we do not consider flow from the $R$ category back to $S$, so
+we have effectively assumed life-long immunity. This assumption is probably not correct
+for Covid19, but since the duration of immunity is still largely unknown, and
+we are mostly interested in the early epidemic spread, we neglect the loss of immunity.
+
+To summarize, the complete ODE system of the SEEIIR model can be written as
+!bt
+\begin{align*}
+\frac{dS}{dt} &= - \beta \frac{SI}{N}- r_{ia} \beta \frac{S I_a}{N} - r_{e2} \beta \frac{S E_2}{N}, \\
+\frac{dE_1}{dt} &= \beta \frac{S I}{N} + r_{ia} \beta \frac{S I_a}{N} + r_{e2} \beta \frac{S E_2}{N}- \lambda_1 E_1, \\
+\frac{dE_2}{dt}  &= \lambda_1(1-p_a)E_1 - \lambda_2E_2, \\
+\frac{dI}{dt} &= \lambda_2E_2 - \mu I, \\
+\frac{dI_a}{dt} &= \lambda_1  p_a E_1 - \mu I_a, \\
+\frac{dR}{dt} &= \mu (I + I_a).
+\end{align*}
+!et
+A suitable choice of default parameters  for the model can be as follows:
+|--l-----------------l----------------|
+|Parameter     | Value                |
+|---l----------------r----------------|
+| $\beta$      | $6.0 \cdot 10^{-6}$  |
+| $r_{ia}$     | 0.1                  |
+| $r_{e2}$     | 1.25                 |
+| $\lambda_1$  | 0.33                 |
+| $\lambda_2$  | 0.5                  |
+| $p_a$        | 0.4                  |
+| $\mu$        | 0.2                  |
+|-------------------------------------|
+These parameters are based on the early phase of the Covid19 outbreak and
+can  tell us quite a bit about the disease dynamics. The
+parameters $\mu, \lambda_1$, and $\lambda_2$ are given in units of days$^{-1}$,
+so the mean duration of the symptomatic disease period is five days ($1/\mu$),
+the non-infectious incubation period lasts three days on average, while the
+mean duration of the infectious incubation period ($E_2$) is two days. Furthermore,
+we see that the mean infectiousness of asymptomatic people is 10\% of
+the infectiousness of the symptomatic cases. However, the infectiousness of the
+$E_2$ category is 25\% higher than the infectiousness of the $I$ category. This
+increased infectiousness is most likely the result of the $E_2$ category being
+asymptomatic, so these people will move around a lot more than the symptomatic $I$
+category. The $I_a$ group is also, of course, asymptomatic and therefore likely to
+move around more, but it is assumed that these people have a very low virus count and
+are therefore less infectious than the people that develop symptoms.
+
+A function implementation of the SEEIIR model can look as follows
+!bc pycod
+def SEEIIR_model(u,t):
+    beta = 6.0e-6; r_ia = 0.1; r_e2=1.25;
+    lmbda1=0.33; lmbda2=0.5; p_a=0.4; mu=0.2;
+
+    S, E1, E2, I, Ia, R = u
+    N = sum(u)
+    dS  = -beta*S*I/N - r_ia*beta*S*Ia/N - r_e2*beta*S*E2/N
+    dE1 = beta*S*I/N + r_ia*beta*S*Ia/N + r_e2*beta*S*E2/N - lmbda_1*E1
+    dE2 = lmbda_1*(1-p_a)*E1 - lmbda_2*E2
+    dI  = lambda_2*E2 - mu*I
+    dIa = lambda_1*p_a*E1 - mu*Ia
+    dR  = mu*(I + Ia)
+    return [dS, dE1, dE2, dI, dIa, dR]
+!ec
+Just as the simpler models, the SEEIIR model can be solved with
+methods in the `ODEsolver` class hierarchy:
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+from ODESolver import *
+
+S_0 = 5e6
+E1_0 = 0
+E2_0 = 100
+I_0 = 0
+Ia_0 = 0
+R_0 = 0
+U0 = [S0, E1_0, E2_0, I_0, Ia_0, R_0]
+
+model = SEEIIR(beta=0.001, mu=1.0/5,nu=1.0/7,gamma=1.0/50)
+
+solver = RungeKutta4(model)
+solver.set_initial_condition(U0)
+time_points = np.linspace(0, 100, 101)
+u, t = solver.solve(time_points)
+S = u[:,0]; E1 = u[:,1]; E2 = u[:,2];
+I = u[:,3]; Ia = u[:,4]; R = u[:,5]
+
+plt.plot(t,S,t,I,t,Ia,t,R)
+plt.show()
+!ec
