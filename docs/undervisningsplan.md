@@ -1,16 +1,15 @@
-Detaljert undervisningsplan
-===========================
+# Detaljert undervisningsplan
 
-::: {.uio-meta}
-:::
+<div class="uio-meta">
+
+</div>
 
 Løsning på [oppgaver](oppgaver.html) gjennomgått i plenum legges ut på
 [nettet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/live_programmering)
 etter timen (send mail til [Joakim Sundnes](mailto:sundnes@ifi.uio.no)
 hvis dette ikke er gjort).
 
-19/8-25/8 {#uke:0}
----------
+## 19/8-25/8
 
 **Oppgaver i plenum**: **1.1** (`1plus1.py`, side 42), **1.2**
 (`hello_world.py`, side 43) fra
@@ -30,11 +29,10 @@ hvis dette ikke er gjort).
 **1.1** (`glucose.py`, side 1) fra
 [kjemiheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/kjemi/kjemi_oppgaver.pdf)
 
-**Mer informasjon** om [uke
-34](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke0.html)
+**Mer informasjon** om
+[uke 34](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke0.html)
 
-26/8-1/9 {#uke:1}
---------
+## 26/8-1/9
 
 **Oppgaver i plenum**: **1.3** (`seconds2years.py`, side 43), **1.4**
 (`length_conversion.py`, side 43), **1.12** (`egg.py`, side 46), **2.1**
@@ -60,8 +58,8 @@ side 85), **2.5** (`sum_int.py`, side 82) fra
 fra
 [kjemiheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/kjemi/kjemi_oppgaver.pdf)
 
-**Mer informasjon** om [uke
-35](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke1.html)
+**Mer informasjon** om
+[uke 35](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke1.html)
 
 **Obligatoriske innleveringsoppgaver**: **1.6** (`interest_rate.py`,
 side 43), **1.11** (`kick.py`, side 45) fra
@@ -69,8 +67,7 @@ side 43), **1.11** (`kick.py`, side 45) fra
 **1.2** (`population.py`, side 2) fra
 [oppgaveheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/OppgavehefteIN1900.pdf)
 
-2/9-8/9 {#uke:2}
--------
+## 2/9-8/9
 
 **Oppgaver i plenum**: **2.7** (`coor.py`, side 83), **2.14**
 (`inverse_sine.py`, side 85), **2.15** (`index_nested_list.py`, side
@@ -95,8 +92,8 @@ og lærebok kap. 3 + oppg. 2.7, 2.14, 2.15, 3.20, 3.23, 3.28
 5) fra
 [kjemiheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/kjemi/kjemi_oppgaver.pdf)
 
-**Mer informasjon** om [uke
-36](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke2.html)
+**Mer informasjon** om
+[uke 36](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke2.html)
 
 **Obligatoriske innleveringsoppgaver**: **2.4** (`odd.py`, side 82),
 **2.9** (`ball_table2.py`, side 83) fra
@@ -105,8 +102,7 @@ og lærebok kap. 3 + oppg. 2.7, 2.14, 2.15, 3.20, 3.23, 3.28
 (`population_table.py`, side 5) fra
 [oppgaveheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/OppgavehefteIN1900.pdf)
 
-9/9-15/9 {#uke:3}
---------
+## 9/9-15/9
 
 **Oppgaver i plenum**: **2.19** (`repeated_sqrt.py`, side 87), **2.20**
 (`machine_zero.py`, side 87), **2.21** (`compare_floats.py`, side 87),
@@ -133,8 +129,8 @@ og lærebok kap. 4 + oppg. 2.19, 2.20, 2.21, 3.7, 4.1, 4.2, 4.3, 4.4
 **4.1** (`nernst_equation2.py`, side 7) fra
 [kjemiheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/kjemi/kjemi_oppgaver.pdf)
 
-**Mer informasjon** om [uke
-37](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke3.html)
+**Mer informasjon** om
+[uke 37](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke3.html)
 
 **Obligatoriske innleveringsoppgaver**: **2.2** (`f2c_approx_table.py`,
 side 82) fra
@@ -144,8 +140,7 @@ side 82) fra
 9) fra
 [oppgaveheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/OppgavehefteIN1900.pdf)
 
-16/9-22/9 {#uke:4}
----------
+## 16/9-22/9
 
 **Oppgaver i plenum**: **4.5** (`f2c_cml_exc.py`, side 217), **4.6**
 (`objects_qa.py`, side 217), **4.7** (`objects_cml.py`, side 217),
@@ -170,8 +165,8 @@ side 328) fra
 (`capacitor_vectorization.py`, side 21) fra
 [fysikkheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/fysikk_oppgaver.pdf)
 
-**Mer informasjon** om [uke
-38](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke4.html)
+**Mer informasjon** om
+[uke 38](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke4.html)
 
 **Obligatoriske innleveringsoppgaver**: **4.10** (`ball_cml.py`, side
 218), **4.11** (`ball_cml_qa.py`, side 218) fra
@@ -182,8 +177,7 @@ side 328) fra
 (`read_file_isotopes.py`, side 12) fra
 [oppgaveheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/OppgavehefteIN1900.pdf)
 
-23/9-29/9 {#uke:5}
----------
+## 23/9-29/9
 
 **Oppgaver i plenum**: **A.1** (`sequence_limits.py`, side 671), **A.4**
 (`loan.py`, side 672), **5.29** (`judge_plot.py`, side 322), **5.39**
@@ -205,8 +199,8 @@ A](./lecture_notes/diffeq.pdf) og lærebok app. A + oppg. A.1, A.4, 5.29,
 **A.12** (`diffeq_midpoint.py`, side 675) fra
 [boka](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/in1900_exercises_2017.pdf)
 
-**Mer informasjon** om [uke
-39](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke5.html)
+**Mer informasjon** om
+[uke 39](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke5.html)
 
 **Obligatoriske innleveringsoppgaver**: **4.10** (`temp_read_write.py`,
 side 14), **5.1** (`fill_log_arrays_loop.py`, side 15), **5.2**
@@ -214,8 +208,7 @@ side 14), **5.1** (`fill_log_arrays_loop.py`, side 15), **5.2**
 side 15) fra
 [oppgaveheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/OppgavehefteIN1900.pdf)
 
-30/9-6/10 {#uke:6}
----------
+## 30/9-6/10
 
 **Oppgaver i plenum**: **A.14** (`sin_Taylor_series_diffeq.py`, side
 676), **5.14** (`read_2columns.py`, side 315) fra
@@ -232,8 +225,8 @@ side 15) fra
 (`growth_logistic2.py`, side 678) fra
 [boka](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/in1900_exercises_2017.pdf)
 
-**Mer informasjon** om [uke
-40](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke6.html)
+**Mer informasjon** om
+[uke 40](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke6.html)
 
 **Obligatoriske innleveringsoppgaver**: **5.12**
 (`f2c_shortcut_plot.py`, side 314), **5.28** (`plot_wavepacket.py`, side
@@ -245,13 +238,11 @@ side 15) fra
 **Om plotting**: Bruk `matplotlib` (ikke `scitools`) til alle plot i de
 obligatoriske oppgavene.
 
-7/10-13/10 {#uke:7}
-----------
+## 7/10-13/10
 
 Midttermineksamen.
 
-14/10-20/10 {#uke:8}
------------
+## 14/10-20/10
 
 **Oppgaver i plenum**: **5.16** (`read_density_data.py`, side 316),
 **5.18** (`fit_density_data.py`, side 317), **6.7** (`humans.py`, side
@@ -274,8 +265,8 @@ side 406) fra
 **6.2** (`constants_hydrogen.py`, side 27) fra
 [fysikkheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/fysikk_oppgaver.pdf)
 
-**Mer informasjon** om [uke
-42](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke7.html)
+**Mer informasjon** om
+[uke 42](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke7.html)
 
 **Obligatoriske innleveringsoppgaver**: **5.32** (`plot_Taylor_sin.py`,
 side 323), **A.3** (`growth_years_efficient.py`, side 672), **A.5**
@@ -288,8 +279,7 @@ side 323), **A.3** (`growth_years_efficient.py`, side 672), **A.5**
 **Om plotting**: Bruk `matplotlib` (ikke `scitools`) til alle plot i
 obligatoriske oppgaver.
 
-21/10-27/10 {#uke:9}
------------
+## 21/10-27/10
 
 **Oppgaver i plenum**: **7.3** (`Account3.py`, side 471), **7.10**
 (`Hello.py`, side 474), **7.11** (`F2.py`, side 474), **7.12**
@@ -312,8 +302,8 @@ lærebok kap. 9.1-9.2 + oppg. 7.3, 7.10, 7.11, 7.12, 7.25
 **6.1** (`autotitrator.py`, side 17) fra
 [kjemiheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/kjemi/kjemi_oppgaver.pdf)
 
-**Mer informasjon** om [uke
-43](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke8.html)
+**Mer informasjon** om
+[uke 43](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke8.html)
 
 **Obligatoriske innleveringsoppgaver**: **A.15**
 (`cos_Taylor_series_diffeq.py`, side 677, **2 poeng**), **6.3**
@@ -326,8 +316,7 @@ fra
 **Om plotting**: Bruk `matplotlib` (ikke `scitools`) til alle plot i de
 obligatoriske oppgavene.
 
-28/10-3/11 {#uke:10}
-----------
+## 28/10-3/11
 
 **Oppgaver i plenum**: **9.1** (`dir_subclass.py`, side 635), **9.3**
 (`sin_plus_quadratic.py`, side 636), **9.4** (`Polynomial_hier.py`, side
@@ -347,8 +336,8 @@ E](./lecture_notes/ode_systems.pdf) og lærebok app E.1-E.2 + oppg. 9.1,
 637), **9.9** (`Sine12.py`, side 637) fra
 [boka](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/in1900_exercises_2017.pdf)
 
-**Mer informasjon** om [uke
-44](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke9.html)
+**Mer informasjon** om
+[uke 44](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke9.html)
 
 **Obligatoriske innleveringsoppgaver**: **9.2** (`Cubic_Poly4.py`, side
 635), **9.11** (`Backward2.py`, side 638), **7.5** (`Quadratic.py`, side
@@ -357,8 +346,7 @@ E](./lecture_notes/ode_systems.pdf) og lærebok app E.1-E.2 + oppg. 9.1,
 **7.1** (`class_people.py`, side 27) fra
 [oppgaveheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/OppgavehefteIN1900.pdf)
 
-4/11-10/11 {#uke:11}
-----------
+## 4/11-10/11
 
 **Oppgaver i plenum**: **9.6** (`PolarPoint.py`, side 636), **E.21**
 (`RK4_func.py`, side 811), **E.22** (`RK4_class.py`, side 811) fra
@@ -377,8 +365,8 @@ E.21, E.22
 **7.34** (`minmaxf.py`, side 484) fra
 [boka](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/in1900_exercises_2017.pdf)
 
-**Mer informasjon** om [uke
-45](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke10.html)
+**Mer informasjon** om
+[uke 45](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/enkeltuker/uke10.html)
 
 **Obligatoriske innleveringsoppgaver**: **E.1** (`simple_ODE_func.py`,
 side 802), **E.2** (`simple_ODE_class.py`, side 802), **E.3**
@@ -389,8 +377,7 @@ side 802), **E.2** (`simple_ODE_class.py`, side 802), **E.3**
 fra
 [oppgaveheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/OppgavehefteIN1900.pdf)
 
-11/11-17/11 {#uke:12}
------------
+## 11/11-17/11
 
 **Oppgaver i plenum**: **E.29** (`radioactive_decay2.py`, side 813),
 **E.49** (`predator_prey.py`, side 824) fra
@@ -413,8 +400,7 @@ E.49
 (`compare_methods.py`, side 44, **2 points**) fra
 [oppgaveheftet](http://www.uio.no/studier/emner/matnat/ifi/IN1900/h19/ressurser/OppgavehefteIN1900.pdf)
 
-18/11-24/11 {#uke:13}
------------
+## 18/11-24/11
 
 **Obligatoriske innleveringsoppgaver**: **E.8** (`bjorgvin.py`, side 49,
 **3 points**), **E.9** (`SIRD.py`, side 51, **3 points**), **E.10**
