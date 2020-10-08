@@ -414,11 +414,11 @@ we use this midpoint derivative to advance the the solution to $t_{n+1}$.
 An alternative second order method is Heun's method,
 which is also referred to as the explicit trapezoidal method:
 !bt
-\begin{align*}
+\begin{align}
 k_1 & = f(u_n, t_n), \\
 k_2 & = f(u_n+\Delta t k_1, t_n+\Delta t), \\
 u_{n+1} &= u_n + \Delta t\, (k_1/2 + k_2/2)
-\end{align*}
+\end{align}
 !et
 This method also computes two stage derivatives $k_1$ and $k_2$, but from the
 formula for $k_2$ we see that it approximates the derivative at $t_{n+1}$ rather

@@ -486,8 +486,8 @@ def SEEIIR_model(u,t):
     dS  = -beta*S*I/N - r_ia*beta*S*Ia/N - r_e2*beta*S*E2/N
     dE1 = beta*S*I/N + r_ia*beta*S*Ia/N + r_e2*beta*S*E2/N - lmbda_1*E1
     dE2 = lmbda_1*(1-p_a)*E1 - lmbda_2*E2
-    dI  = lambda_2*E2 - mu*I
-    dIa = lambda_1*p_a*E1 - mu*Ia
+    dI  = lmbda_2*E2 - mu*I
+    dIa = lmbda_1*p_a*E1 - mu*Ia
     dR  = mu*(I + Ia)
     return [dS, dE1, dE2, dI, dIa, dR]
 !ec
@@ -504,7 +504,7 @@ E2_0 = 100
 I_0 = 0
 Ia_0 = 0
 R_0 = 0
-U0 = [S0, E1_0, E2_0, I_0, Ia_0, R_0]
+U0 = [S_0, E1_0, E2_0, I_0, Ia_0, R_0]
 
 solver = RungeKutta4(SEEIIR_model)
 solver.set_initial_condition(U0)
