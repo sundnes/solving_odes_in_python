@@ -170,7 +170,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def SIR_model(u,t):
-    beta = 0.001
+    beta = 1.0
     nu = 1/7.0
     S, I, R = u[0], u[1], u[2]
     N = S+I+R
@@ -314,7 +314,7 @@ S0 = 1000
 E0 = 0
 I0 = 1
 R0 = 0
-model = SEIR(beta=0.001, mu=1.0/5,nu=1.0/7,gamma=1.0/50)
+model = SEIR(beta=1.0, mu=1.0/5,nu=1.0/7,gamma=1.0/50)
 
 solver= RungeKutta4(model)
 solver.set_initial_condition([S0,E0,I0,R0])
@@ -486,8 +486,8 @@ def SEEIIR_model(u,t):
     dS  = -beta*S*I/N - r_ia*beta*S*Ia/N - r_e2*beta*S*E2/N
     dE1 = beta*S*I/N + r_ia*beta*S*Ia/N + r_e2*beta*S*E2/N - lmbda_1*E1
     dE2 = lmbda_1*(1-p_a)*E1 - lmbda_2*E2
-    dI  = lambda_2*E2 - mu*I
-    dIa = lambda_1*p_a*E1 - mu*Ia
+    dI  = lmbda_2*E2 - mu*I
+    dIa = lmbda_1*p_a*E1 - mu*Ia
     dR  = mu*(I + Ia)
     return [dS, dE1, dE2, dI, dIa, dR]
 !ec
@@ -504,17 +504,21 @@ E2_0 = 100
 I_0 = 0
 Ia_0 = 0
 R_0 = 0
-U0 = [S0, E1_0, E2_0, I_0, Ia_0, R_0]
+U0 = [S_0, E1_0, E2_0, I_0, Ia_0, R_0]
 
-model = SEEIIR(beta=0.001, mu=1.0/5,nu=1.0/7,gamma=1.0/50)
-
-solver = RungeKutta4(model)
+solver = RungeKutta4(SEEIIR_model)
 solver.set_initial_condition(U0)
 time_points = np.linspace(0, 100, 101)
 u, t = solver.solve(time_points)
 S = u[:,0]; E1 = u[:,1]; E2 = u[:,2];
 I = u[:,3]; Ia = u[:,4]; R = u[:,5]
 
-plt.plot(t,S,t,I,t,Ia,t,R)
+plt.plot(t,S,label='S')
+plt.plot(t,E1,label='E1')
+plt.plot(t,E2,label='E2')
+plt.plot(t,I,label='I')
+plt.plot(t,Ia,label='Ia')
+plt.plot(t,R,label='R')
+plt.legend()
 plt.show()
 !ec
