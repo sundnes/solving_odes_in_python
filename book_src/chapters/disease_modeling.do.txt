@@ -452,7 +452,7 @@ A suitable choice of default parameters  for the model can be as follows:
 |--l-----------------l----------------|
 |Parameter     | Value                |
 |---l----------------r----------------|
-| $\beta$      | 0.6  |
+| $\beta$      | 0.5  |
 | $r_{ia}$     | 0.1                  |
 | $r_{e2}$     | 1.25                 |
 | $\lambda_1$  | 0.33                 |
@@ -478,7 +478,7 @@ are therefore less infectious than the people that develop symptoms.
 A function implementation of the SEEIIR model can look as follows
 !bc pycod
 def SEEIIR_model(u,t):
-    beta = 0.6; r_ia = 0.1; r_e2=1.25;
+    beta = 0.5; r_ia = 0.1; r_e2=1.25;
     lmbda_1=0.33; lmbda_2=0.5; p_a=0.4; mu=0.2;
 
     S, E1, E2, I, Ia, R = u
