@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from ODESolver import *
 
 def SEEIIR_model(u,t):
-    beta = 0.6; r_ia = 0.1; r_e2=1.25;
+    beta = 0.5; r_ia = 0.1; r_e2=1.25;
     lmbda_1=0.33; lmbda_2=0.5; p_a=0.4; mu=0.2;
 
     S, E1, E2, I, Ia, R = u
@@ -32,10 +32,11 @@ S = u[:,0]; E1 = u[:,1]; E2 = u[:,2];
 I = u[:,3]; Ia = u[:,4]; R = u[:,5]
 
 plt.plot(t,S,label='S')
-plt.plot(t,E1,label='E1')
-plt.plot(t,E2,label='E2')
+#plt.plot(t,E1,label='E1')
+#plt.plot(t,E2,label='E2')
 plt.plot(t,I,label='I')
 plt.plot(t,Ia,label='Ia')
 plt.plot(t,R,label='R')
 plt.legend()
+plt.savefig('seir_fig0.pdf')
 plt.show()
