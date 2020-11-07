@@ -24,6 +24,9 @@ Ia_0 = 0
 R_0 = 0
 U0 = [S_0, E1_0, E2_0, I_0, Ia_0, R_0]
 
+print(SEEIIR_model([1,1,1,1,1,1],0))
+exit()
+
 solver = RungeKutta4(SEEIIR_model)
 solver.set_initial_condition(U0)
 time_points = np.linspace(0, 100, 101)

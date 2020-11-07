@@ -422,7 +422,7 @@ The model for the asymptomatic disease trajectory is somewhat simpler, with $I_a
 influx from $E_1$ and losing people directly to $R$. We have
 !bt
 \[
-    \frac{I_a}{dt} = \lambda_1  p_a E_1 - \mu I_a,
+    \frac{dI_a}{dt} = \lambda_1  p_a E_1 - \mu I_a,
 \]
 !et
 where we have assumed that the duration of the $I_a$ period is the same as for $I$, i.e. $1/\mu$.
