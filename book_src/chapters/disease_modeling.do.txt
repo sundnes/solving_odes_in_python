@@ -105,7 +105,7 @@ derivatives on the left-hand side:
 !bt
 \begin{align}
 S'(t) &= - \beta \frac{S I}{N}, label{sir_ode0}\\
-I'(t) &= \beta \frac{S I}{N}, -\nu I  label{sir_ode1}\\
+I'(t) &= \beta \frac{S I}{N} -\nu I  label{sir_ode1}\\
 R'(t) &= \nu I label{sir_ode2},
 \end{align}
 !et
