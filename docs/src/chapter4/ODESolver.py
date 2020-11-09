@@ -1,6 +1,6 @@
 """
-Version 1 of the ODESolver class hierarchy. This is the simplest version
-of the class, which only works for scalar ODEs.
+Version 2 of the ODESolver class hierarchy. This class works for systems
+of ODEs and for a single (scalar) ODE.
 """
 
 import numpy as np
