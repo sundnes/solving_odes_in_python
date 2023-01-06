@@ -13,6 +13,7 @@ general-purpose ODE solvers available both in Python and other programming langu
 
 
 ======= Creating a general-purpose ODE solver =======
+label{sec:fe_intro}
 When solving ODEs analytically one will typically consider a specific ODE or a class of ODEs, and try to derive
 a formula for the solution. In this chapter we want to implement numerical solvers that can be applied to any ODE,
 not restricted to a single example or a particular class of equations. For this purpose, we need a general abstract
@@ -82,7 +83,9 @@ compute a solution at all. As an example, consider the very simple ODE
 \[ u'=u .\]
 !et
 This equation has the general solution $u=Ce^t$ for any constant $C$, so it has an infinite number of solutions.
-Specifying an initial condition $u(0)=u_0$ gives $C=u_0$, and we get the unique solution $u=u_0e^t$. When solving the
+Specifying an initial condition $u(0)=u_0$ gives $C=u_0$, and we get the unique solution $u=u_0e^t$. An ODE with 
+a corresponding initial condition is often referred to as an *initial value problem*, and all the ODE problems
+we will consider in this book can be classified as such. When solving an initial value problem
 equation numerically, we start from our known $u_0$, and apply formula (ref{forw_euler}) repeatedly:
 !bt
 \begin{align*}
@@ -136,17 +139,14 @@ time step further will easily create a solution that cannot be distinguished fro
 
 FIGURE: [../chapters/fig-ode2/FE_n_10_20, width=600 frac=1] Solution of $u' = u, u(0) = 1$ with $\Delta t = 0.4$ and $\Delta t=0.2$. label{fig:ode0}
 
-Although detailed error analysis is 
-NBNBNB OK til hit NBNBNB
-
-=== Extending the solver to a general ODE. ===
+=== Extending the solver to the general ODE. ===
 As stated above, the purpose of this chapter is to create general-purpose ODE solvers, that can solve any ODE written
 on the form $u'=f(u,t)$. This requires a very small modification of the algorithm above;
  o Create arrays `t` and `u` of length $N+1$
  o Set initial condition: `u[0]` = $u_0$, `t[0]=0`
  o For $n=0,1,2,\ldots,N-1$:
-  * `u[n+1] = u[n] + dt*f(u[n], t[n])`
   * `t[n+1] = t[n] + dt`
+  * `u[n+1] = u[n] + dt*f(u[n], t[n])`
 
 The only change of the algorithm is in the formula for computing `u[n+1]` from `u[n]`.
 In the previous case we had $f(u,t) = u$, and to create a
@@ -160,7 +160,6 @@ def ForwardEuler(f, U0, T, N):
     u = np.zeros(N+1)  # u[n] is the solution at time t[n]
 
     u[0] = U0
-    t[0] = 0
     dt = T/N
 
     for n in range(N):
@@ -185,8 +184,6 @@ U0 = 1
 T = 3
 N = 30
 u, t = ForwardEuler(f, U0, T, N)
-plt.plt(t,u)
-plt.show()
 !ec
 The `ForwardEuler` function returns the two arrays `u` and `t`, which we can
 plot or process further as we want. One thing worth noticing in this code is the definition of the
@@ -195,9 +192,10 @@ with two arguments `u` and `t`, although in this case only `u` is used inside th
 The two arguments are needed because we want our solver to work for all ODEs on the
 form $u' = f(u,t)$, and the function is therefore called as `f(u[n], t[n])` inside
 the `ForwardEuler` function. If our right
-hand side function was defined as `def f(u):` we would get an error message when the
-function was called inside `ForwardEuler`. This problem is solved by simply writing
-`def f(u,t):` even if `t` is never used inside the function.[^rhs_note]
+hand side function was defined as a function of `u` only, i.e., using `def f(u):`, 
+we would get an error message when the function was called inside `ForwardEuler`. 
+This problem is solved by simply writing `def f(u,t):` even if `t` is never used 
+inside the function.[^rhs_note]
 
 # #if FORMAT != 'ipynb'
 [^rhs_note]: This way of defining the right hand side is a standard used by most
@@ -209,8 +207,9 @@ while others expect `u` first.
 
 For being only 15 lines of Python code, the capabilities of the `ForwardEuler`
 function above are quite remarkable. Using this function, we can solve any
-kind of linear or non-linear ODE, most of which would be impossible to solve
-using analytical techniques. The general recipe goes as follows:
+kind of linear or nonlinear ODE, most of which would be impossible to solve
+using analytical techniques. The general recipe for using this function can be summarized
+as follows:
  o Identify $f(u,t)$ in your ODE
  o Make sure you have an initial condition $u_0$
  o Implement the $f(u,t)$ formula in a Python function `f(u, t)`
@@ -222,13 +221,13 @@ It is worth mentioning that the FE method is the simplest of all
 ODE solvers, and many will argue that it is not very good. This is partly true,
 since there are many other methods that are more accurate and more stable when applied to
 challenging ODEs. We shall look at a few examples of such methods later in this
-chapter. However, the FE method is quite suitable for solving most ODEs.
+book. However, the FE method is quite suitable for solving most ODEs.
 If we are not happy with the accuracy we can simply reduce the time step, and
 in most cases this will give the accuracy we need with a negligible increase in computing time.
 
 
-
 ======= The ODE solver implemented as a class =======
+label{sec:fe_class}
 We can increase the flexibility of the `ForwardEuler`
 solver function by implementing it as a class. The usage of the class
 may for instance be as follows:
@@ -238,14 +237,15 @@ u, t = method.solve()
 plot(t, u)
 !ec
 The benefits of using a class instead of a function may not be obvious at this
-point, but it will become clear later. For now,
-let us just look at how such a solver class can be implemented:
+point, but it will become clear when we introduce different ODE solvers later. 
+For now, let us just look at how such a solver class would need to be implemented in 
+order to support the use case specified above:
   * We need a constructor (`__init__`) which takes `f`, `T`, `N`, and `U0` as arguments
     and stores them as attributes.
-  * The time step $\Delta t$ and the sequences $u_n$, $t_n$ must be
-    initalized and stored as attributes. These tasks are also natural to handle in the constructor.
   * The class needs a `solve`-method, which implements the for-loop and returns
     the solution, similar to the `ForwardEuler` function considered earlier.
+  * The time step $\Delta t$ and the sequences $u_n$, $t_n$ must be
+    initalized and stored as attributes. These tasks are natural to handle in the constructor.
 
 In addition to these methods, it may be convenient to implement the formula for
 advancing the solution one step as a separate method `advance`. In this way it
@@ -285,7 +285,7 @@ This class does essentially the same tasks as the `ForwardEuler` function above.
 The main advantage of the class implementation is
 the increased flexibility that comes with the `advance` method. As we shall see
 later, implementing a different numerical method typically only requires
-implementing a new version of this method, while all the other code can be left unchanged.
+implementing a new version of this method, while all other code can be left unchanged.
 
 We can also use a class to hold the right-hand side $f(u,t)$, which is
 particularly convenient for functions with parameters.
@@ -293,12 +293,14 @@ Consider for instance the model for logistic growth;
 !bt
 \[ u^{\prime}(t)=\alpha u(t)\left(  1-\frac{u(t)}{R}\right),\quad u(0)=U_0,\quad t\in [0,40],\]
 !et
-which is the ODE version of the difference equation considered in Chapter ref{ch:diff_eq}.
+which is typically used to model self-limiting growth of biological population, i.e., growth 
+that is constrained by limited resources. The initial growth is approximately exponential, with
+growth rate $\alpha$, and flattens out as the population size approaches the *carrying capacity* $R$. 
 The right hand side function has two parameters $\alpha$ and $R$, but if we
 want to solve it using our `ForwardEuler` function or class, it must be implemented
-as a function of $u$ and $t$ only. As we have discussed earlier in the course, %IN1900
-a class with a call method provides a very flexible implementation of such a
-function, since we can set the parameters as attributes in the constructor and
+as a function of $u$ and $t$ only. There are several ways to do this in Python, but one
+convenient approach is to implement the function as a class with a call method. 
+We can then define the parameters as attributes in the constructor and
 use them inside the `__call__` method:
 !bc pycod
 class Logistic:
@@ -313,14 +315,12 @@ The main program for solving the logistic growth problem may now look like:
 problem = Logistic(0.2, 1, 0.1)
 method = ForwardEuler_v1(problem,problem.U0,40,401)
 u, t = method.solve()
-plt.plot(t,u)
-plt.show()
 !ec
 
 FIGURE: [../chapters/fig-ode2/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model.
 
 === An alternative class implementation of the FE method. ===
-As always in programming, there are multiple ways to perform the same task. The
+As always in programming, there are multiple ways to perform the same task, and the
 `ForwardEuler_v1` class presented above is by no means the only possible class implementation of the
 FE method. A possible alternative implementation is
 !bc pycod
@@ -372,7 +372,8 @@ classes. To consider a concrete example, the solution of the same logistic
 growth problem as above, using the new class, may look as follows:
 !bc pycod
 problem = Logistic(0.2, 1, 0.1)
-time = np.linspace(0,40,401)
+T, N = 40, 401
+time = np.linspace(0,T,N)
 
 method = ForwardEuler_v2(problem)
 method.set_initial_condition(problem.U0)

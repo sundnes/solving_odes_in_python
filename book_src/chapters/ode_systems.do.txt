@@ -11,9 +11,9 @@ v' &= -u, \quad &&v(0) = 0.
 !et
 The solution of this system is $u=\cos t, v=\sin t$, which can easily be verified by insterting the solution into the equations
 and initial conditions. For more general cases, it is usually even more difficult to find analytical solutions of ODE systems
-than of scalar ODEs, and numerical methods are usually required. In this chapter we will extend the solvers introduced in
-Chapter ref{ch:ode_intro} to be able to solve systems of ODEs. We shall see that such an extension requires relatively small
-modifications of the code.
+than of scalar ODEs, and numerical methods are usually required. In this section we will extend the solvers introduced in
+sections ref{sec:fe_intro}-ref{sec:fe_class} to be able to solve systems of ODEs. We shall see that such an 
+extension requires relatively small modifications of the code.
 
 We want to develop general software that can be applied to any vector ODE or scalar ODE, and for this purpose it is
 useful to introduce general mathematical notation. We have $n$ unknowns
@@ -47,12 +47,13 @@ The ODE system can now be written
 where $u$ and $f$ are vectors and $u_0$ is a vector of initial conditions. We see that we use exactly the
 same notation as for scalar ODEs, and whether we solve a scalar or system of ODEs is determined by how we define $f$ and the initial
 condition $u_0$. This general notation is completely standard in text books on ODEs, and we can easily make the Python
-implementation just as general.
+implementation just as general. The generalization of our ODE solvers is facilitated considerably by the convenience of NumPy
+arrays and vectorized computations.
 
-======= An `ODESolver` class for systems of ODEs =======
-The `ODESolver` class above was written for a scalar ODE. We now want to make it work for a system
-$u'=f$, $u(0)=U_0$, where $u$, $f$ and $U_0$ are vectors (arrays). To identify how the code needs to be changed, let us start with
-the simplest method. Applying the forward Euler method to a system of ODEs yields an update formula that
+======= A `ForwardEuler` class for systems of ODEs =======
+The `ForwardEuler` classes above were written for scalar ODEs, and we now want to make it work for a system
+$u'=f$, $u(0)=U_0$, where $u$, $f$ and $U_0$ are vectors (arrays). To identify how the code needs to be changed, 
+let us first revisit the underlying numerical method. Applying the forward Euler method to a system of ODEs yields an update formula that
 looks exactly as for the scalar case, but where all the terms are vectors:
 !bt
 \[
@@ -81,11 +82,11 @@ containing all the right-hand sides $f^{(0)},\ldots,f^{(n-1)}$. To get a better
 feel for how these arrays look and how they are used,
 we may compare the array holding the solution of a scalar ODE to that of a system of two ODEs.
 For the scalar equation, both `t` and `u` are one-dimensional NumPy
-arrays, and indexing into `u` gives us numbers, representing the solution at each time step:
+arrays, and indexing into `u` gives us numbers, representing the solution at each time step: 
 !bc
-t = [0.  0.4 0.8 1.2 (...) ]
+t = array([0. ,  0.4, 0.8, 1.2, (...) ])
 
-u = [ 1.0 1.4  1.96 2.744  (...)]
+u = array([ 1.0 1.4  1.96 2.744  (...)])
 
 u[0] = 1.0
 u[1] = 1.4
@@ -97,10 +98,13 @@ now two-dimensional, with one column for each solution component. Indexing into 
 yields one-dimensional arrays of length two, which are the two solution components
 at each time step:
 !bc
-u = [[1.0 0.8][1.4 1.1] [1.9 2.7] (...)]
+u = array([[1.0, 0.8],
+           [1.4, 1.1],
+           [1.9, 2.7],
+              (...)])
 
-u[0] = [1.0 0.8]
-u[1] = [1.4 1.1]
+u[0] = array([1.0, 0.8])
+u[1] = array([1.4, 1.1])
 
 (...)
 !ec
@@ -108,22 +112,24 @@ u[1] = [1.4 1.1]
 # #if FORMAT  != 'ipynb'
 [^numpy]: This compact notation requires that the solution vector `u` is represented by
 a NumPy array. We could also, in principle, use lists to hold the solution components, but
-the resulting code would need to loop over the components and be far less elegant and readable.
+the resulting code would need to loop over the components and would be far less elegant and readable.
 # #endif
 
 The similarity of the generic notation for vector and scalar ODEs, and the
 convenient algebra of NumPy arrays, indicate that the solver
 implementation for scalar and system ODEs can also be very similar. This is indeed true,
-and the `ODESolver` class from the previous chapter can be made to work for ODE
+and the `ForwardEuler_v2` class from the previous chapter can be made to work for ODE
 systems by a few minor modifactions:
  * Ensure that `f(u,t)` always returns an array.
  * Inspect $U_0$ to see if it is a single number or a list/array/tuple and
    make the `u` either a one-dimensional or two-dimensional  array
 If these two items are handled and initialized correctly, the rest of the code from
-Chapter ref{ch:ode_intro} will in fact work with no modifications.
+Section ref{sec:fe_class} will in fact work with no modifications.
 The extended superclass implementation may look like:
 !bc pycod
-class ODESolver:
+import numpy as np
+
+class ForwardEuler:
     def __init__(self, f):
         # Wrap user's f in a new function that always
         # converts list/tuple to array (or let array be array)
@@ -170,89 +176,84 @@ initialized to a one- or two-dimensional array of the correct size. The
 actual for-loop, as well as the implementation of the `advance` method in the
 subclasses, can be left unchanged.
 
-=== Example: ODE model for throwing a ball. ===
+=== Example: ODE model for a pendulum. ===
 To demonstrate the use of
-the extended `ODESolver` hierarchy, let us derive and solve a system of ODEs
-describing the trajectory of a ball.
-We first define $x(t),y(t)$ to be the position of the ball, $v_x$ and $v_y$ the velocity components,
-and $a_x,a_y$ the acceleration components. From the definition of velocity and acceleration,
-we have $v_x = dx/dt, v_y = dy/dt, a_x = dv_x/dt$, and $a_y = dv_y/dt$.
-If we neglect air resistance there are no forces acting on the ball in the $x$-direction,
-so from Newton's second law we have $a_x = 0$. In the $y$-direction the acceleration
-must be equal to the acceleration of gravity, which yields $a_y = -g$.
-In terms of the velocities, we have
-!bt
-\begin{align*}
-a_x &= 0 \quad \Rightarrow \quad \frac{dv_x}{dt} = 0, \\
-a_y &= -g \quad \Rightarrow \quad \frac{dv_y}{dt} = -g\mbox{\ } ,
-\end{align*}
-!et
-and the complete ODE system can be written as
+the updated `ForwardEuler` class, we consider a system of ODEs describing the motion 
+of a simple pendulum, as illustrated in Figure ref{fig:pendulum}. This nonlinear system
+is a classic physics problem, and despite its simplicity it is not possible to find 
+an exact analytical solution. We will formulate the system in terms of two main
+variables; the angle $\theta$ and the angle velocity $\omega$, see Figure ref{fig:pendulum}.
+For a simple pendulum with no friction, the dynamcs of these two variables is governed by
 !bt
 \begin{align}
-{dx\over dt} &= v_x, label{vx} \\
-{dv_x\over dt} &= 0,label{ax} \\
-{dy\over dt} &= v_y,label{vy} \\
-{dv_y\over dt} &= -g.label{ay}
+\frac{d \theta}{dt} &= \omega, label{pendulum1} \\
+\frac{d \omega}{dt} &= -\frac{g}{L}\sin(\theta), label{pendulum2}  
 \end{align}
-!et
-To solve the system we need to define initial conditions for all four unknowns,
-i.e., we need to know the initial position and velocity of the ball.
+where $L$ is the length of the pendulum and $g$ is the gravitational constant. Eq. (ref{pendulum1}) follows
+directly from the definition of the angular velocity, while (ref{pendulum2}) follows from Newton's second 
+law, where $d\omega/dt$ is the acceleration and the right hand side is the tangential component of
+the gravitational force acting on the pendulum, divided by its mass.  
+To solve the system we need to define initial conditions for both unknowns,
+i.e., we need to know the initial position and velocity of the pendulum. 
 
-A closer inspection of the system (ref{vx})-(ref{ay}) will reveal that although
-this is a coupled system of ODEs, the coupling is in fact quite weak and the system is
-easy to solve analytically. There is essentially a one-way coupling between equations
-(ref{ax}) and (ref{vx}), the same between (ref{ay}) and (ref{vy}), and no other coupling
-between the equations. We can easily solve (ref{ax}) to conclude that $v_x$ is a constant,
-and inserting a constant on the right hand side of (ref{vx}) yields that $x$ must be a linear
-function of $t$. Similarly, we can solve (ref{ay}) to find that $v_y$ is a linear function, and then
-insert this into (ref{vy}) to find that $y$ is a quadratic function of $t$. The functions
-$x(t)$ and $y(t)$ will contain four unknown coefficients that must be determined from the
-initial conditions.
+FIGURE: [./fig-ode2/penulum.png, width=800 frac=0.8] Illustration of the pendulum problem. The main variable of interest is the angle $\theta$ and the angular velocity $\omega$. label{fig:pendulum}
 
-Although the analytical solution is available, we want to use the `ODESolver`
-class hierarchy presented above to solve this system. The first step is then to
-implement the right hand side as a Python function:
+Since the right hand side defined by (ref{pendulum1})-(ref{pendulum2}) includes the 
+parameters $L$ and $g$, it is convenient to implement it as a class, as illustrated for the logistic
+growth model earlier. A possible implementation may look like this:
 !bc pycod
-def f(u, t):
-    x, vx, y, vy = u
-    g = 9.81
-    return [vx, 0, vy, -g]
+from math import sin
+
+class Pendulum
+    def __init__(self, L, g = 9.81):
+        self.L = L 
+        self.g = g 
+    
+    def __call__(u, t):
+        theta, omega = u
+        dtheta = omega
+        domega = -self.g/self.L * sin(theta)
+        return [dtheta, domega]
 !ec
-We see that the function here returns a list, but this will automatically
-be converted to an array by the solver class' constructor,
+We see that the function returns a list, but this will automatically
+be wrapped into a function returning an array by the solver class' constructor,
 as mentioned above. The main program is not very different
 from the examples of the previous chapter, except that we need to define an
-initial condition with four components:
+initial condition with two components. Assuming that this class definition as 
+well as the `ForwardEuler` exist in the same file, the code to solve the pendulum problem
+can look like this: 
 !bc pycod
-from ODESolver import ForwardEuler
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Initial condition, start at the origin:
-x = 0; y = 0
-# velocity magnitude and angle:
-v0 = 5; theta = 80*np.pi/180
-vx = v0*np.cos(theta); vy = v0*np.sin(theta)
+# Initial condition:
+theta0, omega0 = np.pi/4, 0
 
-U0 = [x, vx, y, vy]
+pendulum = Pendulum(L=1)
 
-solver= ForwardEuler(f)
-solver.set_initial_condition(U0)
-time_points = np.linspace(0, 1.0, 101)
+solver= ForwardEuler(pendulum)
+solver.set_initial_condition((theta0,omega0))
+time_points = np.linspace(0, 10.0, 101)
 u, t = solver.solve(time_points)
-# u is an array of [x,vx,y,vy] arrays, plot y vs x:
-x = u[:,0];  y = u[:,2]
-
-plt.plot(x, y)
+# u is an array of [theta,omega] arrays, we plot both:
+plt.plot(x, u[:,0],label=r'$\theta$')
+plt.plot(x, u[:,1],label=r'$\omega$')
+plt.legend()
 plt.show()
 !ec
 Notice that since `u` is a two-dimensional array, we use array slicing to extract and plot the individual components.
-A call like `plt.plot(t,u)` will also work, but it will plot all the solution
-components in the same window, which for this particular model is not very useful.
-A very useful exercise is to extend this code to plot the analytical solution of the system in the
-same window as the numerical solution. The system can be solved as outlined above, and the
-unknown coefficients in the solution formulas can be determined from the given initial conditions.
-With the chosen number of time steps there will be a visible difference between the numerical
-solution and the analytical solution, but this can easily be removed
-by reducing the time step or choosing a more accurate solver.
+In this specific example a call like `plt.plot(t,u)` would also work, and would plot both solution
+components. However, we are often interested in plotting selected components of the solution, and
+in this case the array slicing is needed. The resulting plot is shown in Figure ref{fig:pendulum_sol}.
+
+======= Checking the error in the numerical solution =======
+Recall from Section ref{sec:ode_intro} that we derived the Forward Euler method by approximating the
+derivative with a finite difference;
+!bt
+\[ u'(t_n)\approx \frac{u(t_{n+1})-u(t_n)}{\Delta t} .\]
+!et
+This approximation obviously introduces an error, and since we approach the true derivative as $\Delta t\rightarrow 0$ it
+is quite intuitive that the error depends on the size of the time step $\Delta t$. This relation was also illustrated
+in Figure ref{fig:ode0}. However, it is of course useful to have a more precise quantification of how the
+error depends on the time step. Such error analysis, and the design of numerical methods with (NBNB ....) 
+
