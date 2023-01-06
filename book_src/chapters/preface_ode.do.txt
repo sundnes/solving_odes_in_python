@@ -44,7 +44,7 @@ programming of ODE solvers in Chapter ref{ch:ode_intro}.
 ## Just dump native latex
 \noindent
 \ \\
-{\it August 2020}  \hfill  {\it Joakim Sundnes}
+{\it August 2021}  \hfill  {\it Joakim Sundnes}
 # #else
-*Joakim Sundnes*, July 2020
+*Joakim Sundnes*, August 2021
 # #endif

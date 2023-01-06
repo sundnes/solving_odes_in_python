@@ -63,16 +63,19 @@ so there is really no need to formulate and solve the problem as
 a difference equation. However, very simple generalizations, such as a non-constant interest rate,
 makes this formula difficult to apply, while a formulation based on a
 difference equation will still be applicable. To formulate the problem as a
-difference equation, we use the fact that the amount $x_n$ at year $n$ is simply the
-amount at year $n-1$ plus the interest for year $n-1$. This gives the following
-relation between $x_n$ and $x_{n-1}$:
+difference equation, we use the fact that the amount $x_{n+1}$ at year $n+1$ is simply the
+amount at year $n$ plus the interest for year $n$. This gives the following
+relation between $x_{n+1}$ and $x_n$:
 !bt
-\[ x_{n} = x_{n-1} + {p\over 100}x_{n-1} . \]
+\[ x_{n+1} = x_{n} + {p\over 100}x_{n} . \]
 !et
 In order to compute $x_n$, we can now simply start with the known $x_0$, and compute $x_1, x_2, \ldots, x_n$.
 The procedure involves repeating a simple calculation many times, which is tedious to do by
 hand, but very well suited for a computer. The complete program for solving this
 difference equation may look like:
+XXX fiks alle indekser XXX
+
+
 !bc pycod
 import numpy as np
 import matplotlib.pyplot as plt
@@ -249,59 +252,6 @@ p[Np:] = 5.0
 !ec
 
 
-
-======= Systems of Difference Equations  =======
-To consider a related example to the one above, assume that we have a fortune $F$ invested with an
-annual interest rate of $p$ percent. Every year we plan to consume an amount $c_n$, where $n$ counts years,
-and we want to compute our fortune $x_n$ at year $n$. The problem can be
-formulated as a small extension of the difference equation considered earlier.
-by reasoning that the fortune at year $n$ is equal to the fortune at year $n-1$
-plus the interest minus the amount we spent in year $n-1$. We have
-!bt
-\[ x_n = x_{n-1} + {p\over 100}x_{n-1} - c_{n-1} \]
-!et
-In the simplest case $c_n$ is constant, but inflation demands $c_n$ to increase. To solve this problem, we assume that
-$c_n$ should grow with a rate of $I$ percent per year, and in the first year we want to consume $q$ percent of first year's
-interest. The extension of the difference equation above becomes
-!bt
-\begin{align*}
-x_n &= x_{n-1} + {p\over 100}x_{n-1} - c_{n-1}, \\
-c_n &= c_{n-1} + {I\over 100}c_{n-1} .
-\end{align*}
-!et
-with initial conditions $x_0=F$ and $c_0 = (pF/100)(q/100)  = \frac{pFq}{10000}$. This is a coupled system of two
-difference equations, but the programming is not much more difficult than for the
-single equation above. We simply create two arrays `x` and `c`, initialize `x[0]`
-and `c[0]` to the given initial conditions, and then update `x[n]` and `c[n]`
-inside the loop. A complete code may look like
-!bc pycod
-import numpy as np
-import matplotlib.pyplot as plt
-F = 1e7                      # initial amount
-p = 5                         # interest rate
-I = 3
-q = 75
-N = 40                         # number of years
-index_set = range(N+1)
-x = np.zeros(len(index_set))
-c = np.zeros_like(x)
-
-x[0] = F
-c[0] = q*p*F*1e-4
-
-for n in index_set[1:]:
-    x[n] = x[n-1] + (p/100.0)*x[n-1] - c[n-1]
-    c[n] = c[n-1] + (I/100.0)*c[n-1]
-
-plt.plot(index_set, x, 'ro',label = 'Fortune')
-plt.plot(index_set, c, 'go', label = 'Yearly consume')
-plt.xlabel('years')
-plt.ylabel('amounts')
-plt.legend()
-plt.show()
-!ec
-
-
 ======= More Examples of Difference Equations =======
 As noted above, sequences, series, and difference equations have countless applications
 in mathematics, science, and engineering. Here we present a selection of well known examples.
@@ -452,11 +402,10 @@ this may speed up the program considerably.
 
 
 === Newton's method as a difference equation  ===
-Earlier in the course %IN1900
-we introduced Newton's method for solving non-linear equations on the form
+Newton's method is a popular method for solving non-linear equations on the form
 !bt
 \[
-f(x)=0
+f(x)=0 .
 \]
 !et
 Starting from some initial guess $x_0$, Newton's method
@@ -493,23 +442,144 @@ number of iteration. Although the method is implemented as a while-loop rather
 than a for-loop, the main structure of the algorithm is exactly the same as for the
 other difference equations considered earlier.
 
+
+
+======= Systems of Difference Equations  =======
+All the examples considered so far have been scalar difference equations, which describe how a single quantity
+changes from one step to the next. However, many applications require tracking multiple variables
+simultaneously, and dynamics of these variables may be coupled in the sense that the value of one variable
+at step $n$ depends on the value of multiple variables at step $n-1$. As an example we may consider a simple
+extension of the interest rate model considered earlier. Assume that we have a fortune $F$ invested with an
+annual interest rate of $p$ percent, just as above, but now we also want to consume an amount $c_n$ every year.
+We model for computing our fortune $x_n$ at year $n$ can be 
+formulated as a small extension of the difference equation considered earlier.
+First, simple reasoning tells us that the fortune at year $n$ is equal to
+the fortune at year $n-1$ plus the interest minus the amount we
+spent in year $n-1$. We have
+!bt
+\[ x_n = x_{n-1} + {p\over 100}x_{n-1} - c_{n-1} . \]
+!et
+In the simplest case we can assume that $c_n$ is constant, which would make this model a trivial
+extension of the interest rate model considered earlier. However, it is more natural to let $c_n$ increase because of
+inflation, and in this case we obtain a system of difference equations describing the evolution of $x_n$ and $c_n$.
+For instance, we may assume that $c_n$ should grow with a rate of $I$ percent per year, and in the first year
+we want to consume $q$ percent of first year's interest. The governing system of difference equations then
+becomes
+!bt
+\begin{align*}
+x_n &= x_{n-1} + {p\over 100}x_{n-1} - c_{n-1}, \\
+c_n &= c_{n-1} + {I\over 100}c_{n-1} .
+\end{align*}
+!et
+with initial conditions $x_0=F$ and $c_0 = (pF/100)(q/100)  = \frac{pFq}{10000}$. This is a coupled
+system of two first order difference equations, but the programming is not much more difficult than for the
+single equation above. We simply create two arrays `x` and `c`, initialize `x[0]`
+and `c[0]` to the given initial conditions, and then update `x[n]` and `c[n]`
+inside the loop. A complete code may look like
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+F = 1e7                      # initial amount
+p = 5                         # interest rate
+I = 3
+q = 75
+N = 40                         # number of years
+index_set = range(N+1)
+x = np.zeros(len(index_set))
+c = np.zeros_like(x)
+
+x[0] = F
+c[0] = q*p*F*1e-4
+
+for n in index_set[1:]:
+    x[n] = x[n-1] + (p/100.0)*x[n-1] - c[n-1]
+    c[n] = c[n-1] + (I/100.0)*c[n-1]
+
+plt.plot(index_set, x, 'ro',label = 'Fortune')
+plt.plot(index_set, c, 'go', label = 'Yearly consume')
+plt.xlabel('years')
+plt.ylabel('amounts')
+plt.legend()
+plt.show()
+!ec
+
+As another example of a system of difference equations, we may consider an extension of the
+logistic growth model considered earlier. While the logistic model describes the growth
+of a single population in the absence of predators, the famous Lotke-Volterra model
+describes the interaction of two species, a predator and a prey, in the same ecosystem.
+If we let $x_n$ be the number of prey and $y_n$ the number of predators on day $n$,
+the model for the population dynamics can be written as 
+!bt
+\begin{align*}
+x_n &= x_{n-1} + a x_{n-1} − b x_{n-1}y_{n-1}, \\
+y_n &= y_{n-1} + db x_{n-1}y_{n-1} − c y_{n-1}.
+\end{align*}
+!et
+Here, $a$ is the natural growth rate of the prey in the absence of predators,
+$b$ is the death rate of prey per encounter of prey and predator, 
+$c$ is the natural death rate of predators in the absence of food (prey), and
+$d$ is the efficiency of turning predated prey into predators. This is a system
+of two first-order difference equations, just as the previous example, and a complete
+solution code may look as follows. 
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+x0 = 100                # initial prey population
+y0 = 8                  # initial predator pop.
+a = 0.0015
+b = 0.0003
+c = 0.006
+d = 0.5
+N = 10000               # number of time units (days)
+index_set = range(N+1)
+x = np.zeros(len(index_set))
+y = np.zeros_like(x)
+
+print(x.shape)
+
+x[0] = x0
+y[0] = y0
+
+for n in index_set[1:]:
+    x[n] = x[n-1] + a*x[n-1] - b*x[n-1]*y[n-1]
+    y[n] = y[n-1] + d*b*x[n-1]*y[n-1] - c*y[n-1]
+
+plt.plot(index_set, x,label = 'Prey')
+plt.plot(index_set, y, label = 'Predator')
+plt.xlabel('Time')
+plt.ylabel('Population')
+plt.legend()
+plt.show()
+!ec
+We 
+
+
+
+
+
 ======= Taylor Series and Approximations =======
 One extremely important use of sequences and series is for approximating
-other functions. For instance, commonly used functions such as
+functions. For instance, commonly used functions such as
 $\sin x, \ln x$, and $e^x$ have been defined to have some desired mathematical
-properties, but we need some kind of algorithm to evaluate the function values.
-A convenient approach is to approximate $\sin x$, etc. by polynomials, since
-they are easy to calculate. It turns out that such approximations
-exist, for example this result by Gregory from 1667:
+properties, and we have an intuitive understanding of how they look,
+but we need some kind of algorithm to evaluate the function values.
+A convenient approach would be to approximate these functions by polynomials,
+since they are easy to calculate. It turns out that such polynomial
+approximations exist, and they have been used for centuries to compute
+exponentials, trigonometric, and other functions. By far, the most famous and
+widely used series of this kind are the Taylor series, discovered in 1715:
 !bt
-\[ \sin x = \sum_{k=0}^\infty (-1)^k\frac{x^{2k+1}}{(2k+1)!}\]
-!et
-and an even more amazing result discovered by Taylor in 1715:
-!bt
-\[ f(x) = \sum_{k=0}^\infty \frac{1}{k!}(\frac{d^kf(0)}{dx^k})x^k .\]
+\begin{equation*}
+f(x) = \sum_{k=0}^\infty \frac{1}{k!}(\frac{d^kf(0)}{dx^k})x^k .
+\label{taylor0}\end{equation*}
 !et
 Here, the notation $d^kf(0)/dx^k$ means the $k$-th derivative of $f$ evaluated
-at $x=0$. Taylor's result means that for any function $f(x)$, if we can compute the
+at $x=0$. We can calculate a few of the terms in the sum to get
+!bt
+\[ f(x) = f(0)+f'(0)x+\frac{1}{2}f''(0)x^2 + \frac{1}{6} f'''(0) x^3 \ldots , \]
+!et
+which makes it obvious that the right hand side of (ref{taylor0}) is in fact a polynomial in $x$.
+Taylor's result means that for any function $f(x)$, if we can compute the
 function value and its derivatives for $x=0$, we can approximate the function
 value at any $x$ by evaluating a polynomial. For practical applications, we always work
 with a truncated version of the Taylor series:
@@ -517,15 +587,25 @@ with a truncated version of the Taylor series:
 \begin{equation}
 f(x) \approx \sum_{k=0}^{N}
 \frac{1}{k!}(\frac{d^kf(0)}{dx^k} )x^k .
-\label{taylor0}\end{equation}
+\label{taylor1}\end{equation}
 !et
 The approximation improves as $N$ is increased, but the most popular
 choice is actually $N=1$, which gives a reasonable approximation close to $x=0$ and
-has been essential in developing physics and technology.
+has been essential in developing physics and technology. By a shift of variables
+we can make these truncated Taylor series accurate asround any value $x=a$:
+!bt
+\[
+f(x) \approx \sum_{k=0}^{N}
+\frac{1}{k!}(\frac{d^kf(a)}{dx^k} )(x-a)^k .
+\]
+!et
+In chapter ref{ch:rk1}
+we will use such truncated Taylor series to derive solvers for ODEs and
+to analyze their accuracy. 
 
-As an example, consider the Taylor approximation to the exponential function.
-For this function we have that $d^k e^x/dx^k = e^x$ for all $k$, and $e^0 = 1$,
-and inserting this into (ref{taylor0}) yields
+As a specific example of a Taylor series, consider the exponential function, where
+we know that $d^k e^x/dx^k = e^x$ for all $k$, and $e^0 = 1$. 
+Inserting this into (ref{taylor1}) yields
 !bt
 \begin{align*}
 e^x &= \sum_{k=0}^\infty \frac{x^k}{k!} \\
@@ -542,16 +622,20 @@ e^x&\approx 1 + x + \frac{1}{2}x^2 + \frac{1}{6}x^3,
 respectively.
 These approximations are obviously not very accurate for large $x$,
 but close to $x=0$ they are sufficiently accurate for many
-applications. By a shift of variables we can also make the Taylor
-polynomials accurate around any point  $x=a$:
-!bt
-\[ f(x) \approx \sum_{k=0}^N \frac{1}{k!}(\frac{d^k}{dx^k} f(a))(x-a)^k .\]
-!et
+applications.
 
+#NBNB not sure if this should be included or not:
+#Taylor series approximations for other functions can be constructed by similar arguments.
+#Consider, for instance, $sin(x)$, where the derivatives follow the repetivive pattern
+#$sin'(x) = cos(x), sin''(x) = -sin(x), sin'''(x) = -cos(x), \dots...$. We also have $sin(0)=0, cos(0)=1$,
+#so in general we have 
+#$d^k sin(0)/dx^k = (-1)^k mod(k,2)$, where $mod(k,2)$ is zero for $k$ even and
+#one for $k$ odd.Inserting this into (ref{taylor0}), we get
+#!bt
+#\[ \sin x = \sum_{k=0}^\infty (-1)^k\frac{x^{2k+1}}{(2k+1)!} .\]
+#!et
 
-=== Taylor series formulated as a difference equation. ===
-label{diffeq:Taylor:exp:1}
-
+=== Taylor series formulated as difference equations.  ===
 We consider again the Taylor series for $e^x$ around $x=0$, given by
 !bt
 \[  e^x= \sum_{k=0}^\infty {x^k\over k!} .\]
@@ -593,7 +677,7 @@ Although we are here solving a system of two difference equations, the computati
 is far more efficient than solving the single equation in (ref{taylor_diffeq0})
 directly, since we avoid the repeated multiplications involved in the factorial computation.
 
-A complete Python code for solving the difference equation and compute the Taylor
+A complete Python code for solving the system of difference equation and computing the Taylor
 approximation to the exponential function may look like
 !bc pycod
 import numpy as np
