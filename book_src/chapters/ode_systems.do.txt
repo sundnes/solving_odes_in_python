@@ -205,12 +205,12 @@ growth model earlier. A possible implementation may look like this:
 !bc pycod
 from math import sin
 
-class Pendulum
+class Pendulum:
     def __init__(self, L, g = 9.81):
         self.L = L 
         self.g = g 
     
-    def __call__(u, t):
+    def __call__(self, t, u):
         theta, omega = u
         dtheta = omega
         domega = -self.g/self.L * sin(theta)
