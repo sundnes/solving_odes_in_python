@@ -61,11 +61,11 @@ This method is known as the *Forward Euler (FE) method* or the *Explicit Euler M
 and is the simplest numerical method for solving an ODE. The classification as a *forward*
 or *explicit* method referw to the fact that we have an explicit update formula for $u(t_{n+1}$,
 which only involves known quantities at time $t_n$. In contrast, for an *implicit* ODE solver
-the update formula will include terms on the form $f(u(t_{n+1),t_{n+1})$, and we need to solve 
+the update formula will include terms on the form $f(u(t_{n+1},t_{n+1})$, and we need to solve 
 a generally nonlinear equation to determine the unknown $u(t_{n+1})$. We will visit other explicit ODE solvers in
 Chapter ref{ch:runge_kutta} and implcit solvers in ref{ch:stiff}. 
 
-To simplify the formula a bit we introduce the notation $u_{n} = $u(t_{n})$, i.e., 
+To simplify the formula a bit we introduce the notation $u_{n} = u(t_{n})$, i.e., 
 we let $u_n$ denote the numerical approximation to the exact solution $u(t)$ at $t=t_n$.
 The update formula now reads 
 !bt
@@ -106,7 +106,7 @@ we perform the following steps:
   * `u[n+1] = (1 + dt)*u[n]`
 
 # #if FORMAT != 'ipynb'
-[^step_note]: For $N$ time steps, the length of the arrays needs to be $N+1$ since
+[^steps_note]: For $N$ time steps, the length of the arrays needs to be $N+1$ since
 we need to store both end points, i.e., $t_0,t_1, \ldots, t_n$ and $u_0,u_1, \ldots, u_n$. 
 # #endif
 
