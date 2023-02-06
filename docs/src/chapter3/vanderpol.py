@@ -1,4 +1,5 @@
 from ODESolver import *
+from ImplicitEuler import *
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,7 +15,7 @@ class VanderPol:
 
 model = VanderPol(mu=5)
 
-solver = ForwardEuler(model)
+solver = ImplicitEuler(model)
 solver.set_initial_condition([1,0])
 
 time = np.linspace(0,20,5001)
