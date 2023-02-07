@@ -226,6 +226,7 @@ and for the first time step, with $u(0) = 1$, we get
 \[
 u_1 = \frac{1}{1-\Delta t\lambda} .    
 \]
+!et
 The stability function of the BE method is therefore $R(z) = 1/(1-z)$, and the corresponding stability domain 
 shown in the left panel of Figure (NB ref ny fig). The method is stable for all choices of $\lambda \Delta t$
 *outside* the circle with radius one and center at (1,0) in the complex plane, confirming that the BE 

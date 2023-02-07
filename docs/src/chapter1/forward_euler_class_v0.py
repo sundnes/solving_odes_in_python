@@ -9,19 +9,19 @@ import matplotlib.pyplot as plt
 class ForwardEuler_v0:
     def __init__(self, f): 
         self.f = f #, self.U0, self.T, self.N = f, U0, T, N
-        #self.dt = T/float(N)
-        #self.u = np.zeros(self.N+1)
-        #self.t = np.zeros(self.N+1)
-
+        
     def set_initial_condition(self,u0):
         self.u0 = u0
 
-    def solve(self,T,N):
-        """Compute solution for 0 <= t <= T."""
+    def solve(self,t_span,N):
+        """Compute solution for t_span[0] <= t <= t_span[1],
+        using N steps."""
+        t0,T = t_span
         self.dt = T/N
         self.t = np.zeros(N+1) #N steps ~ N+1 time points
         self.u = np.zeros(N+1)
         
+        self.t[0] = t0
         self.u[0] = self.u0
         
         for n in range(N):
