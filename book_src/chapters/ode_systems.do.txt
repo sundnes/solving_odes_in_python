@@ -207,7 +207,7 @@ the gravitational force acting on the pendulum, divided by its mass.
 To solve the system we need to define initial conditions for both unknowns,
 i.e., we need to know the initial position and velocity of the pendulum. 
 
-FIGURE: [../chapters/fig-ode2/pendulum.png, width=100 frac=0.2] Illustration of the pendulum problem. The main variable of interest is the angle $\theta$ and the angular velocity $\omega$. label{fig:pendulum}
+FIGURE: [../chapters/figs_ch1/pendulum.png, width=100 frac=0.2] Illustration of the pendulum problem. The main variables of interest are the angle $\theta$ and the angular velocity $\omega$. label{fig:pendulum}
 
 Since the right hand side defined by (ref{pendulum1})-(ref{pendulum2}) includes the 
 parameters $L$ and $g$, it is convenient to implement it as a class, as illustrated for the logistic
@@ -234,28 +234,33 @@ initial condition with two components. Assuming that this class definition as
 well as the `ForwardEuler` exist in the same file, the code to solve the pendulum problem
 can look like this: 
 !bc pycod
-import numpy as np
 import matplotlib.pyplot as plt
 
-# Initial condition:
+problem = Pendulum(L=1)
+solver = ForwardEuler(problem)
 theta0, omega0 = np.pi/4, 0
-
-pendulum = Pendulum(L=1)
-
-solver= ForwardEuler(pendulum)
 solver.set_initial_condition((theta0,omega0))
-time_points = np.linspace(0, 10.0, 101)
-u, t = solver.solve(time_points)
-# u is an array of [theta,omega] arrays, we plot both:
-plt.plot(x, u[:,0],label=r'$\theta$')
-plt.plot(x, u[:,1],label=r'$\omega$')
+T = 10
+N = 1000
+t, u = solver.solve(t_span=(0,T),N=N)
+
+plt.plot(t,u[:,0],label=r'$\theta$')
+plt.plot(t,u[:,1],label=r'$\omega$')
 plt.legend()
 plt.show()
 !ec
 Notice that since `u` is a two-dimensional array, we use array slicing to extract and plot the individual components.
 In this specific example a call like `plt.plot(t,u)` would also work, and would plot both solution
 components. However, we are often interested in plotting selected components of the solution, and
-in this case the array slicing is needed. The resulting plot is shown in Figure ref{fig:pendulum_sol}.
+in this case the array slicing is needed. The resulting plot is shown in Figure ref{fig:pendulum_sol}. 
+The observant reader may also notice that the amplitude of the pendulum motion appears to increase over time, 
+which is clearly not physically correct. In fact, for an undamped pendulum problem defined by 
+(ref{pendulum1})-(ref{pendulum2}), the energy is conserved and the amplitude should therefore be constant. 
+The increasing amplitude is a numerical artefact introduced by the forward Euler method, and the solution
+may be improved by reducing the time step or replacing the numerical method. 
+
+FIGURE: [../chapters/figs_ch1/pendulum_FE.pdf, width=600 frac=1] Solution of the simple pendulum problem, computed with the forward Euler method. 
+
 
 ======= Checking the error in the numerical solution =======
 Recall from Section ref{sec:fe_intro} that we derived the FE method by approximating the

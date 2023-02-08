@@ -26,7 +26,7 @@ class ODESolver:
         t0,T = t_span
         self.dt = T/N
         self.t = np.zeros(N+1) #N steps ~ N+1 time points
-        self.u = np.zeros(N+1)
+        self.u = np.zeros((N+1,self.neq))
         
         self.t[0] = t0
         self.u[0] = self.u0

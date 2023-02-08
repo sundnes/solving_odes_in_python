@@ -1,4 +1,5 @@
 from math import sin
+import matplotlib.pyplot as plt
 
 class Pendulum:
     def __init__(self, L, g = 9.81):
@@ -15,11 +16,11 @@ class Pendulum:
 if __name__ == '__main__':
     from forward_euler_class_v1 import *
     problem = Pendulum(L=1)
-    solver = ForwardEuler_v1(problem)
+    solver = ForwardEuler(problem)
     solver.set_initial_condition([np.pi/4,0])
     T = 10
     N = 1000
-    t, u = solver.solve(T=T,N=N)
+    t, u = solver.solve(t_span=(0,T),N=N)
     
     plt.plot(t,u[:,0],label=r'$\theta$')
     plt.plot(t,u[:,1],label=r'$\omega$')
@@ -27,4 +28,5 @@ if __name__ == '__main__':
     plt.xlabel('t')
     plt.ylabel(r'Angle ($\theta$) and angular velocity ($\omega$)')
     plt.legend()
+    plt.savefig('pendulum_FE.pdf')
     plt.show()

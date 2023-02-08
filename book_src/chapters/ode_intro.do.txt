@@ -74,7 +74,7 @@ or *explicit* method referw to the fact that we have an explicit update formula 
 which only involves known quantities at time $t_n$. In contrast, for an *implicit* ODE solver
 the update formula will include terms on the form $f(u(t_{n+1},t_{n+1})$, and we need to solve 
 a generally nonlinear equation to determine the unknown $u(t_{n+1})$. We will visit other explicit ODE solvers in
-Chapter ref{ch:runge_kutta} and implcit solvers in ref{ch:stiff}. 
+Chapter ref{ch:runge_kutta} and implicit solvers in Chapter ref{ch:stiff}. 
 
 To simplify the formula a bit we introduce the notation $u_{n} = u(t_{n})$, i.e., 
 we let $u_n$ denote the numerical approximation to the exact solution $u(t)$ at $t=t_n$.

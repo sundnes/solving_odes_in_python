@@ -7,8 +7,8 @@
 * Implicit Runge-Kutta methods
 * The BDF method
 
-In the previous chapter we introduced Explicit Runge-Kutta (ERK) methods and observed
-how they could conveniently be implemented as a hierarchy of ODE solvers. For most
+In the previous chapter we introduced explicit Runge-Kutta (ERK) methods and observed
+how they could conveniently be implemented as a hierarchy of Python classes. For most
 ODE systems, replacing the simple forward Euler method with a higher-order ERK method
 will significantly reduce the number of time steps needed to reach a 
 specified accuracy. In most cases it will also lead to a reduced overall computation time,
@@ -18,23 +18,23 @@ very small time steps, and any attempt to increase the time step will lead to sp
 oscillations and possible divergence of the solution. These ODE systems are usually
 referred to as *stiff*, and none of the explicit methods introduced in the previous
 chapters do a very good job at solving them. We shapp see that implicit solvers such as
-Implicit Runge-Kutta (IRK) methods are far better suited for stiff problems, and may give
+implicit Runge-Kutta (IRK) methods are far better suited for stiff problems, and may give
 substantial reduction of the computation time for challenging problems.
 
-======= Stiff ODE system and stability =======
+======= Stiff ODE systems and stability =======
 One very famous example of a stiff ODE system is the Van der Pol equation, which can be 
 written as an initial value problem on the form
 !bt
-\begin{align}
-\frac{dy_1}{dt} = y_2, y_1(0) = 1, label{vdp1}\\
-\frac{dy_2}{dt} = \mu(1-y_1^2)y_2 - y_1, y_2(0) = 0. label{vdp2}
-\end{align}
+\begin{alignat}{2}
+y_1' &= y_2, \quad &y_1(0) &= 1, label{vdp1}\\
+y_2' &= \mu(1-y_1^2)y_2 - y_1, \quad & y_2(0) &= 0. label{vdp2}
+\end{alignat}
 !et
 The parameter $\mu$ is a constant which determines the properties of the system, including 
 its "stiffness". For $\mu=0$ the problem is a simple oscillator with analytical solution
 $y_1 = \cos(t),y_2=\sin(t)$, while for non-zero values of $\mu$ the solution shows
 far more complex behavior. The following code implements this system and solves it with the
-`ForwardEuler` class.
+`ForwardEuler` subclass of the `ODESolver` class hierarchy.
 !bc pycod
 from ODESolver import *
 import numpy as np
@@ -44,50 +44,51 @@ class VanderPol:
     def __init__(self,mu):
         self.mu = mu
 
-    def __call__(self,u,t):
+    def __call__(self,t,u):
         du1 = u[1]
         du2 = self.mu*(1-u[0]**2)*u[1]-u[0]
         return du1,du2
 
-
-model = VanderPol(mu=5)
+model = VanderPol(mu=1)
 
 solver = ForwardEuler(model)
 solver.set_initial_condition([1,0])
 
-time = np.linspace(0,20,2001)
-u,t  = solver.solve(time)
+t,u  = solver.solve(t_span=(0,20),N=1000)
 
 plt.plot(t,u)
 plt.show()
 !ec
 Figure ref{fig:vanderpol} shows the solutions for $\mu=0,1$ and 5. Setting $\mu$ even higher, for instance
-$\mu=50$, leads to a divergent (unstable) solution, and replacing the Forward Euler method with a more
-accurate ERK method does not help much. It helps to reduce the time step dramatically, but the computation
-time may be substantial. The time step is dictated by stability requirements rather than our desired
-accuracy, and there may be significant gains from choosing a more stable solver. 
+$\mu=50$, leads to a divergent (unstable) solution. Replacing the FE method with one of the more
+accurate ERK method may help a little, but not much. It does help to reduce the time step dramatically, 
+but the resulting computation time may be substantial. The time step for this problem is dictated by 
+stability requirements rather than our desired accuracy, and there may be significant gains 
+from choosing a solver that is more stable than the ERK methods considered so far. 
+
+FIGURE: [../chapters/figs_ch3/vanderpol1.pdf, width=600 frac=1] Solutions of Van der Pol model for different values of $\mu$. label{fig:vanderpol}
 
 Why does the solution of the Van der Pol model fail so badly for large $\mu$? And, more generally,
-what are the properties of an ODE system that makes it stiff? If we, for a moment, consider the
-simpler case of a linear ODE, stiffness is related to the eigenvalues of the problem. 
-Consider, for instance, a simple ODE known as the Dahlquist test equation;
+what are the properties of an ODE system that makes it stiff? To answer these questions, it is useful to 
+start with a simpler problem than the Van der Pol model.  
+Consider, for instance, a simple IVP known as the Dahlquist test equation;
 !bt
 \begin{align}
-u' &= \lambda u, u(0) &= 1,  label{linear} 
+u' &= \lambda u, \quad u(0) &= 1,  label{linear} 
 \end{align}
 !et
-where $\lambda$ may be a complex number. As defined in
-(ref {AscherPetzold}), this equation is stiff for an interval
+where $\lambda$ may be a complex number. With $\lambda = 1$ this is the simple exponential growth 
+problem considered earlier, but in this chapter we are primarily interested in $\lambda$ with negative
+real part, i.e., either real or complex $\lambda$ that satisfy $\Re(\lambda) \leq 0$. 
+In such cases the solution of (ref{linear}) decays over time and is completely stable, 
+but we shall see that the numerical solutions do not always retain this property.
+Following the definition in cite{AscherPetzold}, (ref{linear}) is stiff for an interval
 $[0,b]$ if the real part of $\lambda$ satisfies
 \[
 b\Re(\lambda) \ll -1 .
 \]
-Note that we assume
-\[
-\Re(\lambda) \leq 0 ,
-\]
-since this is required for the equation to be stable. For a general non-linear
-problem, such as the Van der Pol in (ref{vdp1})-(ref{vdp2}), the
+For more general non-linear
+problems, such as the Van der Pol model in (ref{vdp1})-(ref{vdp2}), the
 system's stiffness is characterized by the eigenvalues $\lambda_i$ of the local
 Jacobian matrix $J$ of the right hand side function $f$. The Jacobian is defined by 
 \[
@@ -101,22 +102,22 @@ In the ODE literature one will also find more pragmatic definitions
 of stiffness, for instance that an equation is stiff if the 
 time step needed to maintain stability of an explicit
 method is much smaller than the time step dictated by the accuracy
-requirements (NBNB ref {Curtiss52,AscherPetzold}). These definitions indicate that
+requirements cite{Curtiss52,AscherPetzold}. These definitions indicate that
 the stiffness of a problem is not only a function of the ODE itself,
 but also of the interval of integration and of the chosen accuracy requirement. A
 detailed discussion of stiff ODE systems can be found in, for instance,
-(NBNB ref {AscherPetzold,ODEII}).
+cite{AscherPetzold,ODEII}.
 
 Eq. (ref{linear}) is the foundation for *linear stability analysis*, which is a very
 useful technique for analyzing and understanding the stability of ODE solvers. 
 The solution to the equation is $u(t) = \exp(\lambda t)$, which, as noted above,
 is unstable for $\lambda$ with a positive real part. We are therefore primarily 
 interested in the case $\Re(\lambda) < 0$, for which the solution is stable but 
-our choice of solver may introduce *numerical instabilities*. A single step of the
-Forward Euler method applied to (ref{linear}) gives
+our choice of solver may introduce *numerical instabilities*. The
+Forward Euler method applied to (ref{linear}) gives the update formula
 !bt
 \[
-    u_n = u_n +\Delta t \lambda u_0 = u_n (1+\Delta t \lambda) ,
+    u_{n+1} = u_n +\Delta t \lambda u_n = u_n (1+\Delta t \lambda) ,
 \]
 !et
 and for the first step, since we have $u(0) = 1$, we have
@@ -128,10 +129,10 @@ and for the first step, since we have $u(0) = 1$, we have
 Since the analytical solution decays exponentially for $\Re(\lambda) < 0$, it is natural to 
 require the same behavior of the numerical solution, and this gives the requirement
 that $\| 1+\Delta t \lambda \| \leq 1$. If $\lambda$ is real and negative, the time
-step must be chosen to satisfy $\Delta t \leq -2/\lambda$ to ensure stability. 
-Figure (NBNB ref new fig) shows the FE solution to (ref{linear}) with $\lambda = -5$. The 
-left panel shows the solution for $\Delta t = 0.21$, while the right panel is for 
-$\Delta t = 0.19$. (NBNB check this)
+step must be chosen to satisfy $\Delta t \leq -2/\lambda$ to ensure stability. Keep in mind that
+this criterion does not necessarily give a very accurate solution, and it may even oscillate and
+look completely different from the exact solution. However, the stability criterion ensures that 
+the solution, as well as any spurious oscillations and other numerical artefacts, decay over time.
 
 We have observed that the right hand side of (ref{linear_euler1}) contains critical information
 about the stability of the FE method. In fact, this expression is often called the 
