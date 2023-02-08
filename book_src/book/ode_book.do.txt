@@ -54,6 +54,6 @@ label{ch:diff_eq}
 # #include "../chapters/diffeq.do.txt"
 
 
-# !split
-# ========= References =========
-# BIBFILE: ../chapters/papers.pub
+!split
+========= References =========
+BIBFILE: ../bib/ode.pub

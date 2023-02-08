@@ -569,9 +569,9 @@ approximations exist, and they have been used for centuries to compute
 exponentials, trigonometric, and other functions. By far, the most famous and
 widely used series of this kind are the Taylor series, discovered in 1715:
 !bt
-\begin{equation*}
+\begin{equation}
 f(x) = \sum_{k=0}^\infty \frac{1}{k!}(\frac{d^kf(0)}{dx^k})x^k .
-\label{taylor0}\end{equation*}
+\label{taylor0}\end{equation}
 !et
 Here, the notation $d^kf(0)/dx^k$ means the $k$-th derivative of $f$ evaluated
 at $x=0$. We can calculate a few of the terms in the sum to get

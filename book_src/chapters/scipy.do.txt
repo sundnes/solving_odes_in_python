@@ -10,11 +10,11 @@ want solve it as efficiently as possible, there are several existing solvers to 
 For Python programmers, the most natural choice may be the solvers from *SciPy*, which 
 have evolved into a robust and fairly efficient suite of ODE solvers. SciPy is a large suite 
 of scientific software in Python, including tools for linear algebra, optimization, integration,
-and other common tasks of scientific computing (NBNB ref scipy URL). For solving initial 
+and other common tasks of scientific computing.[^scipy] For solving initial 
 value problems, the tool of choice is the `solve_ivp` function from the `integrate` module. 
 The following code applies `solve_ivp` with the `Pendulum` class presented above to solve the
-simple pendulum problem defined by (ref{pendulum1})-(ref{pendulum2}). (Assuming that the `Pendulum`
-class is saved in a file `pendulum.py`)
+simple pendulum problem defined by (ref{pendulum1})-(ref{pendulum2}). We assume that the `Pendulum`
+class is saved in a separate file `pendulum.py`.
 !bc pycod
 from scipy.integrate import solve_ivp
 import numpy as np
@@ -32,6 +32,10 @@ plt.plot(solution.t, solution.y[1,:])
 plt.legend([r'$\theta$',r'$\omega$'])
 plt.show()
 !ec
+# #if FORMAT != 'ipynb'
+[^scipy]: See https://scipy.org/
+# #endif
+
 If you run this code you will notice that the solution does not look nearly as nice as the
 solution we got from the `ForwardEuler` solver above. The reason for this apparent error
 is that `solve_ivp` is an *adaptive* solver, which chooses the time step automatically to 

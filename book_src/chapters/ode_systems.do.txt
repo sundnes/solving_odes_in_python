@@ -261,38 +261,44 @@ in this case the array slicing is needed. The resulting plot is shown in Figure 
 Recall from Section ref{sec:fe_intro} that we derived the FE method by approximating the
 derivative with a finite difference;
 !bt
-\[ 
+\begin{equation} 
     u'(t_n)\approx \frac{u(t_{n+1})-u(t_n)}{\Delta t} .
-\]
+\label{fd_approx}\end{equation}
 !et
 This approximation obviously introduces an error, and since we approach the true derivative as $\Delta t\rightarrow 0$ it
 is quite intuitive that the error depends on the size of the time step $\Delta t$. This relation was demonstrated
 visually in Figure ref{fig:ode0}, but it would of course be valuable to have a more precise quantification of how the
 error depends on the time step. Analyzing the error in numerical methods is a large branch of applied mathematics, 
-and we will not dive into the details of the field here (NBNB cite ODE books). It is, however, very useful to have an idea
-of the accuracy of the methods applied, and in particular to be able to calculate the error and verify that it behaves
-as expected.
+which we will not cover in detail here, and the interested reader is referred to, for instance cite{ODEI}. 
+However, when implementing a numerical method it is very useful to know its theoretical accuracy, and
+in particular to be able to compute the error and verify that it behaves as expected.
 
-The error of the FE method can be estimated by considering a Taylor expansion of the solution $u$ around 
-the time $t_n$. 
-(NBNB ref appendix for the Taylor expansion? and ODE textbook?) 
-For a small time step $\Delta t$, we have (NBNB check notation)
+The Taylor expansion, discussed briefly in Appendix ref{ch:diff_eq}, is an essential tool for 
+estimating the error in numerical methods for ODEs. For any smooth function $\hat{u}(t)$, if we 
+can compute the function value and its derivatives at $t_n$, the value at $t_n+\Delta t$ 
+can be approximated by the series
 !bt
 \[
-    u(t_n+\Delta t) = u(t_n) + \Delta t u'(t_n) +\frac{1}{2}u''(t_n) + O(\Delta t^3).    
+    \hat{u}(t_n+\Delta t) = \hat{u}(t_n) + \Delta t \hat{u}'(t_n) +\frac{\Delta t^2}{2}\hat{u}''(t_n) + 
+    \frac{\Delta t^3}{6}\hat{u}'''(t_n)+O(\Delta t^4).  
 \]
 !et
-From the FE formula introduced above, the approximate solution $\hat{u}_{n+1}$ is given by
+We can include as many terms as we like, and since $Delta t$ is small we always have $Delta t^(n+1) \ll \Delta t^n$, so
+the error in the approximation is dominated by the first neglected term.  
+The update formula of the FE method, derived from (ref{fd_approx}), is 
 !bt
 \[
- \hat{u}_{n+1} = u(t_n) + \Delta t u'(t_n),
+ u_{n+1} = u(t_n) + \Delta t u'(t_n),
 \]
 !et
-and we see that the error $\| \hat{u}_{n+1}- u_{n+1}\| \sim \Delta x^2$, and since this is the error for a single time step, the
-accumulated error after $N\sim 1/Delta t $ steps is proportional to $\Delta t$. The FE method is hence a \emph{first order} method.
-As we will see in Chapter ref{ch:runge_kutta}, more accurate methods can be constructed by deriving update formulas to make more
-terms in the Taylor expansion cancel. This process is fairly straightforward for low-order methods, e.g., of second or third order, 
-but it quickly gets complicated for high order solvers, see, for instance (NBNB ref hairer wanner) for details. 
+which we may recognize as a Taylor series truncated after the first order term, and the error  
+$\|u_{n+1}- \hat{u}_{n+1}\| \sim \Delta x^2$. Since this is the error for a single time step, the
+accumulated error after $N\sim 1/\Delta t $ steps is proportional to $\Delta t$. 
+The FE method is hence a \emph{first order} method. As we will see in Chapter 
+ref{ch:runge_kutta}, more accurate methods can be constructed by deriving update formulas to make more
+terms in the Taylor expansion cancel. This process is fairly straightforward for low-order methods, 
+e.g., of second or third order, but it quickly gets complicated for high order solvers, see, for 
+instance cite{ODEI} for details. 
 
 Knowing the theoretical accuracy of an ODE solver is important for a number of reasons, and one of them is that it
 provides a method for verifying our implentation of the solver. If we can solve a given problem and demonstrate that
@@ -300,38 +306,39 @@ the error behaves as predicted by the theory, it gives a good indication that th
 We can illustrate this procedure using the simple initial value problem introduced earlier;
 !bt
 \[
-    \frac{du}{dt} = u, u(0) = 1 .
+    u' = u, \quad u(0) = 1 .
 \]
 !et
 As stated above, this problem has the analytical solution $u=e^t$, and we can use this to compute the 
-error in our numerical solution. But how should we define the error in the numerical solution? 
+error in our numerical solution. But how should this error be defined?  
 There is no unique answer to this question. For practical applications,
 the so-called root-mean-square (RMS) or relative-root-mean-square (RRMS) are commonly used error measures, defined by
 !bt
 \begin{align*}
-error_{RMS} &=  \sqrt{\frac{1}{n}\sum_{i=0}^N(\hat{u}_i-u(t_i)^2}, 
-error_{RRMS} &= \sqrt{\frac{1}{n}\sum_{i=0}^N(\frac{\hat{u}_i-u(t_i)^2}{u(t_i)^2}}, 
+RMSE &=  \sqrt{\frac{1}{N}\sum_{n=0}^N(u_n-\hat{u}(t_n))^2}, \\
+RRMSE &= \sqrt{\frac{1}{N}\sum_{n=0}^N\frac{(u_n-\hat{u}(t_n))^2}{\hat{u}(t_n)^2}}, 
 \end{align*}
 !et
-respectively. (NBNB check formulas) In more mathematically oriented texts, the errors are defined in terms of \emph{norms}, with
-the discrete $l_1,l_2,$ and $l_\infty$ norms being the most relevant. These are defined as follows;
+respectively. Here, $u_n$ is the numerical solution at time step $n$ and $\hat{u}(t_n)$ the corresponding
+exact solution. In more mathematically oriented texts, the errors are defined in terms of \emph{norms}, for 
+instance the discrete $l_1,l_2,$ and $l_\infty$ norms:
 !bt
 \begin{align*}
- e_{l_1} &= sum_{i=0}^N(\|\hat{u}_i-u(t_i)\|),
- e_{l_2} &= \sum_{i=0}^N(\hat{u}_i-u(t_i)^2),
+ e_{l_1} &= sum_{i=0}^N(\|\hat{u}_i-u(t_i)\|),\\
+ e_{l_2} &= \sum_{i=0}^N(\hat{u}_i-u(t_i)^2), \\
  e_{l_\infty} &= \max_{i=0}^N(\hat{u}_i-u(t_i)).  
 \end{align*}
 !et
 (NBNB check formulas) While the choice of error norm may be important for certain cases, for practical
 applications it is usually not very important, and all the different error measures can be expected to behave
 as predicted by the theory. For simplicity we will apply an even simpler error measure for our example, where
-we simply compute the error at the final time $T$, given by $e = \|\hat{u}_N-u(t_N)\|$. Using the `ForwardEuler`
+we simply compute the error at the final time $T$, given by $e = \|u_N-\hat{u}(t_N)\|$. Using the `ForwardEuler`
 class introduced above, the complete code for checking the convergence may look as follows:
 !bc pycod
-from forward_euler_class_v2 import *
+from forward_euler_class_v1 import *
 import numpy as np
 
-def rhs(u,t):
+def rhs(t,u):
     return u
 
 def exact(t):
@@ -341,14 +348,14 @@ solver = ForwardEuler(rhs)
 solver.set_initial_condition(1.0)
 
 T = 3.0
+t_span = (0,T)
 N = 30
 
 print(f'Time step (dt)   Error (e)      e/dt')
 for _ in range(10):
-    time = np.linspace(0,T,N+1)
+    t,u = solver.solve(t_span,N)
     dt = T/N
-    u,t = solver.solve(time)
-    e = abs(u[-1]-exact(time[-1]))
+    e = abs(u[-1]-exact(T))
     print(f'{dt:<14.7f}   {e:<12.7f}   {e/dt:5.4f}')
     N = N*2
 !ec 
@@ -377,13 +384,13 @@ to the equation, but this solution is only available for very simple ODE problem
 interesting to estimate the error and the order of convergence for more complex problems, and for this task we 
 need to take a different approach. Several alternatives exist, including for instance the *method of manufactured
 solutions*, where one simply choses a solution function $u(t)$ and computes its derivative analytically to 
-determine the right hand side of the ODE (NBNB ref). An even simpler approach, which usually works well, is to 
+determine the right hand side of the ODE. An even simpler approach, which usually works well, is to 
 compute a very accurate numerical solution using a high-order solver and small time steps, and use this
 solution as the reference for computing the error. For accurate error estimates it is of course essential
 that the reference solution is considerably more accurate than the numerical solution we want to evaluate. 
 The reference solution therefore typically requires very small time steps and can take some time to 
 compute, but in most cases the computation time will not be a problem. We will revisit this method for 
-some example problems in Chapter (NBNB ref example chapter).
+some example problems in Chapter ref{ch:disease_models} (NBNB check that this reference is correct).
 
 
 
