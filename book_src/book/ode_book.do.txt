@@ -39,9 +39,9 @@ label{ch:stiff}
 
 !split
 ========= Adaptive time step methods =========
-* Introduce the idea
-* Embedded methods
-* Controlling the time step
+label{ch:adaptive}
+# #include "../chapters/adaptive.do.txt"
+
 
 !split
 ========= Modeling infectious diseases =========
