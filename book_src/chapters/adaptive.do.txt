@@ -120,4 +120,95 @@ Runge-Kutta method that uses the same stage computations as the original method 
 different order of accuracy. Since most of the computational work in Runge-Kutta methods occurs 
 in the stage computations, error estimates based on embedded methods are relatively cheap to evaluate.
 
+For the general Runge-Kutta method defined by 
+(ref{genrk0})-(ref{genrk1}), an embedded method can be introduced by adding one line, to give
+!bt
+\begin{align}
+k_i &= f(t_n+c_i\Delta t,y_n+\Delta t
+\sum_{j=1}^s a_{ij}k_j)  \mbox{ for } i = 1,\ldots ,s \label{ch4:rkpair1}\\
+y_{n+1} &= y_0 + \Delta t \sum_{i=1}^s b_i k_i, \label{ch4:rkpair2} \\
+\hat{y}_{n+1}&= y_0 + \Delta t \sum_{i=1}^s \hat{b}_i k_i . \label{ch4:rkpair3}
+\end{align}
+!et
+Although the main idea is to reuse the same stage computations to compute both 
+$\hat{y}_{n+1}$ and $y_{n+1}$, it is not uncommon to introduce one additional 
+stage in the method to obtain the error estimate. A Runge-Kutta method
+with an embedded error estimator is often referred to as a Runge-Kutta
+pair of order $n(m)$, where $n$ is the order of the main method
+and $m$ the order of the error estimator.
+
+(NBNB introduce Butcher tableau for embedded methods.)
+(NBNB what about an embedded method for the RK4 method considered earlier)
+A quite famous and widely used pair of ERK methods is the Dormand-Prince 
+method, which is a seven-stage method with the following 
+coefficients:
+!bt
+\[
+\renewcommand\arraystretch{1.2}
+\begin{array}{c|ccccccc}
+0 & & & & & & &\\ %\vspace{0.2cm}
+\frac{1}{5} & \frac{1}{5} & & & & & & \\ %\vspace{0.2cm}
+\frac{3}{10}& \frac{3}{40} & \frac{9}{40} & & & & & \\ %\vspace{0.2cm}
+\frac{4}{5} & \frac{44}{45} & -\frac{56}{15} & \frac{32}{9} & & & &  \\ %\vspace{0.2cm}
+\frac{8}{9} & \frac{19372}{6561} &-\frac{25360}{2187}&
+\frac{64448}{6561}
+& -\frac{212}{729} & & &\\ %\vspace{0.2cm}
+1 & \frac{9017}{3168} & -\frac{355}{33} & \frac{46732}{5247} &
+\frac{49}{176} &
+-\frac{5103}{18656} & & \\
+1 & \frac{35}{84} & 0 & \frac{500}{1113} & \frac{125}{192}
+&-\frac{2187}{6784} & \frac{11}{84}  & \\ \hline y_n  &
+\frac{35}{384} & 0 & \frac{500}{1113} & \frac{125}{192} &
+-\frac{2187}{6784} & \frac{11}{84} & 0\\ \hline \hat{y}_n &
+\frac{5179}{57600} & 0 & \frac{7571}{16695}& \frac{393}{640} &
+-\frac{92097}{339200} & \frac{187}{2100} & \frac{1}{40}
+\end{array} \hspace{1cm} 
+\]
+!et
+We see that the seventh step is only used only for the error
+estimator $\hat{y}_n$. A particular feature of this method, and
+of many other explicit RK methods, is that the
+highest-order method is used to advance the solution, while
+the lower-order
+method is used only for error estimation. A Runge-Kutta method
+with an embedded error estimator is often referred to as an RK
+pair of order $n(m)$, where $n$ is the order of the main method
+and $m$ the order of the error estimator.
+
+Implicit RK methods can also be equipped with embedded methods.
+NBNB fix this:
+* Radau here 
+* then SDIRK??
+
+
+Consider, for instance, the SDIRK method given by
+(NB reference). This can be extended to an
+SDIRK pair of order 3(2) of the form
+\[
+\begin{array}{c|cccc}
+0 &  & & & \\
+c_2 & a_{21} & \gamma  & & \\
+c_3 & a_{31} & a_{32} & \gamma & \\
+c_4 & a_{41} & a_{42}& a_{43} & \gamma \\ \hline
+ & b_1 & b_2 & b_3 & b_4 \\ \hline
+ & \hat{b}_1& \hat{b}_2 & \hat{b}_3 & \hat{b}_4
+\end{array}\hspace{1cm}
+\]
+where again the coefficients can be found in Appendix
+\ref{app:ode_coeff}. This method uses the same technique as the
+Dormand-Prince pair; the highest-order method is used to
+advance the solution while the lowest-order method is used
+only for error estimation. 
+
+Although the idea of error estimation and time step control that
+is based on embedded methods is very simple, there are numerous
+matters to be considered regarding its practical use. While
+\eqref{ch4:next_step} offers a very simple formula for the next
+step size, improved formulae have been derived that may give
+better results, in particular for stiff problems. Also particular
+to stiff problems is the fact that the stability properties of
+both the main method and the embedded error estimator must be
+good, in order to ensure reliable error estimates. The reader is
+referred to cite{AscherPetzold} and cite{ODEI,ODEII} for a
+detailed discussion of automatic time step control for ODEs.
 
