@@ -14,34 +14,95 @@ the method's order, and the solution's characteristics. In regions where the sol
 larger time steps can be used without introducing significant error, but in regions where the 
 solution has rapid variations, a smaller time step must be employed. We may illustrate this
 situation by considering a particular class of ODE models, which describe the so-called
-*action potential* of excitable cells. Such models, first introduced by
+*action potential* of excitable cells. These ODE models, first introduced by
 Hodgkin and Huxley cite{HodgkinHuxley}, are important tools for studying the electrophysiology 
 of cells such as neurons and different types of muscle cells. The main variable of interest
-in these models is usually the transmembrane potential, i.e., the potential difference between
-the internals of a cell and its surrounding. When an excitable cell such as a neuron or
-a muscle cell is stimulated electrically it triggers a cascade of processes in the
+is usually the transmembrane potential, that is, the potential difference between
+the internals of a cell and its surroundings. When an excitable cell such as a neuron or
+a muscle cell is stimulated electrically, it triggers a cascade of processes in the
 cell membrane, leading to various ion channels opening and closing, and the membrane
 potential going from its resting negative state to approximately zero or slightly positive, 
 before returning to the resting value. This process of *depolarization* followed by 
-*repolarization* is called the action potential, and is illustrated in Figure ref{ch5:fig:winslow}.
-We see that the solution changes extremely quickly as the cell is depolarized, the so-called upstroke
-phase, and is nearly stationary in the plateau and resting phases. This behavior motivates
+*repolarization* is called the action potential, and is illustrated in Figure ref{fig:hodgkinhuxley}.
+We see that the solution changes rapidly when the cell is depolarized, also referred to as the
+*upstroke phase*, and also during the repolarization. During the resting phase the potential 
+is stationary, and it seems likely that larger time steps can be used in this phase without 
+sacrificing accuracy. Such behavior can be observed in many types of ODE models, and  motivates
 methods that can adjust the time step to the properties of the
 solution. Commonly referred to as adaptive methods or methods with
-automatic time step control, this is an important part of
-successful ODE software.
+automatic time step control, these techniques are important parts of
+modern ODE software.
 
-Automatic step size control can be based on the solution's characteristics or on estimates
-of the error. 
-One obvious example is the  in the cell model ODEs, the algorithm can check for fast variations in $v$ during 
-the upstroke and choose a smaller time step. This approach was used by Rush and Larsen in 
-their solution to the cell model ODEs, but its applicability is limited. A more general 
-approach is to base the step size on error estimates computed using numerical solutions 
-of different accuracy. One common method for estimating the local error is step doubling. 
-Here, two steps of length $\Delta t$ are performed, and the error after one step and two 
-steps are estimated. The error after two steps of length $\Delta t$ and after one step of 
-length $2\Delta t$ are compared, and the error estimate is based on this comparison. The 
-length of the next time step is then chosen so that the local error falls below a specified threshold.
+There are many possible approaches for selecting the time step automatically. One intuitive approach is to
+base the time step estimate on the dynamics of the solution, and select a small time step whenever rapid 
+variations occur. This approach is commonly applied in adaptive solvers for partial differential equations (PDEs), 
+where both the time step and space step can be chosen adaptively. It has also been successfully applied
+in specialized solvers for the action potential models mentioned above, see, e.g., cite{RushLarsen},
+where the time step is simply selected based on the variations of the transmembrane voltage. However, 
+this method may not be universally applicable and the criteria for choosing the time step must be 
+carefully selected based on the characteristics of the problem at hand. A more flexible and general 
+approach to adaptive time steps is to use error estimates to determine the step size. 
+The step size can then be adjusted so that the local error falls below a specified threshold. 
+This method can handle any system of ODEs, but the challenge lies in accurately estimating the error, 
+as the true solution is unknown. A common technique is to use two numerical solutions of varying 
+accuracy to approximate the error, and this approach forms the basis for all the methods discussed in this section.
+
+======= Error estimates via step doubling =======
+A simple method of estimating local error is *step doubling*, which works 
+for any numerical method. Given an initial value of $y(t_0) = y_0$, two steps of length $\Delta t$ are 
+taken using a method of order $p$. The error after the first step is given by
+!bt
+\begin{equation}
+e_1 = \| y_1 -y(t_0 + \Delta t) \| = \|\psi(t_n,y(t_n))\|\Delta t^{p+1}+O(\Delta t^{p+2}) ,
+\end{equation}
+!et
+where $\psi$ is called the principal error function; see, e.g., cite{AscherPetzold,ODEI} for further details. 
+The error $e_2$ after two steps consists of the error carried over from the first step as well as the error 
+introduced in the second step, and, following cite{AscherPetzold}, we here assume that the error 
+after two steps is twice as large as that after one step. We have
+!bt
+\begin{equation}
+e_2 = \|y(t_0 + 2\Delta t)-y_2 \| =   2\| \psi(t_n,y(t_n))\|\Delta t^{p+1}+O(\Delta t^{p+2}) . \label{ch4:error1}
+\end{equation}
+!et
+Similarly, we can estimate the error after one step of length $2\Delta t$ as
+!bt
+\begin{equation}
+\tilde{e}_2 = \| y(t_0 + 2\Delta t)-\tilde{y}_2  \|= \|\psi(t_n,y(t_n))\|(2\Delta t)^{p+1} +O(\Delta t^{p+2}) . \label{ch4:error2}
+\end{equation}
+!et
+From (ref{ch4:error1})-(ref{ch4:error2}), we get
+!bt
+\begin{equation}
+\|y_2-\tilde{y}_2 \| = (2^p-1)2\| \psi(t_n,y(t_n))\| h^{p+1} ,
+\end{equation}
+!et
+and this can be used to eliminate the unknown $\psi$ from $e_2$, to give
+!bt
+\begin{equation}
+e_2 = \frac{\| y_2 -\tilde{y}_2 \|}{2^p-1} .
+\end{equation}
+!et
+This estimated local error can now be compared to an error tolerance $tol$ specified for the given application. If we have
+!bt
+\begin{equation}
+e_2 \leq tol \label{ch4:tolerance}
+\end{equation}
+!et
+the step is accepted and the step size for the next step is computed from
+!bt
+\begin{equation}
+h_{new} = h \left(\frac{tol}{e_2}\right)^{1/(p+1)} . \label{ch4:next_step}
+\end{equation}
+!et
+If the estimated error does not satisfy (ref{ch4:tolerance}), the step is 
+rejected and is recomputed with a smaller step. The new step may also, in this case, 
+be based on a formula such as (ref{ch4:next_step}). In practice, a slightly modification 
+(ref{ch4:next_step}) is usually applied, to introduce a safety factor and limit 
+the variation in step size from one step to the next. Further details can be found in, e.g., 
+cite{ODEI,AscherPetzold}.
+
+======= Error estimates from an embedded method =======
 
 
 
