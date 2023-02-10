@@ -103,7 +103,21 @@ the variation in step size from one step to the next. Further details can be fou
 cite{ODEI,AscherPetzold}.
 
 ======= Error estimates from an embedded method =======
+The step-doubling procedure provides a good approximation of the local error, but it is also 
+computationally expensive. As a result, most modern ODE software uses other estimates for 
+automatic step size control. An alternative solution is to use two numerical solutions 
+computed with the same step size, but with different orders of accuracy. For a numerical 
+method of order $p$, a solution computed with a method of order $p+1$ can be used to estimate 
+the local error. By taking the difference between the two solutions, $|u_n - \tilde{u}_n|$, we 
+obtain an estimate of the local error for the solution $u_n$. This estimate can then be used to 
+control the time step using formulae such as (ref{ch4:next_step}).
 
-
+The remaining issue is how we should compute the two different solutions $u_n$ and $\tilde{u}_n$. 
+If we are to apply two entirely different methods to obtain these solutions, the adaptive time 
+step algorithm becomes very expensive. However, the error estimate can often be obtained more 
+efficiently through so-called *embedded methods*. An embedded method is a variation of a given 
+Runge-Kutta method that uses the same stage computations as the original method but achieves a 
+different order of accuracy. Since most of the computational work in Runge-Kutta methods occurs 
+in the stage computations, error estimates based on embedded methods are relatively cheap to evaluate.
 
 
