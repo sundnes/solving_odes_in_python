@@ -263,6 +263,7 @@ FIGURE: [../chapters/figs_ch1/pendulum_FE.pdf, width=600 frac=1] Solution of the
 
 
 ======= Checking the error in the numerical solution =======
+label{sec:error_taylor}
 Recall from Section ref{sec:fe_intro} that we derived the FE method by approximating the
 derivative with a finite difference;
 !bt

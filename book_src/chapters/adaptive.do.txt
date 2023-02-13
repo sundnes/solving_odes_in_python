@@ -203,7 +203,7 @@ only for error estimation.
 Although the idea of error estimation and time step control that
 is based on embedded methods is very simple, there are numerous
 matters to be considered regarding its practical use. While
-\eqref{ch4:next_step} offers a very simple formula for the next
+(ref{ch4:next_step}) offers a very simple formula for the next
 step size, improved formulae have been derived that may give
 better results, in particular for stiff problems. Also particular
 to stiff problems is the fact that the stability properties of

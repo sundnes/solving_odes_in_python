@@ -6,6 +6,7 @@
 * Examples of stiff systems
 * Implicit Runge-Kutta methods
 * The BDF method
+* TODO: introduce the alternative term *amplification factor* for the stability function
 
 In the previous chapter we introduced explicit Runge-Kutta (ERK) methods and observed
 how they could conveniently be implemented as a hierarchy of Python classes. For most
@@ -145,8 +146,10 @@ about the stability of the FE method. In fact, this expression is often called t
 The FE method is stable for all values $\lambda \Delta t$ which give $\|R(\lambda \Delta t)\| <1$,
 and this region of $\lambda \Delta t$ values in the complex plane is referred to as the method's
 *region of absolute stability*, or simply its *stability region*. 
-The stability region for the FE method is shown in the left panel of Figure (NBNB ref ny fig). Obviously, for any $\lambda \ll 0$, 
-this stability criterion is quite restrictive for the choice of $\Delta t$. 
+The stability region for the FE method is shown in the left panel of Figure ref{fig:stab_erk}. Obviously, 
+for any $\lambda \ll 0$, this stability criterion is quite restrictive for the choice of $\Delta t$. 
+
+FIGURE: [../chapters/figs_ch3/stab_region_erk.pdf, width=800 frac=1] Stability regions for explicit Runge-Kutta methods. From left: forward Euler, explicit midpoint, and the fourth order method given by (ref{rk4_0})-(ref{rk4_5}). label{fig:stab_erk}
 
 We can easily extend the linear stability analysis to the other explicit RK methods introduced in Chapter ref{ch:runge_kutta}.
 For instance, applying a single step of the explicit midpoint method given by (ref{midpoint0})-(ref{midpoint2}) to 
@@ -162,31 +165,32 @@ and we may identify the stability function for this method as
 R(z) = 1 + z + \frac{z^2}{2}.
 \]
 !et
-The corresponding stability region is shown in the middle panel of Figure (NBNB ref ny fig). For the 
+The corresponding stability region is shown in the middle panel of Figure ref{fig:stab_erk}. For the 
 fourth order RK method defined in (ref{rk4_0})-(ref{rk4_5}), the same steps reveal that the stability function is
 !bt 
 \[
     R(z) = 1 + z + \frac{z^2}{2} + \frac{z^3}{6} + \frac{z^4}{24}, 
 \] 
 !et
-(NB sjekk denne!!!) and the stability region is shown in the right panel of Figure (NBNB ref ny fig). We observe
+(NB sjekk denne!!!) and the stability region is shown in the right panel of Figure ref{fig:stab_erk}. We observe
 that the stability of the two higher-order RK methods are larger than that of the FE method, but not much. In fact, 
 if we consider the computational cost of each time step for these methods, the FE method is superior 
-superior for problems where the time step is governed by stability. It can be shown that the stability function
-for an $s$-stage explicit RK method is always a polynomial of degree $\leq s$. To obtain a singificant improvement of this situation, 
-we typically need to replace the explicit methods considered so far with implicit RK methods.
+for problems where the time step is governed by stability. It can be shown that the stability function
+for an $s$-stage explicit RK method is always a polynomial of degree $\leq s$, and it can easily be verified that
+the stability region defined by such a polynomial will never be very large. To obtain a significant 
+improvement of this situation, we typically need to replace the explicit methods considered so far with implicit RK methods.
 
 ======= Implicit methods for stability =======
 Since (ref{linear0}) is stable for all values of $\lambda$ with a negative real part, it is natural to look
 for numerical methods with the same property. This means that the stability domain for the method 
-covers the entire left half of the complex plane, or that its stability function $|R(z)|< 1$ whenever $\Re(z) <0$. 
-(NBNB sjekk < vs <=) This property is called *A-stability*. As noted above, the stability 
+covers the entire left half of the complex plane, or that its stability function $|R(z)|\leq 1$ whenever $\Re(z) \leq 0$. 
+This property is called *A-stability*. As noted above, the stability 
 function of an explicit RK method is always a polynomial, and no polynomial satisfies $|R(z)|< 1$ for all $z<0$. 
 Therefore, there are no A-stable explcit RK methods. 
 An even  stronger stability requirement can be motivated 
 by the fact that for $\lambda \ll 0$, the solution decays very rapidly. It is natural to expect the same
 behavior of the numerical solution, by requiring $|R(z)|\rightarrow 0$ as $z\rightarrow -\infty$. This property is 
-referred to as *stiff decay*, and an A-stable method that also has stiff decay is called an *A-stable* method. 
+referred to as *stiff decay*, and an A-stable method that also has stiff decay is called an *L-stable* method. 
 
 The simplest implicit RK method is the backward Euler (BE) method, which can be derived in exactly the same way 
 as the FE method, by approximating the derivative with a simple finite difference. The only difference
@@ -229,25 +233,106 @@ u_1 = \frac{1}{1-\Delta t\lambda} .
 \]
 !et
 The stability function of the BE method is therefore $R(z) = 1/(1-z)$, and the corresponding stability domain 
-shown in the left panel of Figure (NB ref ny fig). The method is stable for all choices of $\lambda \Delta t$
+shown in the left panel of Figure ref{fig:stab_irk0}. The method is stable for all choices of $\lambda \Delta t$
 *outside* the circle with radius one and center at (1,0) in the complex plane, confirming that the BE 
 is a very stable method. It is A-stable, since the stability domain covers the entire left half of the
-complex plane, and it is also L-stable since we have $R(z) \rightarrow 0$ as $\Re(z) \rightarrow -\infty$.
+complex plane, and it is also L-stable since the stability function satisfies 
+$R(z) \rightarrow 0$ as $\Re(z) \rightarrow -\infty$.
 
-The BE method fits into the general RK framework introduced by (ref{genrk0})-(ref{genrk1}) in Chapter 
-ref{ch:runge_kutta}, with a single stage ($s=1$), and $a_{11} = b_1 = c_1 = 1$. The explicit midpoint and
-trapezoidal methods mentioned above also have their implicit counterpart,
+FIGURE: [../chapters/figs_ch3/stab_region_irk0.pdf, width=800 frac=1] Stability regions for explicit Runge-Kutta methods. From left: forward Euler, explicit midpoint, and the fourth order method given by (ref{rk4_0})-(ref{rk4_5}). label{fig:stab_irk0}
 
-The Butcher tableau is 
+The BE method fits into the general RK framework defined by (ref{genrk0})-(ref{genrk1}) in Chapter 
+ref{ch:runge_kutta}, with a single stage ($s=1$), and $a_{11} = b_1 = c_1 = 1$. 
+As for the FE method considered in Chapter ref{ch:runge_kutta}, we can reformulate the method slightly
+to introduce a stage derivative and make it obvious that the BE methods is part of the Runge-Kutta family:
+!bt
+\begin{align*}
+    k_1 &= f(t_n+\Delta t,u_n+\Delta t k_1), \\
+    u_{n+1} &= u_n + \Delta t k_1 .
+\end{align*}
+
+The explicit midpoint and
+trapezoidal methods mentioned above also have their implicit counterparts. The implicit midpoint method
+is given by
+\begin{align}
+    k_1 &= f(t_n+\Delta t/2,u_n + k_1 \Delta t/2), \label{trapez0} \\
+    u_{n+1} &= u_n + \Delta t k_1, \label{trapez1}
+\end{align}
+!et
+while the implicit trapezoidal rule, or Crank-Nicolson method, is given by 
+!bt
+\begin{align*}
+k_1 &= f(t_n,u_n), \\
+k_2 &= f(t_n+\Delta t,u_n+\Delta t k_2), \\
+u_{n+1} &= u_n + frac{\Delta t}{2} (k_1 +k_2) .
+\end{align*}
+!et
+The implicit nature of these simple methods is apparent from the formulae; one of the stage derivatives 
+must be computed by solving an equation involving the non-linear function $f$ rather than from an 
+explicit update formula. The Butcher tableaus of the three methods are given by  
 !bt
 \[
-\begin{array}{c|cc}
+\begin{array}{c|c}
 1 & 1 \\ \hline
  & 1
-\end{array} .
+\end{array} ,\hspace{0.5cm}
+\begin{array}{c|c}
+    1/2 & 1/2 \\ \hline
+     & 1
+    \end{array} ,\hspace{0.5cm}
+\begin{array}{c|cc}
+    0 & & \\
+    1 & 0 & 1 \\ \hline
+     & 1/2 & 1/2
+    \end{array} ,\hspace{0.5cm}
 \]
 !et
-o Implicit midpoint (maybe before the butcher tableau??)
-o Radeau
-o DIRK/SDIRK?
+from left to right for backward Euler, implicit midpoint and the implicit trapezoidal method. 
+
+The implicit midpoint method is and the implicit trapeziodal method have the
+same stability function, given by $R(z) = (2+z)/(2-z)$. The corresponding stability domain covers
+the entire left half-plane of the complex plane, shown in the right panel of Figure ref{fig:stab_irk0}.
+Both the implicit midpoint method and the trapezoidal method are therefore A-stable methods. However,
+we have $R(z)\rightarrow 1$ as $z\rightarrow -\infty$, so the methods do not have stiff decay 
+and are therefore not L-stable. 
+
+The accuracy of the implicit methods can easily be calculated using a Taylor series expansion 
+as outlined in Section ref{sec:error_taylor}, and confirms that the backward Euler method is 
+first order accurate while the accuracy of the two others are second order. We mentioned
+above that an explicit Runge-Kutta method with $s$ stages has order $p\leq s$, but with implicit
+methods we have greater freedom in choosing the coefficients $a_{ij}$ and therefore potentially 
+higher accuracy for a given number of stages. In fact, the maximum order for an implicit RK method
+is $p=2s$, which is precisely the case for the implicit midpoint method, having $s=1$ and $p=2$. 
+ 
+
+===== Implementing implicit Runge-Kutta methods =====
+In the previous section we have demonstrated the superior stability of the implicit methods,
+and also mentioned that the accuracy is generally higher, for a fixed number of stages. 
+So why are not implicit Runge-Kutta solvers the natural choice for all ODE problem? The
+answer to this question is of course the fact that they are implicit, so the stage derivatives
+are defined in terms of non-linear equations rather than explicit formulae. This fact complicates
+the implementation of the methods considerably, and also makes each time step far more computationally
+expensive. The latter fact generally makes explicit solver more efficient for all non-stiff problems,
+and leaves implicit solvers primarily a choice for stiff ODEs. 
+
+For scalar ODEs, solving an equation such as (ref{be_nonlin0}) or (ref{trapez0}) with Newton's method
+is usually not  very challenging. However, we are generally interested in solving systems of ODEs, 
+which complicates the task quite a bit, since we need to solve a system of linear equations for every
+iteration of Newton's method. We are also left with a large range of solver choices and parameters that
+may be tuned to optimize the performance, including various versions of quasi-Newton methods,
+reusing an already factorized linear system for several iterations, as well as other simplifications that
+may improve the overall computational efficiency. We will not dive too deep into these details in this
+book, but will comment on some of the performance considerations towards the end of this chapter. For now,
+let us simply get a feel for the implementation of implicit solvers by relying on some built-in 
+equation solvers from SciPy. We will start with the backward Euler method, being simplest, but try 
+to keep the implementation sufficiently general so it can easily be extended to more advanced implicit 
+methods.
+
+If we examine the `ODESolver` class introduced in Chapter ref{ch:runge_kutta}, we may 
+observe that most of the administrative tasks involved in the Runge-Kutta methods are the same for 
+implicit as for explicit methods. It is therefore convenient to implement the implicit solvers
+as part of the existing class hierarchy, and let the `ODESolver` superclass handle the 
+tasks of initializing the solver as well as the main solver loop. 
+
+
 
