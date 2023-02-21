@@ -51,7 +51,7 @@ system doconce format pdflatex $name $opt $encoding --device=paper --exercise_nu
 #rm -rf $name.aux $name.ind $name.idx $name.bbl $name.toc $name.loe
 
 system pdflatex $name
-#system bibtex $name
+system bibtex $name
 system makeindex $name
 system pdflatex $name
 system pdflatex $name

@@ -779,66 +779,71 @@ $k_1$ inside the function call. Furthermore, the only difference between (ref{di
 (ref{dirk2_eq1}) is the additional term $\Delta t(1-\gamma)k_1$ inside the function call. 
 In general, any stage equation for any DIRK method can be written as
 !bt
-\begin{equation*}
-k_i = f(t_n+c_i\Delta t, u_n+\Delta t(\sum_{j=0}^{i-1}a_{ij}k_j + \gamma k_i)), 
-\end{equation*}
+\begin{equation}
+k_i = f(t_n+c_i\Delta t, u_n+\Delta t(\sum_{j=0}^{i-1}a_{ij}k_j + \gamma k_i)), \label{sdirk_stage}
+\end{equation}
 !et
-where the sum inside the function call only includes previously computed stages. Given the
-similarity with the stage equation from the backward Euler method, it is natural to implement
-the SDIRK stage equation as a generalization of the `stage_eq` method from the `BackwardEuler` class. 
-A modified `stage_eq` method may look as follows.
+where the sum inside the function call only includes previously computed stages. 
+
+Given the similarity of (ref{sdirk_stage}) with the stage equation from the backward Euler method, 
+it is natural to implement the SDIRK stage equation as a generalization of the `stage_eq` 
+method from the `BackwardEuler` class. It is also convenient to place this method in an SDIRK
+base class, from which we may derive all specific SDIRK solver classes. 
+Furthermore, since the stage equations can be written on this general form, it is not difficult
+to generalize the algorithm for looping through the stages and computing the individual 
+stage derivatives. The base class can, therefore, contain general SDIRK versions of both the `stage_eq`
+and `solve_stages`, and the only task left in individual solver classes is to define the number
+of stages and the method coefficients. The complete base class implementation may look as follows. 
 !bc pycod
-def stage_eq(self,k,c_i,k_sum):
-        u, f, n, t = self.u, self.f, self.n, self.t
-        dt = self.t[n+1] - self.t[n]
-
-        return k - f(t[n]+c_i*dt,u[n]+dt*(k_sum+self.gamma*k))
-!ec
-This method takes two additional parameters; the coefficient `c_i` corresponding to the current stage, 
-and the array `k_sum` which holds the sum $\sum_{j=1}^{i-1}a_{ij}k_j$. These arguments need to 
-initialized correctly for each stage and passed as additional arguments to the SciPy `root` function. 
-We also assume that the method parameter $\gamma$ has been stored as a class attribute, and the
-implementation is restricted to SDIRK methods. 
-
-With the `stage_eq` method implemented as above, the `solve_stages` method may simply consist of repeated
-calls to this method to compute all the stage derivatives. For the two-stage method defined 
-by (ref{dirk2_eq0})-(ref{dirk2_eq2}), the complete class implementation may look like
-!bc pycod
-class DIRK2(ImplicitRK):
-    def __init__(self,f):
-        super().__init__(f)
-        self.gamma = 1/2 + np.sqrt(3)/6
-        self.a21 = 1-self.gamma
-        self.c1 = self.gamma
-        self.c2 = 1
-        self.b = np.array([1/2, 1/2])
-
+class SDIRK(ImplicitRK):
     def stage_eq(self,k,c_i, k_sum):
         u, f, n, t = self.u, self.f, self.n, self.t
-        dt = self.t[n+1] - self.t[n]
+        dt = t[n+1] - t[n]
         gamma = self.gamma
 
         return k - f(t[n]+c_i*dt,u[n]+dt*(k_sum+gamma*k))
 
     def solve_stages(self):
         u, f, n, t = self.u, self.f, self.n, self.t
+        a, c = self.a, self.c    
+        s = self.stages
+
+        k = f(t[n],u[n]) #initial guess for first stage
+        k_sum = np.zeros_like(k)
+        k_all = []
+        for i in range(s):
+            k_sum = np.sum(a_*k_ for a_,k_ in zip(a[i,:i],k_all))
+            k = root(self.stage_eq,k,args=(c[0],k_sum)).x
+            k_all.append(k)
         
-        #stage 1:
-        k0 = f(t[n],u[n]) #initial guess 
-        k_sum = np.zeros_like(k0)
-        k1 = root(self.stage_eq,k0,args=(self.c1,k_sum)).x
-        
-        #stage 2:
-        k_sum = k_sum + self.a21*k1 
-        k2 = root(self.stage_eq,k1,args=(self.c2,k_sum)).x
-        
-        return k1,k2
+        return k_all 
 !ec
-As for the FIRK method classes, the constructor's only tasks are to call the superclass' constructor
-to define the right hand side, and then to define all the method parameters. We have here defined the
-coefficients as individual variables rather than NumPy arrays, since this may be more readable and 
-our implementation of the stage equation does not require them to be arrays. However, we keep the
-array definition of the $b_i$ coefficients, in order to reuse the `advance` method from the `ImplicitRK` class. 
+The modified `stage_eq` method takes two additional parameters; the coefficient `c_i` corresponding to the current stage, 
+and the array `k_sum` which holds the sum $\sum_{j=1}^{i-1}a_{ij}k_j$. These arguments need to be
+initialized correctly for each stage, and passed as additional arguments to the SciPy `root` function. 
+For convenience, we also assume that the method parameter $\gamma$ has been stored as a separate 
+class attribute. With the `stage_eq` method implemented in this general way, the `solve_stages` method 
+simply needs to update the weighted sum of previous stages (`k_sum`), and pass this and the correct $c$ value
+as additional arguments to the SciPy `root` function. The implementation above implements this in a for loop
+which computes the stage derivatives sequentially and returns them as a list `k_all`. 
+
+As for the FIRK method classes, the only method we need to implement specifically for each solver class is the
+constructor, in which we define the number of stages and the method coefficients. A class implementation of the
+method in (ref{dirk2_v0}) may look as follows. 
+!bc pycod
+class SDIRK2(SDIRK):
+    def __init__(self,f):
+        super().__init__(f)
+        self.stages = 2
+        gamma = (2-np.sqrt(2))/2
+        self.gamma = gamma
+        self.a = np.array([[gamma,0],
+                            [1-gamma, gamma]])
+        self.c = np.array([gamma,1])
+        self.b = np.array([1-gamma, gamma])
+!ec
+
+NBNB one more method here + figures with results for van der pol?? 
 
 
 

@@ -15,7 +15,7 @@ larger time steps can be used without introducing significant error, but in regi
 solution has rapid variations, a smaller time step must be employed. We may illustrate this
 situation by considering a particular class of ODE models, which describe the so-called
 *action potential* of excitable cells. These ODE models, first introduced by
-Hodgkin and Huxley cite{HodgkinHuxley}, are important tools for studying the electrophysiology 
+Hodgkin and Huxley cite{Hodgkin}, are important tools for studying the electrophysiology 
 of cells such as neurons and different types of muscle cells. The main variable of interest
 is usually the transmembrane potential, that is, the potential difference between
 the internals of a cell and its surroundings. When an excitable cell such as a neuron or

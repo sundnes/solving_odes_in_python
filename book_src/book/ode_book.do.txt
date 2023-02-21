@@ -53,7 +53,7 @@ label{ch:disease_models}
 label{ch:diff_eq}
 # #include "../chapters/diffeq.do.txt"
 
-
 !split
 ========= References =========
-BIBFILE: ../bib/ode.pub
+BIBFILE: ../bib/papers.pub
+
