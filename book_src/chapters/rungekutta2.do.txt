@@ -7,6 +7,9 @@
 * Implicit Runge-Kutta methods
 * The BDF method
 * TODO: introduce the alternative term *amplification factor* for the stability function
+* Check acronyms IRK, ERK, etc, both in this chapter and the previous.
+* Introduce the term stiffly accurate in a suitable spot
+* Check implementation of Radau methods. Does not seem to be correct
 
 In the previous chapter we introduced explicit Runge-Kutta (ERK) methods and observed
 how they could conveniently be implemented as a hierarchy of Python classes. For most
@@ -244,34 +247,38 @@ FIGURE: [../chapters/figs_ch3/stab_region_irk0.pdf, width=800 frac=1] Stability 
 The BE method fits into the general RK framework defined by (ref{genrk0})-(ref{genrk1}) in Chapter 
 ref{ch:runge_kutta}, with a single stage ($s=1$), and $a_{11} = b_1 = c_1 = 1$. 
 As for the FE method considered in Chapter ref{ch:runge_kutta}, we can reformulate the method slightly
-to introduce a stage derivative and make it obvious that the BE methods is part of the Runge-Kutta family:
+to introduce a stage derivative and make it obvious that the BE method is part of the Runge-Kutta family:
 !bt
-\begin{align*}
-    k_1 &= f(t_n+\Delta t,u_n+\Delta t k_1), \\
-    u_{n+1} &= u_n + \Delta t k_1 .
-\end{align*}
+\begin{align}
+    k_1 &= f(t_n+\Delta t,u_n+\Delta t k_1), \label{backward_euler0}\\
+    u_{n+1} &= u_n + \Delta t k_1 . \label{backward_euler1}
+\end{align}
 
 The explicit midpoint and
 trapezoidal methods mentioned above also have their implicit counterparts. The implicit midpoint method
 is given by
 \begin{align}
-    k_1 &= f(t_n+\Delta t/2,u_n + k_1 \Delta t/2), \label{trapez0} \\
-    u_{n+1} &= u_n + \Delta t k_1, \label{trapez1}
+    k_1 &= f(t_n+\Delta t/2,u_n + k_1 \Delta t/2), \label{imp_midpoint0} \\
+    u_{n+1} &= u_n + \Delta t k_1, \label{imp_midpoint1}
 \end{align}
 !et
 while the implicit trapezoidal rule, or Crank-Nicolson method, is given by 
 !bt
-\begin{align*}
-k_1 &= f(t_n,u_n), \\
-k_2 &= f(t_n+\Delta t,u_n+\Delta t k_2), \\
-u_{n+1} &= u_n + frac{\Delta t}{2} (k_1 +k_2) .
-\end{align*}
+\begin{align}
+k_1 &= f(t_n,u_n), \label{cn_0}\\
+k_2 &= f(t_n+\Delta t,u_n+\Delta t k_2), \label{cn_1}\\
+u_{n+1} &= u_n + \frac{\Delta t}{2} (k_1 +k_2) . \label{cn_2}
+\end{align}
 !et
-The implicit nature of these simple methods is apparent from the formulae; one of the stage derivatives 
+Note that this formulation of the Crank-Nicolson is not very common, but is 
+used here to highlight that it is in fact an implicit RK method. The 
+formulation can be simplified considerably by eliminating the stage derivatives
+and defining the method in terms of $u_n$ and $u_{n+1}$ only. 
+The implicit nature of the simple methods above is apparent from the formulae; one of the stage derivatives 
 must be computed by solving an equation involving the non-linear function $f$ rather than from an 
 explicit update formula. The Butcher tableaus of the three methods are given by  
 !bt
-\[
+\begin{equation}
 \begin{array}{c|c}
 1 & 1 \\ \hline
  & 1
@@ -285,7 +292,8 @@ explicit update formula. The Butcher tableaus of the three methods are given by
     1 & 0 & 1 \\ \hline
      & 1/2 & 1/2
     \end{array} ,\hspace{0.5cm}
-\]
+\label{irk_butcher0}
+\end{equation}
 !et
 from left to right for backward Euler, implicit midpoint and the implicit trapezoidal method. 
 
@@ -294,9 +302,17 @@ same stability function, given by $R(z) = (2+z)/(2-z)$. The corresponding stabil
 the entire left half-plane of the complex plane, shown in the right panel of Figure ref{fig:stab_irk0}.
 Both the implicit midpoint method and the trapezoidal method are therefore A-stable methods. However,
 we have $R(z)\rightarrow 1$ as $z\rightarrow -\infty$, so the methods do not have stiff decay 
-and are therefore not L-stable. 
+and are therefore not L-stable. In general, the stability functions of implicit RK methods are always
+rational functions, i.e., given by
+!bt
+\[
+R(z) = \frac{P(z)}{Q(z)}, 
+\]
+!et
+where $P, Q$ are polynomials of degree at most $s$. Recall from Section XXX above that the stability functions
+for the explicit methods are always polynomials. NBNB check this part. 
 
-The accuracy of the implicit methods can easily be calculated using a Taylor series expansion 
+The accuracy of the implicit methods considered above can easily be calculated using a Taylor series expansion 
 as outlined in Section ref{sec:error_taylor}, and confirms that the backward Euler method is 
 first order accurate while the accuracy of the two others are second order. We mentioned
 above that an explicit Runge-Kutta method with $s$ stages has order $p\leq s$, but with implicit
@@ -305,7 +321,8 @@ higher accuracy for a given number of stages. In fact, the maximum order for an 
 is $p=2s$, which is precisely the case for the implicit midpoint method, having $s=1$ and $p=2$. 
  
 
-===== Implementing implicit Runge-Kutta methods =====
+======= Implementing implicit Runge-Kutta methods =======
+label{sec:irk_simple_impl}
 In the previous section we have demonstrated the superior stability of the implicit methods,
 and also mentioned that the accuracy is generally higher, for a fixed number of stages. 
 So why are not implicit Runge-Kutta solvers the natural choice for all ODE problem? The
@@ -315,7 +332,7 @@ the implementation of the methods considerably, and also makes each time step fa
 expensive. The latter fact generally makes explicit solver more efficient for all non-stiff problems,
 and leaves implicit solvers primarily a choice for stiff ODEs. 
 
-For scalar ODEs, solving an equation such as (ref{be_nonlin0}) or (ref{trapez0}) with Newton's method
+For scalar ODEs, solving an equation such as (ref{be_nonlin0}) or (ref{imp_midpoint0}) with Newton's method
 is usually not  very challenging. However, we are generally interested in solving systems of ODEs, 
 which complicates the task quite a bit, since we need to solve a system of linear equations for every
 iteration of Newton's method. We are also left with a large range of solver choices and parameters that
@@ -332,7 +349,500 @@ If we examine the `ODESolver` class introduced in Chapter ref{ch:runge_kutta}, w
 observe that most of the administrative tasks involved in the Runge-Kutta methods are the same for 
 implicit as for explicit methods. It is therefore convenient to implement the implicit solvers
 as part of the existing class hierarchy, and let the `ODESolver` superclass handle the 
-tasks of initializing the solver as well as the main solver loop. 
+tasks of initializing the solver as well as the main solver loop. Based on this idea,
+a compact implementation of the backward Euler method may look as follows:
+!bc pycod
+from ODESolver import *
+from scipy.optimize import root
+
+class BackwardEuler(ODESolver):
+
+    def stage_eq(self,k):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = self.t[n+1] - self.t[n]
+        return k - f(t[n+1],u[n]+dt*k)
+
+    def solve_stage(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        k0 = f(t[n],u[n])
+        sol = root(self.stage_eq,k0)
+        return sol.x
+
+    def advance(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = t[n+1] - t[n]
+        k1 = self.solve_stage()
+        return u[n]+dt*k1
+!ec
+Notice that while the various explicit solvers presented in Chapter ref{ch:runge_kutta}
+could be realized by changing the `advance` method only, we have introduced two additional methods
+in our `BackwardEuler` class. The first of these, `stage_eq(self,k)`, is simply a Python
+implementation of (ref{backward_euler0}), which defines the stage derivative. The method takes a 
+the stage derivative `k` as input and returns the residual of `stage_eq(self,k)`, which makes it
+suitable for use with SciPy non-linear equation solvers. The solution of the stage derivate equation
+is handled in the `solve_stage` method, which first computes an initial guess `k0` for the stage
+derivative, and then passes this array and the function `stage_eq` to SciPy's `root` method for 
+solving the equation. The `root` function returns an object of the class `OptimizeResult`, which includes
+the solution as an attribute `x`, as well as numerous other attributes containing information about the 
+solution process. We refer to the SciPy documentation for further details on the `OptimizeResult` and the
+`root` function.
+
+FIGURE: [../chapters/figs_ch3/vanderpol2.pdf, width=600 frac=1] Solutions of the Van der Pol model for $\mu=10$, using the forward Euler method with $\Delta t = 0.0004$ and $\Delta t = 0.04$, and backward Euler with $\Delta t = 0.04$. label{fig:vdp2}
+
+We can demonstrate the superior stability of the backward Euler method by returning to the 
+Van der Pol equation considered above. Setting, for instance, $\mu=10$, and solving the model with 
+both the forward ad backward Euler method gives the plots shown in Figure ref{fig:vdp2}. The top panel shows
+the solution using forward Euler and a very small time step ($\Delta t = 0.0004$), which can be considered 
+the exact solution. The middle panel shows the solution produced by 
+forward Euler with $\Delta t = 0.04$, with visible oscillations in 
+one of the solution components. Increasing the time step further leads to a divergent solution. The lower 
+panel shows the solution from backward Euler with $\Delta t = 0.04$, which is obviously a lot more stable, 
+but still quite different from the reference solution in the top panel. With the backward Euler method, 
+increasing the time step further will still give a stable solution, but it does not look like the
+exact solution at all. This little experiment illustrates the need to consider both accuracy and stability 
+when solving challenging ODEs systems.
+
+Just as we did for the explicit methods in Chapter ref{ch:runnge_kutta}, it is possible to reuse code from 
+the `BackwardEuler` class to implement other solvers. Extensive code reuse for a large group of implicit
+solvers requires a small rewrite of the code above to a more general form, which will be presented in the next 
+section. However, we may observe that a simple solver like the Crank-Nicolson method can be realized as 
+a very small modificcation of our `BackwardEuler` class. A class implementation may look like
+!bc pycod
+class CrankNicolson(BackwardEuler):
+    def advance(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = t[n+1] - t[n]
+        k1 = f(t[n],u[n])
+        k2 = self.solve_stage()
+        return u[n]+dt/2*(k1+k2)
+!ec
+Here, we utilize the fact that the stage $k_1$ in the Crank-Nicolson is explicit and does not require
+solving an equation, while the definition of $k_2$ is identical to the definition of 
+$k_1$ in the backward Euler method. We can therefore reuse both the `stage_eq` and `solve_stage` methods directly
+and only the `advance` method needs to be reimplemented. This compact implementation of the Crank-Nicolson method
+is convenient for code reuse, but it may be argued that it violates a common principle of object-oriented programming.
+Subclassing and inheritance is considered an "is-a" relationship, so our class implementation implies that an instance
+of the `Crank-Nicolson` class is also an instance of the `BackwardEuler` class. While this works fine in the program, 
+and is convenient for code reuse, it is not a correct representation of the relationship between the two 
+numerical methods. The Crank-Nicolson method is not a special case of the backward Euler, but, as noted above, 
+both methods belong to the group of implicit RK solvers. In the following sections we will 
+describe an alternative class hierarchy which is based on this relationship, and enables a compact 
+implementation of RK methods by utilizing the general formulation in (ref{genrk0})-(ref{genrk1})
+
+
+======= Implicit methods of higher order =======
+Just as for the ERK methods considered in Chapter ref{ch:runge_kutta}, the accuracy of IRK methods
+can be increased by adding more stages. However, for implicit methods we have even more
+freedom in choosing the parameters $a_{ij}$, and the choice of these impacts both the
+accuracy and the computational complexity of the methods. We will in this book consider two 
+main branches of IRK methods; the so-called *diagonally implicit* methods, and the
+*fully implicit* methods. Both classes of methods are quite popular and commonly
+used, and both have their advantages and drawbacks.
+
+===== Fully implicit RK methods =====
+The most general form of RK methods are the fully implicit methods, often referred to as
+FIRK methods. These solvers are simply defined by (ref{genrk0})-(ref{genrk1}), with all
+coefficients $a_{ij}$ (potentially) non-zero. For a method with more than one stage, 
+this formulation implies that all stage derivatives depend on all other stage derivatives,
+so we need to determine them all at once by solving a single system of non-linear 
+equations. This operation is quite expensive, but the reward is that the FIRK methods have
+superior stability and accuracy for a given number of stages. A FIRK method with 
+$s$ stages can have order at most $2s$, which is the case for the implicit midpoint
+method in (ref{imp_midpoint0})-(ref{imp_midpoint1}).
+
+Many of the most popular FIRK methods are based on combining standard quadrature 
+methods for numerical integration with the idea of *collocation*. 
+Recall from Chapter ref{ch:runge_kutta} that all Runge-Kutta methods
+could be viewed as approximations of (ref{ode_integral0}), where
+the integral was approximated by a weighted sum. We set
+!bt
+\begin{align*}
+    u(t_{n+1}) &= u(t_n) + \int_{t_n}^{t_{n+1}} f(t,u(t)) \approx u(t_n) + \sum_{i=1}^s b_i k_i ,
+    \label{ode_integral_approx}
+\end{align*}   
+!et
+with $b_i$ being the weights and $k_i$ could be interpreted as 
+approximations of the right hand side function $f(t,u)$ at distinct 
+time points $t_n+\Delta t c_i$. This form of numerical integration is a very well studied branch of 
+numerical analysis, and it is natural to choose the integration
+points $c_i$ and weights $b_i$ based on standard quadrature rules
+with well established properties. Such quadrature rules have been derived
+by approximating the integrand with a polynomial and then integrating the
+polynomial exactly, and the same idea can be used here. We approximate the
+$u$ on the the interval $t_n < t \leq t_{n+1}$ by a polynomial $P(t)$ of 
+degree at most $s$, and then require that $P(t)$ solves the ODE exactly in
+distinct points $t_n+c_i\Delta t$. This requirement, i.e., that 
+!bt
+\begin{equation}
+P'(t_i) = f(t_i,P(t_i)), \quad  t_i = t_n+c_i\Delta t, i = 1,\ldots , s .
+\label{colloc0}\end{equation}
+!et
+is known as collocation, and is a widely used idea in numerical analysis. 
+It can be shown that (ref{colloc0}) determines the method coefficients $a_{ij}$ 
+and $b_i$ uniquely, given a set of quadrature points $c_i$, see, for instance,
+cite{AscherPetzold} for details. 
+
+* NBNB improve part above. Maybe include reference to HairerWanner
+
+The collocation approach has led to families of FIRK methods based on 
+common rules for numerical integration. For instance, choosing $c_i$ as Gauss points
+gives rise to the Gauss methods, which are the most accurate methods, having order $2s$.
+The single stage Gauss method is the implicit midpoint method introduced above, 
+while the fourth order Gauss method with $s=2$ is defined by the Butcher tableau
+!bt
+\[
+\begin{array}{c|cc}
+    \frac{3-\sqrt{3}}{6} &\frac{1}{4} & \frac{3-2\sqrt{3}}{12}\\
+    \frac{3+\sqrt{3}}{6}  & \frac{3+2\sqrt{3}}{12} & \frac{1}{4} \\ \hline
+     & \frac{1}{2}& \frac{1}{2}
+    \end{array} .
+\]
+!et
+The Gauss methods are A-stable but not L-stable, and since we typically only use
+FIRK methods for challenging stiff problems where stability is important, another
+family of FIRK methods is more popular in practice. These are the Radau methods, 
+which are based on Radau quadrature points which include the right end of the 
+integration interval (i.e., $c_s = 1$). The one-stage Radau method is the backward 
+Euler method, while two- and three-stage versions are given by
+!bt
+\[
+\begin{array}{c|ccc}
+    \frac{1}{3} &\frac{5}{12} & -\frac{1}{12}\\
+    1 & \frac{3}{4} & \frac{1}{4} \\ \hline
+     & \frac{3}{4}& \frac{1}{4}
+    \end{array} , \hspace{1.0cm}
+    \begin{array}{c|ccc}
+        \frac{4-\sqrt{6}}{10} &\frac{88-7\sqrt{6}}{360} & \frac{296-169\sqrt{6}}{1800}&\frac{-2+3\sqrt{6}}{225}\\
+        \frac{4+\sqrt{6}}{10} & \frac{296+169\sqrt{6}}{1800} & \frac{88+7\sqrt{6}}{360} & \frac{-2-3\sqrt{6}}{225} \\ 
+        1 & \frac{16-\sqrt{6}}{36} & \frac{16+\sqrt{6}}{36} & \frac{1}{9} \\ \hline
+        & \frac{16-\sqrt{6}}{36} & \frac{16+\sqrt{6}}{36} & \frac{1}{9} \\ 
+        \end{array} .
+\]
+!et
+The Radau methods have order $s-1$ and they are L-stable, which makes them a popular choice for solving 
+stiff ODE systems. However, as noted above, the fact that all $a_{ij} \neq 0$ complicates 
+the implementation of the methods and makes each time step computationally expensive. All the
+$s$ equations of (ref{genrk0}) become fully coupled and need to be solved simultaneously. 
+For an ODE system consisting of $m$ ODEs, we need to solve a system of $m s$ non-linear
+equations for each time step. We will come back the implementation of FIRK methods in 
+Section ref{sec:irk_implementations}, but let us first consider a slightly simplerclass 
+of implicit RK solvers. 
+
+===== Diagonally implicit RK methods =====
+Diagonally implicit RK methods, or DIRK methods for short, are also sometimes also 
+referred to as semi-explicit methods. For these methods, we have $a_{ij} = 0$ for
+all $j>i$. (Notice the small but important difference from the explicit methods,
+where we have $a_{ij} = 0$ for $j\geq i$.) The consequence of this
+choice of parameters is that the equation for a single stage derivative $k_i$ 
+does not involve stages $k_{i+1}, k_{i+2}$, and so forth. We can therefore solve 
+for the stage stage derivatives one by one in a sequential manner. We still need to solve
+non-linear equations to determine each $k_i$, but we can solve $s$ systems of $m$
+equations rather than one large system to compute all the stages at once. This 
+property simplifies the implementation and reduces the computational expense 
+per time step. However, as expected, the restriction on the method coefficients 
+reduces the accuracy and stability compared with the FIRK methods. 
+A general DIRK method with $s$ stages has maximum order $s+1$, and methods optimized for stability 
+typically have even lower order. 
+
+From the definition of the DIRK methods, we may observe that the implicit midpoint method
+introduced above is, technically, a DIRK method. However, this method is also a fully implicit
+Gauss method, and is not commonly referred to as a DIRK method. The
+Crank-Nicolson (implicit trapezoidal) method given by (ref{imp_trapez0})-(ref{imp_trapez2}) is 
+also a DIRK method, which is evident from the Butcher tableau in (ref{imp_butcher0}). 
+These methods are, however, only A-stable, and it is possible to derive DIRK methods with
+better stability properties. One family of methods are the two-stage methods defined by
+!bt
+\begin{equation}
+\begin{array}{c|cc}
+    \gamma &\gamma & 0 \\
+    1  & 1-\gamma& \gamma\\ \hline
+     & 1/2& 1/2
+    \end{array} ,
+\label{dirk2_v0}\end{equation}
+!et
+which have stability function 
+!bt
+\[
+R(z) = \frac{1+z(1-2\gamma)+z^2(1/2-2\gamma+\gamma^2)}{(1-z\gamma)^2},
+\]
+!et
+and are A-stable for $\gamma >1/4$. For $\gamma = 1/2+\sqrt(3)/6$ the accuracy is third order. 
+NBNB check this part NBNB
+
+NBNB the L-stability is not the same method. check this
+L-stable for $\gamma = 1\pm \sqrt(2)/2$. Note that 
+choosing $\gamma > 1$ means that we estimate the stage derivatives outside the 
+interval $(t_n,t_{n+1})$, and for the last step outside the time interval of interest. 
+While this does not affect the stability or accuracy of the method it may not make sense
+for all ODE problems, and the most popular choice is therefore $\gamma = 1-\sqrt(2)/2$.
+It is worth commenting on the fact that the two diagonal entries of $a_{ij}$ 
+are identical, in this case $a{11}=a_{22}=\gamma$. This choice is very common in DIRK
+methods, and methods of this kind are sometimes reffered to as *singly diagonally
+implicit* RK (SDIRK) methods. The main benefit of this structure is that 
+the non-linear equations for each stage derivate become very similar, which
+we can take advantage of when solving the equations with quasi-Newton methods.
+In particular, the systems will have the same Jacobian matrix, which can 
+then be reused for all stages. We will come back to this benefit in our discussion of
+the implementation in Section ref{sec:irk_implementation}.
+
+While we do not aim to present a complete overview of the various sub-categories
+of RK methods, one additional class of method is worth mentioning. These are
+the so called ESDIRK methods, which are simply DIRK/SDIRK methods where the first stage
+is explicit. The motivation for such methods is that the non-linear algebraic equations
+involved in the implicit methods are always solved with iterative methods, which
+require an initial guess for the solution. For DIRK methods, it is convenient to
+use the previous stage derivate as initial guess for the next, but this is of course 
+not possible for the first stage. An explicit formula for the first stage solves this 
+problem. The simplest ESDIRK method is the implicit trapezoidal (Crank-Nicolson) method
+introduced above, and a popular extension of this method is given by
+!bt
+\begin{equation*}
+\begin{array}{c|ccc}
+    0 & 0&  & \\
+    2\gamma & \gamma & \gamma & 0\\ 
+    1 & \beta & \beta & \gamma \\ \hline
+    1 & \beta & \beta & \gamma \\
+    \end{array} ,\hspace{0.5cm}
+\end{equation*}
+!et
+with $\gamma = 1-\sqrt{2}/2$ and $\beta = \sqrt{2}/4$. This latter method can be interpreted as the sequential 
+application of the trapezoidal method and a popular multistep solver referred to as BDF2, and it is commonly referred
+to as the TR-BDF2 method. It is second order accurate, just as the trapezoidal rule, but has better stability properties.
+NBNB mention L-stable et sted
+We will present more examples of ESDIRK methods in the discussion of adaptive methods in Chapter ref{ch:adaptive}.
+
+======= Implementing higher order IRK methods =======
+label{sec:irk_implementation}
+* Extend the ideas of previous section
+* FIRK + DIRK 
+
+In Section ref{sec:irk_simple_impl} we implemented two of the simplest implicit RK methods by a relatively 
+small extension of the `ODEsolver` class hierarchy. We could easily continue this idea for the more complex
+IRK methods, and all the different methods could be realized by separate implementations of the three methods 
+`solve_stage`, `stage_eq`, and `advance`. However, these three methods essentially implement the
+equations given by (ref{genrk0})-(ref{genrk1}), which are common for all RK solvers. It is natural
+to look for an implementation that allows even more code reuse between the various methods, and we shall see
+that such a general implementation is indeed possible. However, it still makes sense to treat the
+fully implicit methods and DIRK methods separately, since the stage calculations of these two method classes are
+fundamentally different. 
+
+===== A base class for fully implicit methods =====
+Starting with the fully implicit methods, one approach is to rewrite the 
+`solve_stage`, `stage_eq`, and `advance` methods of the 
+`BackwardEuler` class  above in a completely general manner, so they can handle any number of stages and any choice of
+method parameters $a_{ij},b_i$, and $c_i$. New methods can then be implemented simply by setting the number of stages and 
+defining the parameter values. In the methods considered so far all the method coefficients have been 
+hard coded into the mathematical expressions, for instance in the `advance` methods, but with the generic approach
+it is natural to define them as class attributes in the constructor. A general base class for implicit RK
+methods may look as follows:
+!bc pycod
+class ImplicitRK(ODESolver):
+    def solve_stages(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        neq = self.neq
+        s = self.stages
+        k0 = f(t[n],u[n]) 
+        k0 = np.hstack([k0 for i in range(s)]) 
+        
+        sol = root(self.stage_eq,k0)
+        return np.split(sol.x,s)
+
+    def stage_eq(self,k_all):
+        a,c = self.a, self.c 
+        s, neq = self.stages, self.neq
+
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = t[n+1] - t[n]
+
+        res = np.zeros_like(k_all)
+        k = np.split(k_all,s)
+        
+        for i in range(s):
+            fi = f(t[n]+c[0]*dt, 
+                   u[n]+dt*np.sum([a[i,j]*k[j] for j in range(s)]))
+            res[i*neq:(i+1)*neq] = k[i] - fi 
+        
+        return res
+
+    def advance(self):
+        b = self.b 
+        u, n, t = self.u, self.n, self.t
+        dt = t[n+1] - t[n]
+        k = self.solve_stages()
+        
+        return u[n]+dt*sum(b_*k_ for b_,k_ in zip(b,k)) 
+!ec
+Note that we assume that the method parameters are assumed to be held in NumPy arrays 
+`self.a, self.b, self.c`, which need to be defined in sub-classes. The `ImplicitRK` class
+is meant to be a pure base class for holding common code, and is not intended to be a usable solver
+class in itself.[^base_note] The three methods are generalizations of the
+same methods in `BackwardEuler` class, and perform the same tasks, but the abstraction level is higher and 
+the methods rely on a bit of NumPy magic: 
+* The `solve_stages` method is obviously a generalization of the `solve_stage` method above, and most of the
+  lines are quite similar and should be self-explanatory. However, be aware that we are now implemeting a general
+  IRK method with $s$ stages, and we solve a single system of non-linear equations to determine all $s$ stage
+  derivatives at once. The solution of this system is a one-dimensional array of length 
+  `self.stages * self.neq`, which contains all the stage derivatives. The line `k0 = np.hstack([k0 for i in range(s)])`
+  takes an initial guess `k0` for a single stage, and simply stacks it after itself $s$ times to create the initial guess
+  for all the stages, using NumPy's `hstack` and a list comprehension. 
+* The `stage_eq` method is also a pure generalization of the `BackwardEuler` version, and performs the same tasks. 
+  The first few lines should be self-explanatory, while the `res = np.zeros_like(k_all)` defines an array of the 
+  correct length to hold the residual of the equation. Then, for convenience, the line `k = np.split(k_all,s)` 
+  splits the array `k_all` into a list `k` containing the individual stage derivatives, which is used inside
+  the for loop on the next four lines. This loop forms the core of the method, and 
+  is essentially just (ref{genrk0}) implemented in Python code, split over several lines for improved readability.  
+  The residual is returned as a single array of length `self.stages * self.neq`, as expected by the SciPy `root` function.
+* Finally, the `advance` method calls the `solve_stages` to compute all the stage derivatives, and then advances
+  the solution using a general implementation of (ref{genrk1}).
+
+# #if FORMAT != 'ipynb'
+[^base_note]: There are ways in Python to make it more explicit and obvious that a class is intended to be 
+a pure base class. For instance, the module `abc` (short for *abstract base class*), enables the 
+implementation of abstract classes, which give an error if we try to make an instance of them. 
+Using these tools would be quite natural for the class hierarchies of this book, but we have 
+decided to focus on the fundamentals of the solvers and the class structure, 
+and keep the code as simple and compact as possible. 
+# #endif
+
+NBNB comment on the confusion between the math indices starting with 1 and Python indices starting with 0??
+
+With the general base class at hand, we can easily implement new solvers, simply by writing the constructors
+that define the method coefficients. The following code implements the implicit midpoint and the two- and
+three-stage Radau methods:
+!bc pycod
+class ImpMidpoint(ImplicitRK):
+    def __init__(self,f):
+        super().__init__(f)
+        self.stages = 1
+        self.a = np.array([[1/2]])
+        self.c = np.array([1/2])
+        self.b = np.array([1])
+
+
+class Radau2(ImplicitRK):      
+    def __init__(self,f):
+        super().__init__(f)
+        self.stages = 2
+        self.a = np.array([[5/12,-1/12],[3/4,1/4]])
+        self.c = np.array([1/3,1])
+        self.b = np.array([3/4, 1/4])
+
+
+class Radau3(ImplicitRK):
+    def __init__(self,f):
+        super().__init__(f)
+        self.stages = 3
+        sq6 = np.sqrt(6)
+        self.a = np.array([ [(88-7*sq6)/360,
+                            (296-169*sq6)/1800,
+                            (-2+3*sq6)/(225)],
+                            [(296+169*sq6)/1800, 
+                            (88+7*sq6)/360,
+                            (-2-3*sq6)/(225)],
+                            [(16-sq6)/36, (16+sq6)/36,1/9]])
+        self.c = np.array([(4-sq6)/10,(4+sq6)/10,1])
+        self.b = np.array([(16-sq6)/36, (16+sq6)/36,1/9])
+!ec 
+Notice that we always define the method coefficients as NumPy arrays, even for the
+implicit midpoint method where they all contain a single number. This definition is
+necessary for the generic methods of the `ImplicitRK` class to work. 
+
+===== Implementing DIRK methods =====
+We could, in principle, implement the DIRK methods in the same manner as the
+FIRK methods above, simply by defining
+the method coefficients in the constructor. The generic methods from 
+`ImplicitRK` base class will work fine even if we have $a_{ij} = 0$ 
+for $j>i$. However, the motivation for deriving DIRK methods is precisely to
+avoid solving these large systems of non-linear equations, so it does not make much
+sense to implement them in this way. Instead, we should utilize the structure of 
+the method coefficients and solve for the stage variables one by one in a sequential 
+manner. This requires rewriting the two methods `solve_stages` and `stage_eq` from the
+base class above, but the `advance` method can be left unchanged. We 
+may therefore implement the DIRK methods as subclasses of the `ImplicitRK` class, which
+enables some (moderate) code reuse and reflects the fact that DIRK methods are indeed
+a special case of implicit RK methods. 
+
+Starting with the two-stage DIRK method defined by (ref{dirk2_v0}) as an example, 
+we get a better view of the tasks involved if we write out the equations for the
+stage derivatives. Inserting the coefficients from (ref{dirk2_v0}) into 
+(ref{genrk0})-(ref{genrk1}) gives
+!bt
+\begin{align}
+k_1 &= f(t_n+\gamma\Delta t, u_n+\Delta t \gamma k_1), \label{dirk2_eq0}\\
+k_2 &= f(t_n+\Delta t,u_n+\Delta t((1-\gamma)k_1 + \gamma k_2)), \label{dirk2_eq1}\\
+u_{n+1} &= u_n + \frac{\Delta t}{2} (k_1 +k_2) . \label{dirk2_eq2}
+\end{align}
+!et
+Here, (ref{dirk2_eq0}) is nearly identical to the equation defining the stage derivative
+in the backward Euler method, the only difference being the factor $\gamma$ in front of
+$k_1$ inside the function call. Furthermore, the only difference between (ref{dirk2_eq0}) and
+(ref{dirk2_eq1}) is the additional term $\Delta t(1-\gamma)k_1$ inside the function call. 
+In general, any stage equation for any DIRK method can be written as
+!bt
+\begin{equation*}
+k_i = f(t_n+c_i\Delta t, u_n+\Delta t(\sum_{j=0}^{i-1}a_{ij}k_j + \gamma k_i)), 
+\end{equation*}
+!et
+where the sum inside the function call only includes previously computed stages. Given the
+similarity with the stage equation from the backward Euler method, it is natural to implement
+the SDIRK stage equation as a generalization of the `stage_eq` method from the `BackwardEuler` class. 
+A modified `stage_eq` method may look as follows.
+!bc pycod
+def stage_eq(self,k,c_i,k_sum):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = self.t[n+1] - self.t[n]
+
+        return k - f(t[n]+c_i*dt,u[n]+dt*(k_sum+self.gamma*k))
+!ec
+This method takes two additional parameters; the coefficient `c_i` corresponding to the current stage, 
+and the array `k_sum` which holds the sum $\sum_{j=1}^{i-1}a_{ij}k_j$. These arguments need to 
+initialized correctly for each stage and passed as additional arguments to the SciPy `root` function. 
+We also assume that the method parameter $\gamma$ has been stored as a class attribute, and the
+implementation is restricted to SDIRK methods. 
+
+With the `stage_eq` method implemented as above, the `solve_stages` method may simply consist of repeated
+calls to this method to compute all the stage derivatives. For the two-stage method defined 
+by (ref{dirk2_eq0})-(ref{dirk2_eq2}), the complete class implementation may look like
+!bc pycod
+class DIRK2(ImplicitRK):
+    def __init__(self,f):
+        super().__init__(f)
+        self.gamma = 1/2 + np.sqrt(3)/6
+        self.a21 = 1-self.gamma
+        self.c1 = self.gamma
+        self.c2 = 1
+        self.b = np.array([1/2, 1/2])
+
+    def stage_eq(self,k,c_i, k_sum):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = self.t[n+1] - self.t[n]
+        gamma = self.gamma
+
+        return k - f(t[n]+c_i*dt,u[n]+dt*(k_sum+gamma*k))
+
+    def solve_stages(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        
+        #stage 1:
+        k0 = f(t[n],u[n]) #initial guess 
+        k_sum = np.zeros_like(k0)
+        k1 = root(self.stage_eq,k0,args=(self.c1,k_sum)).x
+        
+        #stage 2:
+        k_sum = k_sum + self.a21*k1 
+        k2 = root(self.stage_eq,k1,args=(self.c2,k_sum)).x
+        
+        return k1,k2
+!ec
+As for the FIRK method classes, the constructor's only tasks are to call the superclass' constructor
+to define the right hand side, and then to define all the method parameters. We have here defined the
+coefficients as individual variables rather than NumPy arrays, since this may be more readable and 
+our implementation of the stage equation does not require them to be arrays. However, we keep the
+array definition of the $b_i$ coefficients, in order to reuse the `advance` method from the `ImplicitRK` class. 
+
+
+
+
 
 
 

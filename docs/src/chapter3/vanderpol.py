@@ -1,4 +1,4 @@
-from ODESolver import *
+from ImplicitRK_v2 import *
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -15,7 +15,9 @@ class VanderPol:
 if __name__ == '__main__':
     model = VanderPol(mu=1)
 
-    solver = ForwardEuler(model)
+    
+    solver = Radau3(model)
+
     solver.set_initial_condition([1,0])
 
     t_span = (0,20)

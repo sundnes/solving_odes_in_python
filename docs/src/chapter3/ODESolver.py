@@ -26,7 +26,10 @@ class ODESolver:
         t0,T = t_span
         self.dt = T/N
         self.t = np.zeros(N+1) #N steps ~ N+1 time points
-        self.u = np.zeros((N+1,self.neq))
+        if self.neq == 1:
+            self.u = np.zeros(N+1)
+        else:
+            self.u = np.zeros((N+1,self.neq))
         
         self.t[0] = t0
         self.u[0] = self.u0
@@ -80,8 +83,8 @@ def test_exact_numerical_solution():
     """
     a = 0.2; b = 3
 
-    def f(u, t):
-        return a + (u - u_exact(t))**5
+    def f(t, u):
+        return a #+ (u - u_exact(t))**5
 
     def u_exact(t):
         """Exact u(t) corresponding to f above."""
@@ -91,11 +94,12 @@ def test_exact_numerical_solution():
     T = 8
     N = 10
     tol = 1E-15
-    t_points = np.linspace(0, T, N)
+    #t_points = np.linspace(0, T, N)
+    t_span = (0,T)
     for solver_class in registered_solver_classes:
         solver = solver_class(f)
         solver.set_initial_condition(u0)
-        u, t = solver.solve(t_points)
+        t, u = solver.solve(t_span,N)
         u_e = u_exact(t)
         max_error = (u_e - u).max()
         msg = f'{solver.__class__.__name__} failed with max_error={max_error}'
