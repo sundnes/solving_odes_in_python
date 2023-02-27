@@ -97,8 +97,8 @@ h_{new} = h \left(\frac{tol}{e_2}\right)^{1/(p+1)} . \label{ch4:next_step}
 !et
 If the estimated error does not satisfy (ref{ch4:tolerance}), the step is 
 rejected and is recomputed with a smaller step. The new step may also, in this case, 
-be based on a formula such as (ref{ch4:next_step}). In practice, a slightly modification 
-(ref{ch4:next_step}) is usually applied, to introduce a safety factor and limit 
+be based on a formula such as (ref{ch4:next_step}). In practice, a slightly modified version
+ (ref{ch4:next_step}) is usually applied, to introduce a safety factor and limit 
 the variation in step size from one step to the next. Further details can be found in, e.g., 
 cite{ODEI,AscherPetzold}.
 
@@ -137,8 +137,30 @@ with an embedded error estimator is often referred to as a Runge-Kutta
 pair of order $n(m)$, where $n$ is the order of the main method
 and $m$ the order of the error estimator.
 
+The simplest Runge-Kutta pair is obtained by combining Heun's method with the
+forward Euler method. The method is defined by the Butcher Tableau 
+!bt
+\begin{equation}
+\begin{array}{c|cc}
+0 & 0 & \\ 
+1 & 1 & \\ \hline
+ & 1/2 & 1/2 \\
+ & 1 & 0
+\end{array} ,
+\label{heun_euler0}
+\end{equation}
+!et
+where we see that we include an additional line at the bottom for defining the additional 
+coefficients $\hat{b}_i$. We can use this simple method to illustrate the
+implementation of adaptive methods. 
+
+
+
+
 (NBNB introduce Butcher tableau for embedded methods.)
 (NBNB what about an embedded method for the RK4 method considered earlier)
+(NBNB introduce the idea with a simpler method)
+
 A quite famous and widely used pair of ERK methods is the Dormand-Prince 
 method, which is a seven-stage method with the following 
 coefficients:
