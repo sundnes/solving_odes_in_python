@@ -24,7 +24,7 @@ u^{\prime}(t) = f(t,u(t)),
 label{ode0}
 \end{equation}
 !et
-which means that the ODE is fully specified by the definition of the right hand side function $f(t,u)$. Examples of this
+which means that the ODE is fully specified by the definition of the right-hand side function $f(t,u)$. Examples of this
 function may be:
 !bt
 \begin{align*}
@@ -33,7 +33,7 @@ f(t,u) &= \alpha u\left(  1-\frac{u}{R}\right),\quad\hbox{logistic growth}\\
 f(t,u) &= -b|u|u + g,\quad\hbox{falling body in a fluid}
 \end{align*}
 !et
-Notice that, for generality, we write all these right hand sides as functions of both $t$ and $u$, although the
+Notice that, for generality, we write all these right-hand sides as functions of both $t$ and $u$, although the
 mathematical formulations only involve $u$. It will become clear later why such a general formulation is useful.
 Our aim is now to write functions and classes that take $f$ as input, and solve the corresponding ODE to produce
 $u$ as output.
@@ -50,7 +50,7 @@ and is commonly referred to as an *initial value problem*, or simply an IVP. All
 in this book are initial value problems.
 
 === A simple and general solver; the Forward Euler method. ===
-All the numerical methods we will considered in this chapter are based on approximating the derivatives
+All the numerical methods we will consider in this chapter are based on approximating the derivatives
 in the equation $u'=f(t,u)$ by finite differences. To introduce the idea, assume that we have 
 computed $u$ at discrete time points $t_0,t_1,\ldots,t_n$. At time $t_n$ we have the ODE
 !bt
@@ -70,7 +70,7 @@ and we can rearrange the terms to obtain an explicit formula for $u(t_{n+1})$:
 !et
 This method is known as the *Forward Euler (FE) method* or the *Explicit Euler Method*,
 and is the simplest numerical method for solving an ODE. The classification as a *forward*
-or *explicit* method referw to the fact that we have an explicit update formula for $u(t_{n+1}$,
+or *explicit* method refer to the fact that we have an explicit update formula for $u(t_{n+1}$,
 which only involves known quantities at time $t_n$. In contrast, for an *implicit* ODE solver
 the update formula will include terms on the form $f(u(t_{n+1},t_{n+1})$, and we need to solve 
 a generally nonlinear equation to determine the unknown $u(t_{n+1})$. We will visit other explicit ODE solvers in
@@ -180,8 +180,8 @@ def forward_euler(f, u0, T, N):
 
     return t, u
 !ec
-This simple function can solve any ODE written on the form (ref{ode0}). The right
-hand side function $f(t,u)$ needs to be implemented as a Python function, which is
+This simple function can solve any ODE written on the form (ref{ode0}). The right-hand 
+side function $f(t,u)$ needs to be implemented as a Python function, which is
 then passed as an argument to `forward_euler` together with the initial condition `u0`, the
 stop time `T` and the number of time steps. The two latter arguments are then used
 to calculate the time step `dt` inside the function.
@@ -199,7 +199,7 @@ t, u = forward_euler(f, u0, T, N)
 !ec
 The `forward_euler` function returns the two arrays `u` and `t`, which we can
 plot or process further as we want. One thing worth noticing in this code is the definition of the
-right hand side function `f`. As we mentioned above, this function should always be written
+right-hand side function `f`. As we mentioned above, this function should always be written
 with two arguments `u` and `t`, although in this case only `u` is used inside the function.
 The two arguments are needed because we want our solver to work for all ODEs on the
 form $u' = f(t,u)$, and the function is therefore called as `f(t[n], u[n])` inside
@@ -210,8 +210,8 @@ This problem is solved by simply writing `def f(t,u):` even if `t` is never used
 inside the function.[^rhs_note]
 
 # #if FORMAT != 'ipynb'
-[^rhs_note]: This way of defining the right hand side is a standard used by most
-available ODE solver libraries, both in Python and other languages. The right hand
+[^rhs_note]: This way of defining the right-hand side is a standard used by most
+available ODE solver libraries, both in Python and other languages. The right-hand
 side function always takes two arguments `t` and `u`, but, annoyingly, the order of the
 two arguments varies between different solver libraries. Some expect the `t` argument first,
 while others expect `u` first.
@@ -254,14 +254,14 @@ The benefits of using a class instead of a function may not be obvious at this
 point, but it will become clear when we introduce different ODE solvers later. 
 For now, let us just look at how such a solver class would need to be implemented in 
 order to support the use case specified above:
-  * We need a constructor (`__init__`) which takes a single argument, the right hand side function `f`, 
+  * We need a constructor (`__init__`) which takes a single argument, the right-hand side function `f`, 
     and stores it as an attribute.
   * The method `set_initial_condition` takes the initial condition as argument and stores it. 
   * The class needs a `solve`-method, which takes the time interval `t_span` and number of time steps `N`
     as arguments. The method implements the for-loop for solving the ODE and returns
     the solution, similar to the `forward_euler` function considered earlier.
   * The time step $\Delta t$ and the sequences $t_n$, $u_n$ must be
-    initalized in one of the methods, and it may also be convenient to store these as attributes. 
+    initialized in one of the methods, and it may also be convenient to store these as attributes. 
     Since the time interval and the number of steps are arguments to the `solve` method it is natural
     to do these computations there.
 

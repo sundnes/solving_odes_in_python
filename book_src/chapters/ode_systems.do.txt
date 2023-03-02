@@ -2,7 +2,7 @@
 label{sec:ode_sys}
 So far we have only considered ODEs with a single solution component, often called scalar ODEs.
 Many interesting processes can be described
-by systems of ODEs, i.e., multiple ODEs where the right hand side of one equation depends on the solution of the others. Such equation
+by systems of ODEs, i.e., multiple ODEs where the right-hand side of one equation depends on the solution of the others. Such equation
 systems are also referred to as vector ODEs. One simple example is
 !bt
 \begin{alignat*}{2}
@@ -10,7 +10,7 @@ u' &= v, \quad &&u(0) = 1\\
 v' &= -u, \quad &&v(0) = 0.
 \end{alignat*}
 !et
-The solution of this system is $u=\cos t, v=\sin t$, which can easily be verified by insterting the solution into the equations
+The solution of this system is $u=\cos t, v=\sin t$, which can easily be verified by inserting the solution into the equations
 and the initial conditions. For more general cases, it is usually even more difficult to find analytical solutions of ODE systems
 than of scalar ODEs, and numerical methods are usually required. In this section we will extend the solvers introduced in
 sections ref{sec:fe_intro}-ref{sec:fe_class} to be able to solve systems of ODEs. We shall see that such an 
@@ -74,7 +74,7 @@ u^{(i)}_{k+1} = u^{(i)}_{k} + \Delta t f^{(i)}(t_k, u_{k}), \mbox{ for } i = 0,\
 !et
 but the compact vector notation is much easier to read. Fortunately, the way we write the vector
 version of the formula is also how NumPy arrays are used in calculations. The
-Python code for the formula above may therefore look idential to the version for scalar ODEs;
+Python code for the formula above may therefore look identical to the version for scalar ODEs;
 !bc pycod
 u[k+1] = u[k] + dt*f(t[k], u[k])
 !ec
@@ -99,7 +99,7 @@ u[1] = 1.4
 !ec
 In the case of a system of two ODEs, `t` is still a one-dimensional array, but the solution array `u` is
 now two-dimensional, with one column for each solution component. We can index it exactly as shown above, 
-and the result is a one-dimensional array of length two, which holdes the two solution components
+and the result is a one-dimensional array of length two, which holds the two solution components
 at a single time step:
 !bc
 u = array([[1.0, 0.8],
@@ -123,7 +123,7 @@ The similarity of the generic notation for vector and scalar ODEs, and the
 convenient algebra of NumPy arrays, indicate that the solver
 implementation for scalar and system ODEs can also be very similar. This is indeed true,
 and the `ForwardEuler_v2` class from the previous chapter can be made to work for ODE
-systems by a few minor modifactions:
+systems by a few minor modifications:
  * Ensure that `f(t,u)` always returns an array.
  * Inspect $u_0$ to see if it is a single number or a list/array/tuple and
    make the `u` either a one-dimensional or two-dimensional  array.
@@ -193,7 +193,7 @@ of a simple pendulum, as illustrated in Figure ref{fig:pendulum}. This nonlinear
 is a classic physics problem, and despite its simplicity it is not possible to find 
 an exact analytical solution. We will formulate the system in terms of two main
 variables; the angle $\theta$ and the angular velocity $\omega$, see Figure ref{fig:pendulum}.
-For a simple pendulum with no friction, the dynamcs of these two variables is governed by
+For a simple pendulum with no friction, the dynamics of these two variables is governed by
 !bt
 \begin{align}
 \frac{d \theta}{dt} &= \omega, label{pendulum1} \\
@@ -202,14 +202,14 @@ For a simple pendulum with no friction, the dynamcs of these two variables is go
 !et
 where $L$ is the length of the pendulum and $g$ is the gravitational constant. Eq. (ref{pendulum1}) follows
 directly from the definition of the angular velocity, while (ref{pendulum2}) follows from Newton's second 
-law, where $d\omega/dt$ is the acceleration and the right hand side is the tangential component of
+law, where $d\omega/dt$ is the acceleration and the right-hand side is the tangential component of
 the gravitational force acting on the pendulum, divided by its mass.  
 To solve the system we need to define initial conditions for both unknowns,
 i.e., we need to know the initial position and velocity of the pendulum. 
 
 FIGURE: [../chapters/figs_ch1/pendulum.png, width=100 frac=0.2] Illustration of the pendulum problem. The main variables of interest are the angle $\theta$ and the angular velocity $\omega$. label{fig:pendulum}
 
-Since the right hand side defined by (ref{pendulum1})-(ref{pendulum2}) includes the 
+Since the right-hand side defined by (ref{pendulum1})-(ref{pendulum2}) includes the 
 parameters $L$ and $g$, it is convenient to implement it as a class, as illustrated for the logistic
 growth model earlier. A possible implementation may look like this:
 !bc pycod
@@ -255,7 +255,7 @@ components. However, we are often interested in plotting selected components of 
 in this case the array slicing is needed. The resulting plot is shown in Figure ref{fig:pendulum_sol}. 
 The observant reader may also notice that the amplitude of the pendulum motion appears to increase over time, 
 which is clearly not physically correct. In fact, for an undamped pendulum problem defined by 
-(ref{pendulum1})-(ref{pendulum2}), the energy is conserved and the amplitude should therefore be constant. 
+(ref{pendulum1})-(ref{pendulum2}), the energy is conserved, and the amplitude should therefore be constant. 
 The increasing amplitude is a numerical artefact introduced by the forward Euler method, and the solution
 may be improved by reducing the time step or replacing the numerical method. 
 
@@ -307,7 +307,7 @@ e.g., of second or third order, but it quickly gets complicated for high order s
 instance cite{ODEI} for details. 
 
 Knowing the theoretical accuracy of an ODE solver is important for a number of reasons, and one of them is that it
-provides a method for verifying our implentation of the solver. If we can solve a given problem and demonstrate that
+provides a method for verifying our implementation of the solver. If we can solve a given problem and demonstrate that
 the error behaves as predicted by the theory, it gives a good indication that the solver is implemented correctly. 
 We can illustrate this procedure using the simple initial value problem introduced earlier;
 !bt
@@ -326,18 +326,18 @@ RRMSE &= \sqrt{\frac{1}{N}\sum_{n=0}^N\frac{(u_n-\hat{u}(t_n))^2}{\hat{u}(t_n)^2
 \end{align*}
 !et
 respectively. Here, $u_n$ is the numerical solution at time step $n$ and $\hat{u}(t_n)$ the corresponding
-exact solution. In more mathematically oriented texts, the errors are defined in terms of \emph{norms}, for 
+exact solution. In more mathematically oriented texts, the errors are usually defined in terms of \emph{norms}, for 
 instance the discrete $l_1,l_2,$ and $l_\infty$ norms:
 !bt
 \begin{align*}
- e_{l_1} &= sum_{i=0}^N(\|\hat{u}_i-u(t_i)\|),\\
+ e_{l_1} &= \sum_{i=0}^N(\|\hat{u}_i-u(t_i)\|),\\
  e_{l_2} &= \sum_{i=0}^N(\hat{u}_i-u(t_i)^2), \\
  e_{l_\infty} &= \max_{i=0}^N(\hat{u}_i-u(t_i)).  
 \end{align*}
 !et
-(NBNB check formulas) While the choice of error norm may be important for certain cases, for practical
+While the choice of error norm may be important for certain cases, for practical
 applications it is usually not very important, and all the different error measures can be expected to behave
-as predicted by the theory. For simplicity we will apply an even simpler error measure for our example, where
+as predicted by the theory. For simplicity, we will apply an even simpler error measure for our example, where
 we simply compute the error at the final time $T$, given by $e = \|u_N-\hat{u}(t_N)\|$. Using the `ForwardEuler`
 class introduced above, the complete code for checking the convergence may look as follows:
 !bc pycod
@@ -390,7 +390,7 @@ to the equation, but this solution is only available for very simple ODE problem
 interesting to estimate the error and the order of convergence for more complex problems, and for this task we 
 need to take a different approach. Several alternatives exist, including for instance the *method of manufactured
 solutions*, where one simply choses a solution function $u(t)$ and computes its derivative analytically to 
-determine the right hand side of the ODE. An even simpler approach, which usually works well, is to 
+determine the right-hand side of the ODE. An even simpler approach, which usually works well, is to 
 compute a very accurate numerical solution using a high-order solver and small time steps, and use this
 solution as the reference for computing the error. For accurate error estimates it is of course essential
 that the reference solution is considerably more accurate than the numerical solution we want to evaluate. 

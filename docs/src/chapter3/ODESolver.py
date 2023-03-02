@@ -9,6 +9,7 @@ class ODESolver:
     def __init__(self, f):
         # Wrap user's f in a new function that always
         # converts list/tuple to array (or let array be array)
+        self.model = f
         self.f = lambda t, u: np.asarray(f(t,u), float)
 
     def set_initial_condition(self, u0):

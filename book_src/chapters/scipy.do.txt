@@ -6,7 +6,7 @@ be used directly, so one may argue that there is no need to implement our own so
 This may indeed be true, but, as we have argued earlier, it is sometimes very useful to 
 know the inner workings of the solvers we apply, and the best way to obtain this 
 knowledge is to implement the solvers ourselves. However, if we have a given ODE model and
-want solve it as efficiently as possible, there are several existing solvers to choose from.
+want to solve it as efficiently as possible, there are several existing solvers to choose from.
 For Python programmers, the most natural choice may be the solvers from *SciPy*, which 
 have evolved into a robust and fairly efficient suite of ODE solvers. SciPy is a large suite 
 of scientific software in Python, including tools for linear algebra, optimization, integration,

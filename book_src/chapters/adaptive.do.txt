@@ -152,12 +152,24 @@ forward Euler method. The method is defined by the Butcher Tableau
 !et
 where we see that we include an additional line at the bottom for defining the additional 
 coefficients $\hat{b}_i$. We can use this simple method to illustrate the
-implementation of adaptive methods. 
+implementation of adaptive methods, before moving to more advanced adaptive RK solvers. 
+
+===== Implementing an adaptive solver =====
+Additional requirements:
+
+* Estimate error 
+* Accept/reject step
+* Compute next step
 
 
 
 
-(NBNB introduce Butcher tableau for embedded methods.)
+
+
+
+
+===== More advanced adaptive methods =====
+
 (NBNB what about an embedded method for the RK4 method considered earlier)
 (NBNB introduce the idea with a simpler method)
 
