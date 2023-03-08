@@ -16,7 +16,9 @@ solution has rapid variations, a smaller time step must be employed. We may illu
 situation by considering a particular class of ODE models, which describe the so-called
 *action potential* of excitable cells. These ODE models, first introduced by
 Hodgkin and Huxley cite{Hodgkin}, are important tools for studying the electrophysiology 
-of cells such as neurons and different types of muscle cells. The main variable of interest
+of cells such as neurons and different types of muscle cells. We will present the 
+ODEs of the Hodgkin-Huxley model below, and outline the main principles of the models
+here. The main variable of interest
 is usually the transmembrane potential, that is, the potential difference between
 the internals of a cell and its surroundings. When an excitable cell such as a neuron or
 a muscle cell is stimulated electrically, it triggers a cascade of processes in the
@@ -24,14 +26,17 @@ cell membrane, leading to various ion channels opening and closing, and the memb
 potential going from its resting negative state to approximately zero or slightly positive, 
 before returning to the resting value. This process of *depolarization* followed by 
 *repolarization* is called the action potential, and is illustrated in Figure ref{fig:hodgkinhuxley}.
-We see that the solution changes rapidly when the cell is depolarized, also referred to as the
-*upstroke phase*, and also during the repolarization. During the resting phase the potential 
-is stationary, and it seems likely that larger time steps can be used in this phase without 
-sacrificing accuracy. Such behavior can be observed in many types of ODE models, and  motivates
-methods that can adjust the time step to the properties of the
+See, for instance, cite{KeenerSneyd}, for a comprehensive overview of the Hodgkin-Huxley model
+and action potential models in general.
+The potential utility of adaptive time step methods is obvious from Figure ref{fig:hodgkinhuxley}. 
+The solution changes rapidly during the action potential, but is approximately constant for long
+time intervals when the cell is at rest. Such behavior can be observed in many 
+types of ODE models, and  motivates methods that can adjust the time step to the properties of the
 solution. Commonly referred to as adaptive methods or methods with
 automatic time step control, these techniques are important parts of
-modern ODE software.
+all modern ODE software.
+
+FIGURE: [../chapters/figs_ch4/hodgkinhuxley_AP.pdf, width=600 frac=1] Solution of the Hodgkin-Huxley model. The left panel shows a single action potential, while the right panel shows the result of stimulating the cell multiple times with a fixed period. label{fig:hodgkinhuxley}
 
 There are many possible approaches for selecting the time step automatically. One intuitive approach is to
 base the time step estimate on the dynamics of the solution, and select a small time step whenever rapid 

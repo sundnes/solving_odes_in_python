@@ -34,11 +34,13 @@ f(t,u) &= -b|u|u + g,\quad\hbox{falling body in a fluid}
 \end{align*}
 !et
 Notice that, for generality, we write all these right-hand sides as functions of both $t$ and $u$, although the
-mathematical formulations only involve $u$. It will become clear later why such a general formulation is useful.
+mathematical formulations only involve $u$. This general formulation is not strictly needed in the
+mathematical equations, but it is very convenient when we start programming, and want to use the same solver
+for a wide range of ODE models. We will discuss this in more detail later. 
 Our aim is now to write functions and classes that take $f$ as input, and solve the corresponding ODE to produce
 $u$ as output.
 
-For (ref{ode0}) to have a unique solution we need to specify the *initial condition* for $u$, which is 
+In order for (ref{ode0}) to have a unique solution we need to specify the *initial condition* for $u$, which is 
 the value of the solution at time $t=t_0$. The resulting mathematical problem is written as
 !bt
 \begin{align*}
@@ -47,12 +49,19 @@ u(t_0) &= u_0 ,
 \end{align*}
 !et
 and is commonly referred to as an *initial value problem*, or simply an IVP. All the ODE problems we will consider 
-in this book are initial value problems.
+in this book are initial value problems. As an example, consider the very simple ODE
+!bt
+\[ u'=u .\]
+!et
+This equation has the general solution $u=Ce^t$ for any constant $C$, so it has an infinite number of solutions.
+Specifying an initial condition $u(t_0)=u_0$ gives $C=u_0$, and we get the unique solution $u=u_0e^t$.  
+We shall see that, when solving the equation numerically, we need to define $u_0$ in order to start our method and
+compute a solution at all.
 
 === A simple and general solver; the Forward Euler method. ===
-All the numerical methods we will consider in this chapter are based on approximating the derivatives
-in the equation $u'=f(t,u)$ by finite differences. To introduce the idea, assume that we have 
-computed $u$ at discrete time points $t_0,t_1,\ldots,t_n$. At time $t_n$ we have the ODE
+A numerical method for (ref{ode0}) can be derived by simply approximating the derivative
+in the equation $u'=f(t,u)$ by a finite difference. To introduce the idea, assume that we have 
+already computed $u$ at discrete time points $t_0,t_1,\ldots,t_n$. At time $t_n$ we have the ODE
 !bt
 \[ u'(t_n) = f(t_n,u(t_n)), \]
 !et
@@ -70,9 +79,9 @@ and we can rearrange the terms to obtain an explicit formula for $u(t_{n+1})$:
 !et
 This method is known as the *Forward Euler (FE) method* or the *Explicit Euler Method*,
 and is the simplest numerical method for solving an ODE. The classification as a *forward*
-or *explicit* method refer to the fact that we have an explicit update formula for $u(t_{n+1}$,
+or *explicit* method refer to the fact that we have an explicit update formula for $u(t_{n+1})$,
 which only involves known quantities at time $t_n$. In contrast, for an *implicit* ODE solver
-the update formula will include terms on the form $f(u(t_{n+1},t_{n+1})$, and we need to solve 
+the update formula will include terms on the form $f(t_{n+1},u(t_{n+1})$, and we need to solve 
 a generally nonlinear equation to determine the unknown $u(t_{n+1})$. We will visit other explicit ODE solvers in
 Chapter ref{ch:runge_kutta} and implicit solvers in Chapter ref{ch:stiff}. 
 
@@ -85,20 +94,7 @@ label{forw_euler}
 \end{equation}
 !et
 which, if we know the $u_0$ at time $t_0$, can be applied repeatedly to $u_1$, $u_2$, $u_3$ and so forth.
-
-=== An ODE needs an initial condition. ===
-As mentioned above, in order to solve an ODE like (ref{ode0}) we need to specify an initial condition,
-to turn the problem into an initial value problem. In mathematics, the initial condition is needed 
-to have a unique solution $u$, and when solving the equation numerically, we need to 
-set $u_0$ in order to start our method and
-compute a solution at all. As an example, consider the very simple ODE
-!bt
-\[ u'=u .\]
-!et
-This equation has the general solution $u=Ce^t$ for any constant $C$, so it has an infinite number of solutions.
-Specifying an initial condition $u(t_0)=u_0$ gives $C=u_0$, and we get the unique solution $u=u_0e^t$.  
-When solving an initial value problem numerically, we start from our known $u_0$, and 
-apply formula (ref{forw_euler}) repeatedly:
+If we again consider the very simple ODE given by $u' = u$, we have 
 !bt
 \begin{align*}
 u_1 &= u_0 + \Delta t u_0, \\
@@ -108,7 +104,9 @@ u_3 &= u_2 + \ldots .
 !et
 In a Python program, this repeated application
 of the same formula is conveniently implemented in a for-loop, and the solution can 
-be stored in a list or a NumPy array. For a given final time $T$ and number of time steps $N$, 
+be stored in a list or a NumPy array. See, for instance, cite{sundnes2020introduction} for an introduction to
+NumPy arrays and tools, which will be used extensively through these notes. 
+For a given final time $T$ and number of time steps $N$, 
 we perform the following steps:
  o Create arrays `t` and `u` of length $N+1$[^steps_note]
  o Set initial condition: `u[0]` $= u_0$, `t[0]` $= 0$
@@ -127,7 +125,7 @@ A complete Python implementation of this algorithm may look like
 import numpy as np
 import matplotlib.pyplot as plt
 
-N=20
+N = 20
 T = 4
 dt = T/N
 u0 = 1
@@ -149,7 +147,7 @@ The solution is shown in Figure ref{fig:ode0}, for two different choices of the 
 approximate solution improves as $\Delta t$ is reduced, although both the solutions are quite inaccurate. However, reducing the
 time step further will easily create a solution that cannot be distinguished from the exact solution.
 
-FIGURE: [../chapters/fig-ode2/FE_n_10_20, width=600 frac=1] Solution of $u' = u, u(0) = 1$ with $\Delta t = 0.4$ and $\Delta t=0.2$. label{fig:ode0}
+FIGURE: [../chapters/fig-ode2/FE_n_10_20, width=600 frac=1] Solution of $u' = u, u(0) = 1$ with $\Delta t = 0.4 (N=10)$ and $\Delta t=0.2 (N=20)$. label{fig:ode0}
 
 === Extending the solver to the general ODE. ===
 As stated above, the purpose of this chapter is to create general-purpose ODE solvers, that can solve any ODE written
@@ -158,11 +156,11 @@ on the form $u'=f(t,u)$. This requires a very small modification of the algorith
  o Set initial condition: `u[0]` = $u_0$, `t[0]=0`
  o For $n=0,1,2,\ldots,N-1$:
   * `t[n+1] = t[n] + dt`
-  * `u[n+1] = u[n] + dt*f(u[n], t[n])`
+  * `u[n+1] = u[n] + dt*f(t[n], u[n])`
 
 The only change of the algorithm is in the formula for computing `u[n+1]` from `u[n]`.
 In the previous case we had $f(t,u) = u$, and to create a
-general-purpose ODE solver we simply replace `u[n]` with the more general `f(u[n],t[n])`.
+general-purpose ODE solver we simply replace `u[n]` with the more general `f(t[n],u[n])`.
 The following Python function implements this generic version of the FE method:
 !bc pycod
 def forward_euler(f, u0, T, N):
@@ -176,14 +174,14 @@ def forward_euler(f, u0, T, N):
 
     for n in range(N):
         t[n+1] = t[n] + dt
-        u[n+1] = u[n] + dt*f(u[n], t[n])
+        u[n+1] = u[n] + dt*f(t[n], u[n])
 
     return t, u
 !ec
 This simple function can solve any ODE written on the form (ref{ode0}). The right-hand 
 side function $f(t,u)$ needs to be implemented as a Python function, which is
 then passed as an argument to `forward_euler` together with the initial condition `u0`, the
-stop time `T` and the number of time steps. The two latter arguments are then used
+stop time `T` and the number of time steps `N`. The two latter arguments are then used
 to calculate the time step `dt` inside the function.
 
 To illustrate how the function is used, let us apply it to solve the same problem as above;
@@ -275,17 +273,18 @@ import numpy as np
 
 class ForwardEuler_v0:
     def __init__(self, f): 
-        self.f = f #, self.U0, self.T, self.N = f, U0, T, N
+        self.f = f 
         
     def set_initial_condition(self,u0):
         self.u0 = u0
 
     def solve(self,t_span,N):
-        """Compute solution for t_span[0] <= t <= t_span[1],
+        """Compute solution for 
+        t_span[0] <= t <= t_span[1],
         using N steps."""
         t0,T = t_span
         self.dt = T/N
-        self.t = np.zeros(N+1) #N steps ~ N+1 time points
+        self.t = np.zeros(N+1) 
         self.u = np.zeros(N+1)
         
         self.t[0] = t0
@@ -299,8 +298,6 @@ class ForwardEuler_v0:
 
     def advance(self):
         """Advance the solution one time step."""
-        # Create local variables to get rid of "self." in
-        # the numerical formula
         u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
 
         unew = u[n] + dt*f(t[n],u[n])
@@ -320,7 +317,8 @@ Consider for instance the model for logistic growth;
 !et
 which is typically used to model self-limiting growth of a biological population, i.e., growth 
 that is constrained by limited resources. The initial growth is approximately exponential, with
-growth rate $\alpha$, and flattens out as the population size approaches the *carrying capacity* $R$. 
+growth rate $\alpha$, and the population curve flattens out as the population size approaches the *carrying capacity* $R$,
+see Figure ref{fig:logistic} for an example solution. 
 The right hand side function includes two parameters $\alpha$ and $R$, but if we
 want to solve it using our FE function or class, it must be implemented
 as a function of $t$ and $u$ only. There are several ways to do this in Python, but one
@@ -330,7 +328,9 @@ use them inside the `__call__` method:
 !bc pycod
 class Logistic:
     def __init__(self, alpha, R, u0):
-        self.alpha, self.R, self.u0 = alpha, float(R), u0
+        self.alpha = alpha
+        self.R = R 
+        self.u0 = u0
 
     def __call__(self, t, u):   # f(t,u)
         return self.alpha*u*(1 - u/self.R)
@@ -344,4 +344,4 @@ solver.set_initial_condition(problem.u0)
 t, u = solver.solve(T=40,N=400)
 !ec
 
-FIGURE: [../chapters/fig-ode2/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model.
+FIGURE: [../chapters/fig-ode2/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model. label{fig:logistic}

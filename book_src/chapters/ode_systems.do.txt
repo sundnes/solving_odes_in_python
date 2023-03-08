@@ -44,7 +44,7 @@ a vector of $n$ values.
 Using this notation, the ODE system can be written
 !bt
 \[ 
-    u' = f(u, t),\quad u(t_0) = u_0,
+    u' = f(t, u),\quad u(t_0) = u_0,
 \]
 !et
 where $u$ and $f$ are now vectors and $u_0$ is a vector of initial conditions. We see that we use exactly the
@@ -81,12 +81,13 @@ u[k+1] = u[k] + dt*f(t[k], u[k])
 with the important difference that both `u[k]` and `u[k+1]` are now arrays.[^numpy]
 Since these are arrays, the solution `u` must be a
 two-dimensional array, and `u[k],u[k+1]`, etc. are the rows of this array.
-The function `f` expects an array as its first argument, and must return a one-dimensional array,
+The function `f` expects an array as its second argument, and must return a one-dimensional array,
 containing all the right-hand sides $f^{(0)},\ldots,f^{(n-1)}$. To get a better
 feel for how these arrays look and how they are used,
 we may compare the array holding the solution of a scalar ODE to that of a system of two ODEs.
 For the scalar equation, both `t` and `u` are one-dimensional NumPy
-arrays, and indexing into `u` gives us numbers, representing the solution at each time step: 
+arrays, and indexing into `u` gives us numbers, representing the solution at each time step.
+For instance, we may have 
 !bc
 t = array([0. ,  0.4, 0.8, 1.2, (...) ])
 
@@ -115,22 +116,29 @@ u[1] = array([1.4, 1.1])
 
 # #if FORMAT  != 'ipynb'
 [^numpy]: This compact notation requires that the solution vector `u` is represented by
-a NumPy array. We could also, in principle, use lists to hold the solution components, but
+a NumPy array. We could, in principle, use lists to hold the solution components, but
 the resulting code would need to loop over the components and would be far less elegant and readable.
 # #endif
 
 The similarity of the generic notation for vector and scalar ODEs, and the
 convenient algebra of NumPy arrays, indicate that the solver
 implementation for scalar and system ODEs can also be very similar. This is indeed true,
-and the `ForwardEuler_v2` class from the previous chapter can be made to work for ODE
+and the `ForwardEuler_v0` class from the previous chapter can be made to work for ODE
 systems by a few minor modifications:
  * Ensure that `f(t,u)` always returns an array.
  * Inspect $u_0$ to see if it is a single number or a list/array/tuple and
-   make the `u` either a one-dimensional or two-dimensional  array.
+   make the `u` either a one-dimensional or two-dimensional  array. [^u_dim]
 If these two items are handled and initialized correctly, the rest of the code from
 Section ref{sec:fe_class} will in fact work with no modifications.
+
+[^u_dim]: This step is not strictly needed, since we could use a two-dimensional array
+with size `(N+1,1)` for scalar ODEs. However, using a one-dimensional array for scalar
+ODEs gives simpler and more intuitive indexing. 
+
 The extended class implementation may look like:
 !bc pycod
+import numpy as np
+
 class ForwardEuler:
     def __init__(self, f): 
         self.f = lambda t,u: np.asarray(f(t,u),float)
@@ -147,16 +155,19 @@ class ForwardEuler:
     
     def solve(self,t_span,N):
         """Compute solution for 
-        t_span[0] <= t <= t_span[1], using N steps."""
+        t_span[0] <= t <= t_span[1],
+        using N steps."""
         t0,T = t_span
-        self.dt = T/N
-        self.t = np.zeros(N+1) #N steps ~ N+1 time points
-        self.u = np.zeros(N+1)
+        self.dt = (T-t0)/N
+        self.t = np.zeros(N+1)
+        if self.neq == 1:
+            self.u = np.zeros(N+1)
+        else:
+            self.u = np.zeros((N+1,self.neq))
         
         self.t[0] = t0
         self.u[0] = self.u0
     
-        
         for n in range(N):
             self.n = n
             self.t[n+1] = self.t[n] + self.dt
@@ -165,17 +176,17 @@ class ForwardEuler:
 
     def advance(self):
         """Advance the solution one time step."""
-        # Create local variables to get rid of "self." in
-        # the numerical formula
         u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
 
         unew = u[n] + dt*f(t[n],u[n])
         return unew
+
 !ec
 It is worth commenting on some parts of this code. First, the constructor looks
 almost identical to the scalar case, but we use a lambda function and
-`np.asarray` to convert any `f` that returns a list or tuple to a function
-returning a NumPy array. This modification is not strictly
+the convenient `np.asarray` function to convert any `f` that 
+returns a list or tuple to a function returning a NumPy array. If `f` already returns an
+array, `np.asarray` will simply return this array with no changes. This modification is not strictly
 needed, since we could just assume that the user implements `f` to return
 an array, but it makes the class more robust and flexible. We have also included
 a couple of tests in the `set_initial_condition` method, to check if `u0` is a single
@@ -253,13 +264,16 @@ Notice that since `u` is a two-dimensional array, we use array slicing to extrac
 In this specific example a call like `plt.plot(t,u)` would also work, and would plot both solution
 components. However, we are often interested in plotting selected components of the solution, and
 in this case the array slicing is needed. The resulting plot is shown in Figure ref{fig:pendulum_sol}. 
+Another minor detail worth noticing is use of Python's raw string format for the labels, indicated
+by the `r` in front of the string. Raw strings will treat the backslash (`\`) as a regular character, and is
+often needed when using Latex encoding of mathematical symbols. 
 The observant reader may also notice that the amplitude of the pendulum motion appears to increase over time, 
 which is clearly not physically correct. In fact, for an undamped pendulum problem defined by 
 (ref{pendulum1})-(ref{pendulum2}), the energy is conserved, and the amplitude should therefore be constant. 
 The increasing amplitude is a numerical artefact introduced by the forward Euler method, and the solution
 may be improved by reducing the time step or replacing the numerical method. 
 
-FIGURE: [../chapters/figs_ch1/pendulum_FE.pdf, width=600 frac=1] Solution of the simple pendulum problem, computed with the forward Euler method. 
+FIGURE: [../chapters/figs_ch1/pendulum_FE.pdf, width=600 frac=1] Solution of the simple pendulum problem, computed with the forward Euler method. label{fig:pendulum_sol}
 
 
 ======= Checking the error in the numerical solution =======
@@ -279,7 +293,7 @@ which we will not cover in detail here, and the interested reader is referred to
 However, when implementing a numerical method it is very useful to know its theoretical accuracy, and
 in particular to be able to compute the error and verify that it behaves as expected.
 
-The Taylor expansion, discussed briefly in Appendix ref{ch:diff_eq}, is an essential tool for 
+The Taylor expansion, also discussed briefly in Appendix ref{ch:diff_eq}, is an essential tool for 
 estimating the error in numerical methods for ODEs. For any smooth function $\hat{u}(t)$, if we 
 can compute the function value and its derivatives at $t_n$, the value at $t_n+\Delta t$ 
 can be approximated by the series
@@ -289,20 +303,20 @@ can be approximated by the series
     \frac{\Delta t^3}{6}\hat{u}'''(t_n)+O(\Delta t^4).  
 \]
 !et
-We can include as many terms as we like, and since $Delta t$ is small we always have $Delta t^(n+1) \ll \Delta t^n$, so
+We can include as many terms as we like, and since $\Delta t$ is small we always have $\Delta t^(n+1) \ll \Delta t^n$, so
 the error in the approximation is dominated by the first neglected term.  
-The update formula of the FE method, derived from (ref{fd_approx}), is 
+The update formula of the FE method, derived from (ref{fd_approx}), was
 !bt
 \[
  u_{n+1} = u(t_n) + \Delta t u'(t_n),
 \]
 !et
-which we may recognize as a Taylor series truncated after the first order term, and the error  
-$\|u_{n+1}- \hat{u}_{n+1}\| \sim \Delta x^2$. Since this is the error for a single time step, the
-accumulated error after $N\sim 1/\Delta t $ steps is proportional to $\Delta t$. 
-The FE method is hence a \emph{first order} method. As we will see in Chapter 
-ref{ch:runge_kutta}, more accurate methods can be constructed by deriving update formulas to make more
-terms in the Taylor expansion cancel. This process is fairly straightforward for low-order methods, 
+which we may recognize as a Taylor series truncated after the first order term, and we expect the error
+$|u_{n+1}- \hat{u}_{n+1}|$ to be proportional to $\Delta x^2$. Since this is the error for a single time step, the
+accumulated error after $N\sim 1/\Delta t $ steps is proportional to $\Delta t$, and the 
+FE method is hence a \emph{first order} method. As we will see in Chapter 
+ref{ch:runge_kutta}, more accurate methods can be constructed by deriving update formulas that make more
+terms in the Taylor expansion of the error cancel. This process is fairly straightforward for low-order methods, 
 e.g., of second or third order, but it quickly gets complicated for high order solvers, see, for 
 instance cite{ODEI} for details. 
 
@@ -316,7 +330,7 @@ We can illustrate this procedure using the simple initial value problem introduc
 \]
 !et
 As stated above, this problem has the analytical solution $u=e^t$, and we can use this to compute the 
-error in our numerical solution. But how should this error be defined?  
+error in our numerical solution. But how should the error be defined?  
 There is no unique answer to this question. For practical applications,
 the so-called root-mean-square (RMS) or relative-root-mean-square (RRMS) are commonly used error measures, defined by
 !bt
@@ -330,15 +344,15 @@ exact solution. In more mathematically oriented texts, the errors are usually de
 instance the discrete $l_1,l_2,$ and $l_\infty$ norms:
 !bt
 \begin{align*}
- e_{l_1} &= \sum_{i=0}^N(\|\hat{u}_i-u(t_i)\|),\\
- e_{l_2} &= \sum_{i=0}^N(\hat{u}_i-u(t_i)^2), \\
+ e_{l_1} &= \sum_{i=0}^N(|u_i-\hat{u}(t_i)|),\\
+ e_{l_2} &= \sum_{i=0}^N(u_i-\hat{u}(t_i)^2), \\
  e_{l_\infty} &= \max_{i=0}^N(\hat{u}_i-u(t_i)).  
 \end{align*}
 !et
 While the choice of error norm may be important for certain cases, for practical
 applications it is usually not very important, and all the different error measures can be expected to behave
 as predicted by the theory. For simplicity, we will apply an even simpler error measure for our example, where
-we simply compute the error at the final time $T$, given by $e = \|u_N-\hat{u}(t_N)\|$. Using the `ForwardEuler`
+we simply compute the error at the final time $T$, given by $e = |u_N-\hat{u}(t_N)|$. Using the `ForwardEuler`
 class introduced above, the complete code for checking the convergence may look as follows:
 !bc pycod
 from forward_euler_class_v1 import *
@@ -357,7 +371,7 @@ T = 3.0
 t_span = (0,T)
 N = 30
 
-print(f'Time step (dt)   Error (e)      e/dt')
+print('Time step (dt)   Error (e)      e/dt')
 for _ in range(10):
     t,u = solver.solve(t_span,N)
     dt = T/N
@@ -396,7 +410,7 @@ solution as the reference for computing the error. For accurate error estimates 
 that the reference solution is considerably more accurate than the numerical solution we want to evaluate. 
 The reference solution therefore typically requires very small time steps and can take some time to 
 compute, but in most cases the computation time will not be a problem. We will revisit this method for 
-some example problems in Chapter ref{ch:disease_models} (NBNB check that this reference is correct).
+some example problems in Chapter ref{ch:disease_models}. (NBNB check that this reference is correct).
 
 
 

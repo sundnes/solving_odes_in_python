@@ -1,50 +1,77 @@
-These lecture notes are based on the book *A Primer on Scientific Programming with Python* by
-Hans Petter Langtangen[^primer], and primarily cover topics from Appendix A, C,
-and E. The notes are intended as a brief and gentle introduction to solving
+These lecture were originally based on the book *A Primer on Scientific Programming with Python* by
+Hans Petter Langtangen cite{langtangen2012primer}, mainly covering topics from Appendix A, C,
+and E. They have later been extended with more material on implicit solvers and 
+methods and automatic time-stepping methods, to provide a more complete and balanced
+overview of state-of-the-art solvers for ordinary differential equations (ODEs). The 
+main purpose of the notes is to serve as a brief and gentle introduction to solving
 differential equations in Python, for use in the course
 *Introduction to programming for scientific applications* (IN1900) at the
 University of Oslo. To read these notes one should have basic knowledge of Python
-and NumPy[^intro_book], and it is also useful to have a fundamental understanding
-of ordinary differential equations (ODEs).
+and NumPy, see for instance cite{sundnes2020introduction}, and it is also useful to have a 
+fundamental understanding of ODEs.
 
-[^primer]: Hans Petter Langtangen, *A Primer on Scientific Programming with Python*,
-5th edition, Springer-Verlag, 2016.
-
-[^intro_book]: See for instance Joakim Sundnes, *Introduction to Scientific Programming with Python*,
-Springer-Verlag, 2020.
-
-The purpose of these notes is to provide a foundation for writing your own ODE solvers
+These notes provide the foundation for writing your own ODE solvers
 in Python. One may ask why this is useful, since there are already
 multiple such solvers available, for instance in the *SciPy* library. However, no single ODE
 solver is the best and most efficient tool for all possible ODE problems, and the choice
-of solver should always based on the characteristics of the problem. To make such choices
+of solver should always be based on the characteristics of the problem. To make such choices
 it is extremely useful to know the strengths and weaknesses of the different solvers,
-and the best way to learn this is to program your own collection of ODE solvers.
+and the best way to obtain this knowledge is to program your own collection of ODE solvers.
 Different ODE solvers are also conveniently grouped into families and hierarchies of solvers,
-and provide an excellent example of how object oriented programming (OOP) can be
+and provide an excellent example of how object-oriented programming (OOP) can be
 used to maximize code reuse and minimize duplication.
 
-Although the main purpose of these notes is to solve differential equations,
-the topic of the first chapter is difference equations. The motivation for this
-somewhat unusual approach is that, from a programming perspective, difference
-equations are easier to solve, and a natural step on the way towards solving ODEs.
-The standard formulation of difference equations in mathematical textbooks is
-already in a "computer-friendly" form, and is very easy to translate into a
-Python program using for-loops and arrays. Furthermore, as we shall see in Chapter
-ref{ch:ode_intro}, applying a numerical method such as the
-Forward Euler scheme to an ODE effectively turns the differential equation
-into a difference equation. If we already know how to program difference equations
-it is therefore very easy to solve an ODE,
-by simply adding one extra step at the start of the process. However, although this
-structure provides a natural step-by-step introduction to ODE programming, it
-is entirely possible to skip Chapter ref{ch:diff_eq} completely and jump straight into the
-programming of ODE solvers in Chapter ref{ch:ode_intro}.
+The chapters of the text are organized as follows. Chapter ref{ch:ode_intro} introduces the forward Euler method,
+and uses this simple method to introduce the fundamental ideas and principles that
+underpin all the methods considered later. The chapter introduces the notation and general
+mathematical formulation used throughout the book, both for scalar ODEs and systems of ODEs, 
+and is essential reading for everyone with little prior experience with ODEs and ODE solvers.
+The chapter also briefly explains how to use the ODE solvers from the SciPy library.
+Readers already familiar with the fundamentals of the forward Euler method and its 
+implementation may consider moving straight to Chapter ref{ch:rungekutta}, which presents
+explicit Runge-Kutta methods. The fundamental ideas of the methods are introduced, and 
+the main focus of the chapter is how a collection of ODE solvers can be implemented as
+a class hierarchy with minimal code duplication. Chapter ref{ch:stiff} introduces so-called
+*stiff* ODEs, and presents techniques for simple stability analysis of Runge-Kutta methods.
+The bulk of the chapter is then devoted to programming of implicit Runge-Kutta methods, 
+which have better stability properties than explicit methods and therefore perform better 
+for stiff ODEs. Chapter ref{ch:adaptive} then concludes the presentation of ODE solvers by
+introducing methods for adaptive time step control, which is an essential component of
+all modern ODE software. Chapter ref{ch:disease_models} is quite different 
+from the preceding ones, since the focus is on a specific class of ODE models rather than 
+a set of solvers. The simpler ODE problems considered in earlier chapters are useful for 
+introducing and testing the solvers, but in order to appreciate both the
+potential and the challenges of modelling with ODEs it is useful to step beyond this. 
+As an example of a real-world application of ODEs we have chosen the famous Kermack-McKendrick
+SIR (Susceptible-Infected-Recovered) model from epidemiology. These classic models were 
+first developed in the early 1900s (see cite{SIR1}), and have 
+received quite some attention in recent years, for obvious reasons. We derive the models
+from a set of fundamental assumptions, and discuss the implications and limitations resulting
+from these assumptions. The main focus of the chapter is then on how the models can be
+modified and extended to capture new phenomena, and how these changes can be implemented
+and explored using the solvers developed in preceding chapters. 
+
+Although the focus of the text is on differential equations, Appendix ref{ch:diff_eq} is 
+devoted to the related topic of *difference equations*. The motivation 
+for including this chapter is that difference equations are closely related to 
+ODEs, they have many important applications on their own, and numerical methods
+for ODEs are essentially methods for turning differential equations into 
+difference equations. Solving difference equations can therefore be seen as
+a natural step on the way towards solving ODEs, and the standard formulation of 
+difference equations in mathematical textbooks is already in a "computer-friendly" form, 
+which is very easy to translate into a Python program using for-loops and arrays. 
+Appendix ref{ch:diff_eq} is quite independent of the other chapters, although 
+much of the solution framework and code is similar, and it can be read on its own. 
+Some students find difference equations easier to understand than differential equations, and
+may benefit from reading Appendix ref{ch:diff_eq} first, while others find it easier to
+go straight to the ODEs and leave Appendix ref{ch:diff_eq} for later.
+
 
 # #if FORMAT in ("latex", "pdflatex")
 ## Just dump native latex
 \noindent
 \ \\
-{\it August 2021}  \hfill  {\it Joakim Sundnes}
+{\it March 2023}  \hfill  {\it Joakim Sundnes}
 # #else
-*Joakim Sundnes*, August 2021
+*Joakim Sundnes*, March 2023
 # #endif

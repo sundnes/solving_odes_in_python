@@ -24,7 +24,7 @@ if __name__ == '__main__':
     
     plt.plot(t,u[:,0],label=r'$\theta$')
     plt.plot(t,u[:,1],label=r'$\omega$')
-    plt.title(f'Pendulum problem, Forward Euler, $\Delta t$ = {T/N}')
+    plt.title(r'Pendulum problem, Forward Euler, $\Delta t$ = {T/N}')
     plt.xlabel('t')
     plt.ylabel(r'Angle ($\theta$) and angular velocity ($\omega$)')
     plt.legend()

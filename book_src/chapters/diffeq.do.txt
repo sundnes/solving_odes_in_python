@@ -2,14 +2,17 @@
 ========= Programming of difference equations =========
 # #endif
 
-Although the main focus of these notes is on solvers for *differential equations*, this first
-chapter is devoted to the closely related class of problems known as *difference equations*. The
-main motivation for introducing this topic first is that the mathematical formulation of
-difference equations is very easy to translate into a computer program.
-When we move on to ODEs in the next chapter, we shall
-see that such equations are typically solved by applying some numerical scheme to turn the
-differential equation into a difference equation, which is then solved using the techniques
-presented in this chapter.
+Although the main focus of these notes is on solvers for *differential equations*, we find it useful
+to include a chapter on the closely related class of problems known as *difference equations*. 
+The main motivation for including this topic in a book on ODEs is to highlight the similarity 
+between the two classes of problems, and in particular the similarity of the solution methods
+and their implementation. Indeed, solving ODEs numerically can be seen as a two-step procedure.
+First, a numerical method is applied to turn *differential equations* into *difference 
+equations*, and then these equations are solved using simple for-loop. The standard formulation
+of difference equations is very easy to translate into a computer program, and some readers may find
+it easier to study these equations first, before moving on to ODEs. In the present chapter we will
+also touch upon famous sequences and series, which have important applications both in the
+numerical solution of ODEs and elsewhere. 
 
 ======= Sequences and Difference Equations =======
 Sequences is a central topic in mathematics, which has important applications in numerical analysis
@@ -73,9 +76,6 @@ In order to compute $x_n$, we can now simply start with the known $x_0$, and com
 The procedure involves repeating a simple calculation many times, which is tedious to do by
 hand, but very well suited for a computer. The complete program for solving this
 difference equation may look like:
-XXX fiks alle indekser XXX
-
-
 !bc pycod
 import numpy as np
 import matplotlib.pyplot as plt
@@ -306,13 +306,13 @@ Populations of humans, animals, and other organisms also exhibit the same type
 of growth when there are unlimited resources
 (space and food), and the model for exponential growth therefore has many applications in biology.[^expo]
 However, most environments can only support a finite number $R$ of individuals, while in the exponential growth model
-the population will continue to grow indefinitely. How can we alter the equation to be a more realistic model for growing populations?
+the population will continue to grow indefinitely. How can we alter the 
+equation to be a more realistic model for growing populations?
 
 # #if FORMAT != 'ipynb'
-[^expo]: The formula $x= x_0e^{\lambda t}$ is the solution of the *differential equation* $dx/dt = \lambda x$, and
-this formulation may be more familiar to some readers. As mentioned at the start of the chapter,
-differential equations and difference equations are closely related, and these relations are
-discussed in more detail in Chapter ref{ch:ode_intro}.
+[^expo]: As discussed in Chapter ref{ch:ode_intro}, the formula $x= x_0e^{\lambda t}$ is the solution 
+of the differential equation $dx/dt = \lambda x$, which illustrates the close relation between 
+difference equations and differential equations. 
 # #endif
 
 Initially, when resources are abundant, we want the growth to be exponential,

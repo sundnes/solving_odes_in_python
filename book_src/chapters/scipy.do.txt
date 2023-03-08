@@ -36,13 +36,17 @@ plt.show()
 [^scipy]: See https://scipy.org/
 # #endif
 
-If you run this code you will notice that the solution does not look nearly as nice as the
-solution we got from the `ForwardEuler` solver above. The reason for this apparent error
-is that `solve_ivp` is an *adaptive* solver, which chooses the time step automatically to 
-satisfy a given error tolerance. The default value of this tolerance is relatively large, 
+
+FIGURE: [../chapters/figs_ch1/pendulum_scipy.pdf, width=600 frac=1] Solution of the simple pendulum problem, computed with the SciPy `solve_ivp` function and the default tolerance. label{fig:pendulum_scipy}
+
+Running this code will result in a plot similar to Figure ref{fig:pendulum_scipy}, and we observe that
+the solution does not look nearly as nice as the one we got from the `ForwardEuler` solver above. 
+The reason for this apparent error is that `solve_ivp` is an *adaptive* solver, which chooses the 
+time step automatically to satisfy a given error tolerance. The default value of this tolerance is relatively large, 
 which results in the solver using very few time steps and the solution plots looking edgy. 
-If we computed the error at any given time point $t_n$ we would see that it is in fact not very
-large, but the linear interpolation between the time points completely destroys the visual 
+If we compare the plot with the exact solution, indicated by the two dotted curves
+Figure ref{fig:pendulum_scipy}, we see that the solution at the time points $t_n$ 
+is quite accurate, but the linear interpolation between the time points completely destroys the visual 
 appearance. A more visually appealing solution can be obtained in several ways. 
 We may, for instance, pass the function an additional argument `t_eval`, which is a NumPy array 
 containing the time points where we want to evaluate the solution: 
@@ -57,7 +61,7 @@ solution = solve_ivp(problem, t_span, u0,rtol=rtol)
 !ec
 This latter call will reduce the relative tolerance `rtol` from its default value of `1e-3` (0.001). 
 We could also adjust the absolute tolerance using the parameter `atol`. While we will not
-consider all the possible arguments and options to `solve_ivp` here, we mention that we can
+consider all the possible arguments and options to `solve_ivp` here, we mention that we can also 
 change the numerical method used by the function, by passing in a parameter named `method`. For instance, 
 a call like 
 !bc pycod
