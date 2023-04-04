@@ -350,3 +350,506 @@ t, u = solver.solve(t_span=(0,T),N=400)
 !ec
 
 FIGURE: [../chapters/figs_ch1/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model. label{fig:logistic}
+======= Systems of ODEs =======
+label{sec:ode_sys}
+idx{systems of odes} idx{ordinary differential equation ! system of}
+So far we have only considered ODEs with a single solution component, often called scalar ODEs.
+Many interesting processes can be described
+by systems of ODEs, i.e., multiple ODEs where the right-hand side of one equation depends on the solution of the others. Such equation
+systems are also referred to as vector ODEs. One simple example is
+!bt
+\begin{alignat*}{2}
+u' &= v, \quad &&u(0) = 1\\
+v' &= -u, \quad &&v(0) = 0.
+\end{alignat*}
+!et
+The solution of this system is $u=\cos t, v=\sin t$, which can easily be verified by inserting the solution into the equations
+and the initial conditions. For more general cases, it is usually even more difficult to find analytical solutions of ODE systems
+than of scalar ODEs, and numerical methods are usually required. In this section we will extend the solvers introduced in
+sections ref{sec:fe_intro}-ref{sec:fe_class} to be able to solve systems of ODEs. We shall see that such an 
+extension requires relatively small modifications of the code.
+
+We want to develop general software that can be applied to any vector ODE or scalar ODE, and for this purpose it is
+useful to introduce some general mathematical notation. We have $n$ unknowns
+!bt
+\[ u^{(0)}(t), u^{(1)}(t), \ldots, u^{(n-1)}(t) \]
+!et
+in a system of $n$ ODEs:
+!bt
+\begin{align*}
+{d\over dt}u^{(0)} &= f^{(0)}(t, u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}),\\
+{d\over dt}u^{(1)} &= f^{(1)}(t, u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}),\\
+\vdots &= \vdots\\
+{d\over dt}u^{(n-1)} &= f^{(n-1)}(t, u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}).
+\end{align*}
+!et
+To simplify the notation (and later the implementation), we collect both the solutions $u^{(i)}(t)$
+and right-hand side functions $f^{(i)}$ into vectors;
+!bt
+\[ u = (u^{(0)}, u^{(1)}, \ldots, u^{(n-1)}),\]
+!et
+and
+!bt
+\[ f = (f^{(0)}, f^{(1)}, \ldots, f^{(n-1)}).\]
+!et
+Note that $f$ is now a vector-valued function. It takes $n+1$ input arguments ($t$ and the $n$ components of $u$) and returns
+a vector of $n$ values.
+Using this notation, the ODE system can be written
+!bt
+\[ 
+    u' = f(t, u),\quad u(t_0) = u_0,
+\]
+!et
+where $u$ and $f$ are now vectors and $u_0$ is a vector of initial conditions. We see that we use exactly the
+same notation as for scalar ODEs, and whether we solve a scalar or system of ODEs is determined by how we define $f$ and the initial
+condition $u_0$. This general notation is completely standard in text books on ODEs, and we can easily make the Python
+implementation just as general. The generalization of our ODE solvers is facilitated considerably by the convenience of NumPy
+arrays and vectorized computations.
+
+======= A `ForwardEuler` class for systems of ODEs =======
+idx{`ForwardEuler` class}
+The `ForwardEuler_v0` class above was written for scalar ODEs, and we now want to make it work for a system
+$u'=f$, $u(0)=u_0$, where $u$, $f$ and $u_0$ are vectors (arrays). To identify how the code needs to be changed, 
+let us first revisit the underlying numerical method. Using the general notation introduced above, 
+applying the forward Euler method to a system of ODEs yields an update formula that looks exactly 
+as for the scalar case, but where all the terms are vectors:
+!bt
+\[
+\underbrace{u_{k+1}}_{\mbox{vector}} =
+\underbrace{u_k}_{\mbox{vector}} +
+\Delta t\, \underbrace{f(u_k, t_k)}_{\mbox{vector}} .
+\]
+!et
+We could also write this formula in terms of the individual components, as in
+!bt
+\[
+u^{(i)}_{k+1} = u^{(i)}_{k} + \Delta t f^{(i)}(t_k, u_{k}), \mbox{ for } i = 0,\ldots , {n-1},
+\]
+!et
+but the compact vector notation is much easier to read. Fortunately, the way we write the vector
+version of the formula is also how NumPy arrays are used in calculations. The
+Python code for the formula above may therefore look identical to the version for scalar ODEs;
+!bc pycod
+u[k+1] = u[k] + dt*f(t[k], u[k])
+!ec
+with the important difference that both `u[k]` and `u[k+1]` are now arrays.[^numpy]
+Since these are arrays, the solution `u` must be a
+two-dimensional array, and `u[k],u[k+1]`, etc. are the rows of this array.
+The function `f` expects an array as its second argument, and must return a one-dimensional array,
+containing all the right-hand sides $f^{(0)},\ldots,f^{(n-1)}$. To get a better
+feel for how these arrays look and how they are used,
+we may compare the array holding the solution of a scalar ODE to that of a system of two ODEs.
+For the scalar equation, both `t` and `u` are one-dimensional NumPy
+arrays, and indexing into `u` gives us numbers, representing the solution at each time step.
+For instance, we may have 
+!bc
+t = array([0. ,  0.4, 0.8, 1.2, (...) ])
+
+u = array([1. , 1.4, 1.96, 2.744, (...)])
+
+u[0] = 1.0
+u[1] = 1.4
+
+(...)
+!ec
+In the case of a system of two ODEs, `t` is still a one-dimensional array, but the solution array `u` is
+now two-dimensional, with one column for each solution component. We can index it exactly as shown above, 
+and the result is a one-dimensional array of length two, which holds the two solution components
+at a single time step:
+!bc
+u = array([[1.0, 0.8],
+           [1.4, 1.1],
+           [1.9, 2.7],
+              (...)])
+
+u[0] = array([1.0, 0.8])
+u[1] = array([1.4, 1.1])
+
+(...)
+!ec
+
+# #if FORMAT  != 'ipynb'
+[^numpy]: This compact notation requires that the solution vector `u` is represented by
+a NumPy array. We could, in principle, use lists to hold the solution components, but
+the resulting code would need to loop over the components and would be far less elegant and readable.
+# #endif
+
+The similarity of the generic notation for vector and scalar ODEs, and the
+convenient algebra of NumPy arrays, indicate that the solver
+implementation for scalar and system ODEs can also be very similar. This is indeed true,
+and the `ForwardEuler_v0` class from the previous chapter can be made to work for ODE
+systems by a few minor modifications:
+ * Ensure that `f(t,u)` always returns an array.
+ * Inspect $u_0$ to see if it is a single number or a list/array/tuple and
+   make the `u` either a one-dimensional or two-dimensional  array. [^u_dim]
+If these two items are handled and initialized correctly, the rest of the code from
+Section ref{sec:fe_class} will in fact work with no modifications.
+
+[^u_dim]: This step is not strictly needed, since we could use a two-dimensional array
+with size `(N+1,1)` for scalar ODEs. However, using a one-dimensional array for scalar
+ODEs gives simpler and more intuitive indexing. 
+
+The extended class implementation may look like:
+!bc pycod
+import numpy as np
+
+class ForwardEuler:
+    def __init__(self, f): 
+        self.f = lambda t,u: np.asarray(f(t,u),float)
+
+    
+    def set_initial_condition(self,u0):
+        if isinstance(u0, (float,int)):  #scalar ODE
+            self.neq = 1                 #number of eqs.
+            u0 = float(u0)
+        else:
+            u0 = np.asarray(u0)
+            self.neq = u0.size
+        self.u0 = u0
+    
+    def solve(self,t_span,N):
+        """Compute solution for 
+        t_span[0] <= t <= t_span[1],
+        using N steps."""
+        t0,T = t_span
+        self.dt = (T-t0)/N
+        self.t = np.zeros(N+1)
+        if self.neq == 1:
+            self.u = np.zeros(N+1)
+        else:
+            self.u = np.zeros((N+1,self.neq))
+        
+        self.t[0] = t0
+        self.u[0] = self.u0
+    
+        for n in range(N):
+            self.n = n
+            self.t[n+1] = self.t[n] + self.dt
+            self.u[n+1] = self.advance()
+        return self.t, self.u
+
+    def advance(self):
+        """Advance the solution one time step."""
+        u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
+
+        unew = u[n] + dt*f(t[n],u[n])
+        return unew
+
+!ec
+It is worth commenting on some parts of this code. First, the constructor looks
+almost identical to the scalar case, but we use a lambda function and
+the convenient `np.asarray` function to convert any `f` that 
+returns a list or tuple to a function returning a NumPy array. If `f` already returns an
+array, `np.asarray` will simply return this array with no changes. This modification is not strictly
+needed, since we could just assume that the user implements `f` to return
+an array, but it makes the class more robust and flexible. We have also included
+a couple of tests in the `set_initial_condition` method, to check if `u0` is a single
+number (`float`) or a NumPy array, and define the attribute `self.neq` to
+hold the number of equations.
+The final modification is found in the method `solve`, where
+the `self.neq` attribute is inspected and `u` is
+initialized to a one- or two-dimensional array of the correct size. The
+actual for-loop and the `advance` method are both identical to the previous version of the class.
+
+=== Example: ODE model for a pendulum. ===
+idx{pendulum problem}
+To demonstrate the use of
+the updated `ForwardEuler` class, we consider a system of ODEs describing the motion 
+of a simple pendulum, as illustrated in Figure ref{fig:pendulum}. This nonlinear system
+is a classic physics problem, and despite its simplicity it is not possible to find 
+an exact analytical solution. We will formulate the system in terms of two main
+variables; the angle $\theta$ and the angular velocity $\omega$, see Figure ref{fig:pendulum}.
+For a simple pendulum with no friction, the dynamics of these two variables is governed by
+!bt
+\begin{align}
+\frac{d \theta}{dt} &= \omega, label{pendulum1} \\
+\frac{d \omega}{dt} &= -\frac{g}{L}\sin(\theta), label{pendulum2}  
+\end{align}
+!et
+where $L$ is the length of the pendulum and $g$ is the gravitational constant. Eq. (ref{pendulum1}) follows
+directly from the definition of the angular velocity, while (ref{pendulum2}) follows from Newton's second 
+law, where $d\omega/dt$ is the acceleration and the right-hand side is the tangential component of
+the gravitational force acting on the pendulum, divided by its mass.  
+To solve the system we need to define initial conditions for both unknowns,
+i.e., we need to know the initial position and velocity of the pendulum. 
+
+FIGURE: [../chapters/figs_ch1/pendulum.png, width=100 frac=0.2] Illustration of the pendulum problem. The main variables of interest are the angle $\theta$ and its derivative $\omega$ (the angular velocity). label{fig:pendulum}
+
+Since the right-hand side defined by (ref{pendulum1})-(ref{pendulum2}) includes the 
+parameters $L$ and $g$, it is convenient to implement it as a class, as illustrated for the logistic
+growth model earlier. A possible implementation may look like this:
+!bc pycod
+from math import sin
+
+class Pendulum:
+    def __init__(self, L, g = 9.81):
+        self.L = L 
+        self.g = g 
+    
+    def __call__(self, t, u):
+        theta, omega = u
+        dtheta = omega
+        domega = -self.g/self.L * sin(theta)
+        return [dtheta, domega]
+!ec
+We see that the function returns a list, but this will automatically
+be wrapped into a function returning an array by the solver class' constructor,
+as mentioned above. The main program is not very different
+from the examples of the previous chapter, except that we need to define an
+initial condition with two components. Assuming that this class definition as 
+well as the `ForwardEuler` exist in the same file, the code to solve the pendulum problem
+can look like this: 
+!bc pycod
+import matplotlib.pyplot as plt
+
+problem = Pendulum(L=1)
+solver = ForwardEuler(problem)
+theta0, omega0 = np.pi/4, 0
+solver.set_initial_condition((theta0,omega0))
+T = 10
+N = 1000
+t, u = solver.solve(t_span=(0,T),N=N)
+
+plt.plot(t,u[:,0],label=r'$\theta$')
+plt.plot(t,u[:,1],label=r'$\omega$')
+plt.legend()
+plt.show()
+!ec
+Notice that since `u` is a two-dimensional array, we use array slicing to extract and plot the individual components.
+In this specific example a call like `plt.plot(t,u)` would also work, and would plot both solution
+components. However, we are often interested in plotting selected components of the solution, and
+in this case the array slicing is needed. The resulting plot is shown in Figure ref{fig:pendulum_sol}. 
+Another minor detail worth noticing is use of Python's raw string format for the labels, indicated
+by the `r` in front of the string. Raw strings will treat the backslash (`\`) as a regular character, and is
+often needed when using Latex encoding of mathematical symbols. 
+The observant reader may also notice that the amplitude of the pendulum motion appears to increase over time, 
+which is clearly not physically correct. In fact, for an undamped pendulum problem defined by 
+(ref{pendulum1})-(ref{pendulum2}), the energy is conserved, and the amplitude should therefore be constant. 
+The increasing amplitude is a numerical artefact introduced by the forward Euler method, and the solution
+may be improved by reducing the time step or replacing the numerical method. 
+
+FIGURE: [../chapters/figs_ch1/pendulum_FE.pdf, width=600 frac=1] Solution of the simple pendulum problem, computed with the forward Euler method. label{fig:pendulum_sol}
+
+
+======= Checking the error in the numerical solution =======
+label{sec:error_taylor}
+idx{error analysis} idx{Taylor expansion} idx{convergence} 
+Recall from Section ref{sec:fe_intro} that we derived the FE method by approximating the
+derivative with a finite difference;
+!bt
+\begin{equation} 
+    u'(t_n)\approx \frac{u(t_{n+1})-u(t_n)}{\Delta t} .
+\label{fd_approx}\end{equation}
+!et
+This approximation obviously introduces an error, and since we approach the true derivative as $\Delta t\rightarrow 0$ it
+is quite intuitive that the error depends on the size of the time step $\Delta t$. This relation was demonstrated
+visually in Figure ref{fig:ode0}, but it would of course be valuable to have a more precise quantification of how the
+error depends on the time step. Analyzing the error in numerical methods is a large branch of applied mathematics, 
+which we will not cover in detail here, and the interested reader is referred to, for instance cite{ODEI}. 
+However, when implementing a numerical method it is very useful to know its theoretical accuracy, and
+in particular to be able to compute the error and verify that it behaves as expected.
+
+The Taylor expansion, also discussed briefly in Appendix ref{ch:diff_eq}, is an essential tool for 
+estimating the error in numerical methods for ODEs. For any smooth function $\hat{u}(t)$, if we 
+can compute the function value and its derivatives at $t_n$, the value at $t_n+\Delta t$ 
+can be approximated by the series
+!bt
+\[
+    \hat{u}(t_n+\Delta t) = \hat{u}(t_n) + \Delta t \hat{u}'(t_n) +\frac{\Delta t^2}{2}\hat{u}''(t_n) + 
+    \frac{\Delta t^3}{6}\hat{u}'''(t_n)+O(\Delta t^4).  
+\]
+!et
+We can include as many terms as we like, and since $\Delta t$ is small we always have $\Delta t^(n+1) \ll \Delta t^n$, so
+the error in the approximation is dominated by the first neglected term.  
+The update formula of the FE method, derived from (ref{fd_approx}), was
+!bt
+\[
+ u_{n+1} = u(t_n) + \Delta t u'(t_n),
+\]
+!et
+which we may recognize as a Taylor series truncated after the first order term, and we expect the error
+$|u_{n+1}- \hat{u}_{n+1}|$ to be proportional to $\Delta x^2$. Since this is the error for a single time step, the
+accumulated error after $N\sim 1/\Delta t $ steps is proportional to $\Delta t$, and the 
+FE method is hence a \emph{first order} method. As we will see in Chapter 
+ref{ch:runge_kutta}, more accurate methods can be constructed by deriving update formulas that make more
+terms in the Taylor expansion of the error cancel. This process is fairly straightforward for low-order methods, 
+e.g., of second or third order, but it quickly gets complicated for high order solvers, see, for 
+instance cite{ODEI} for details. 
+
+Knowing the theoretical accuracy of an ODE solver is important for a number of reasons, and one of them is that it
+provides a method for verifying our implementation of the solver. If we can solve a given problem and demonstrate that
+the error behaves as predicted by the theory, it gives a good indication that the solver is implemented correctly. 
+We can illustrate this procedure using the simple initial value problem introduced earlier;
+!bt
+\[
+    u' = u, \quad u(0) = 1 .
+\]
+!et
+As stated above, this problem has the analytical solution $u=e^t$, and we can use this to compute the 
+error in our numerical solution. But how should the error be defined?  
+There is no unique answer to this question. For practical applications,
+the so-called root-mean-square (RMS) or relative-root-mean-square (RRMS) are commonly used error measures, defined by
+!bt
+\begin{align*}
+RMSE &=  \sqrt{\frac{1}{N}\sum_{n=0}^N(u_n-\hat{u}(t_n))^2}, \\
+RRMSE &= \sqrt{\frac{1}{N}\sum_{n=0}^N\frac{(u_n-\hat{u}(t_n))^2}{\hat{u}(t_n)^2}}, 
+\end{align*}
+!et
+respectively. Here, $u_n$ is the numerical solution at time step $n$ and $\hat{u}(t_n)$ the corresponding
+exact solution. In more mathematically oriented texts, the errors are usually defined in terms of \emph{norms}, for 
+instance the discrete $l_1,l_2,$ and $l_\infty$ norms:
+!bt
+\begin{align*}
+ e_{l_1} &= \sum_{i=0}^N(|u_i-\hat{u}(t_i)|),\\
+ e_{l_2} &= \sum_{i=0}^N(u_i-\hat{u}(t_i)^2), \\
+ e_{l_\infty} &= \max_{i=0}^N(\hat{u}_i-u(t_i)).  
+\end{align*}
+!et
+While the choice of error norm may be important for certain cases, for practical
+applications it is usually not very important, and all the different error measures can be expected to behave
+as predicted by the theory. For simplicity, we will apply an even simpler error measure for our example, where
+we simply compute the error at the final time $T$, given by $e = |u_N-\hat{u}(t_N)|$. Using the `ForwardEuler`
+class introduced above, the complete code for checking the convergence may look as follows:
+!bc pycod
+from forward_euler_class_v1 import *
+import numpy as np
+
+def rhs(t,u):
+    return u
+
+def exact(t):
+    return np.exp(t)
+
+solver = ForwardEuler(rhs)
+solver.set_initial_condition(1.0)
+
+T = 3.0
+t_span = (0,T)
+N = 30
+
+print('Time step (dt)   Error (e)      e/dt')
+for _ in range(10):
+    t,u = solver.solve(t_span,N)
+    dt = T/N
+    e = abs(u[-1]-exact(T))
+    print(f'{dt:<14.7f}   {e:<12.7f}   {e/dt:5.4f}')
+    N = N*2
+!ec 
+This program will produce the following output when it is run in the terminal:
+!bc
+Time step (dt)   Error (e)      e/dt
+0.1000000        2.6361347      26.3613
+0.0500000        1.4063510      28.1270
+0.0250000        0.7273871      29.0955
+0.0125000        0.3700434      29.6035
+0.0062500        0.1866483      29.8637
+0.0031250        0.0937359      29.9955
+0.0015625        0.0469715      30.0618
+0.0007813        0.0235117      30.0950
+0.0003906        0.0117624      30.1116
+0.0001953        0.0058828      30.1200
+!ec
+In the rightmost column we see that the error divided by the time step is approximately constant, which
+supports the theoretical result that the error is proportional to $\Delta t$. In subsequent chapters we will
+perform similar calculations for higher order methods, to confirm that the error is proportional to $\Delta t^r$,
+where $r$ is the theoretical order of convergence for the method. 
+
+In order to compute the error in our numerical solution we obviously need to know the true solution to our 
+initial value problem. This part was easy for the simple example above, since we knew the analytical solution
+to the equation, but this solution is only available for very simple ODE problems. It is, however, often 
+interesting to estimate the error and the order of convergence for more complex problems, and for this task we 
+need to take a different approach. Several alternatives exist, including for instance the *method of manufactured
+solutions*, where one simply choses a solution function $u(t)$ and computes its derivative analytically to 
+determine the right-hand side of the ODE. An even simpler approach, which usually works well, is to 
+compute a very accurate numerical solution using a high-order solver and small time steps, and use this
+solution as the reference for computing the error. For accurate error estimates it is of course essential
+that the reference solution is considerably more accurate than the numerical solution we want to evaluate. 
+The reference solution therefore typically requires very small time steps and can take some time to 
+compute, but in most cases the computation time will not be a problem. 
+
+
+
+
+
+
+
+
+
+
+
+
+======= Using ODE solvers from SciPy =======
+idx{SciPy} idx{`solve_ivp`}
+As mentioned in the preface to this book, there are numerous ODE solvers around that can 
+be used directly, so one may argue that there is no need to implement our own solvers. 
+This may indeed be true, but, as we have argued earlier, it is sometimes very useful to 
+know the inner workings of the solvers we apply, and the best way to obtain this 
+knowledge is to implement the solvers ourselves. However, if we have a given ODE model and
+want to solve it as efficiently as possible, there are several existing solvers to choose from.
+For Python programmers, the most natural choice may be the solvers from *SciPy*, which 
+have evolved into a robust and fairly efficient suite of ODE solvers. SciPy is a large suite 
+of scientific software in Python, including tools for linear algebra, optimization, integration,
+and other common tasks of scientific computing.[^scipy] For solving initial 
+value problems, the tool of choice is the `solve_ivp` function from the `integrate` module. 
+The following code applies `solve_ivp` with the `Pendulum` class presented above to solve the
+simple pendulum problem defined by (ref{pendulum1})-(ref{pendulum2}). We assume that the `Pendulum`
+class is saved in a separate file `pendulum.py`.
+!bc pycod
+from scipy.integrate import solve_ivp
+import numpy as np
+import matplotlib.pyplot as plt
+from pendulum import Pendulum
+
+problem = Pendulum(L=1)
+t_span = (0,10.0)
+u0 = (np.pi/4, 0)
+
+solution = solve_ivp(problem, t_span, u0)
+
+plt.plot(solution.t, solution.y[0,:])
+plt.plot(solution.t, solution.y[1,:])
+plt.legend([r'$\theta$',r'$\omega$'])
+plt.show()
+!ec
+# #if FORMAT != 'ipynb'
+[^scipy]: See https://scipy.org/
+# #endif
+
+
+FIGURE: [../chapters/figs_ch1/pendulum_scipy.pdf, width=600 frac=1] Solution of the simple pendulum problem, computed with the SciPy `solve_ivp` function and the default tolerance. label{fig:pendulum_scipy}
+
+Running this code will result in a plot similar to Figure ref{fig:pendulum_scipy}, and we observe that
+the solution does not look nearly as nice as the one we got from the `ForwardEuler` solver above. 
+The reason for this apparent error is that `solve_ivp` is an *adaptive* solver, which chooses the 
+time step automatically to satisfy a given error tolerance. The default value of this tolerance is relatively large, 
+which results in the solver using very few time steps and the solution plots looking edgy. 
+If we compare the plot with the exact solution, indicated by the two dotted curves
+Figure ref{fig:pendulum_scipy}, we see that the solution at the time points $t_n$ 
+is quite accurate, but the linear interpolation between the time points completely destroys the visual 
+appearance. A more visually appealing solution can be obtained in several ways. 
+We may, for instance, pass the function an additional argument `t_eval`, which is a NumPy array 
+containing the time points where we want to evaluate the solution: 
+!bc pycod
+t_eval = np.linspace(0,10.0,1001)
+solution = solve_ivp(problem, t_span, u0,t_eval=t_eval)
+!ec
+Alternatively, we can reduce the error tolerance of the solver, for instance setting
+!bc pycod
+rtol = 1e-6
+solution = solve_ivp(problem, t_span, u0,rtol=rtol)
+!ec
+This latter call will reduce the relative tolerance `rtol` from its default value of `1e-3` (0.001). 
+We could also adjust the absolute tolerance using the parameter `atol`. While we will not
+consider all the possible arguments and options to `solve_ivp` here, we mention that we can also 
+change the numerical method used by the function, by passing in a parameter named `method`. For instance, 
+a call like 
+!bc pycod
+rtol = 1e-6
+solution = solve_ivp(problem, t_span, u0,method='Radau')
+!ec
+will replace the default solver (called `rk45`) with an implicit Radau ODE solver, which we will introduce and
+explain in Chapter ref{ch:stiff}. For a complete description of parameters accepted by the `solve_ivp` 
+function we refer to the online SciPy documentation.
+
+
+

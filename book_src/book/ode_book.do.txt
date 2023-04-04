@@ -20,9 +20,9 @@ TOC: on
 !split
 ========= Programming a simple ODE solver =========
 label{ch:ode_intro}
-# #include "../chapters/ode_intro.do.txt"
-# #include "../chapters/ode_systems.do.txt"
-# #include "../chapters/scipy.do.txt"
+# #include "../chapters/chapter1.do.txt"
+## #include "../chapters/ode_systems.do.txt"
+## #include "../chapters/scipy.do.txt"
 
 
 !split
