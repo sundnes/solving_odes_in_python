@@ -1,0 +1,76 @@
+
+======= Using ODE solvers from *SciPy* =======
+
+As mentioned in the preface to this book, there are numerous ODE solvers around that can 
+be used directly, so one may argue that there is no need to implement our own solvers. 
+This may indeed be true, but, as we have argued earlier, it is sometimes very useful to 
+know the inner workings of the solvers we apply, and the best way to obtain this 
+knowledge is to implement the solvers ourselves. However, if we have a given ODE model and
+want to solve it as efficiently as possible, there are several existing solvers to choose from.
+For Python programmers, the most natural choice may be the solvers from *SciPy*, which 
+have evolved into a robust and fairly efficient suite of ODE solvers. SciPy is a large suite 
+of scientific software in Python, including tools for linear algebra, optimization, integration,
+and other common tasks of scientific computing.[^scipy] For solving initial 
+value problems, the tool of choice is the `solve_ivp` function from the `integrate` module. 
+The following code applies `solve_ivp` with the `Pendulum` class presented above to solve the
+simple pendulum problem defined by (ref{pendulum1})-(ref{pendulum2}). We assume that the `Pendulum`
+class is saved in a separate file `pendulum.py`.
+!bc pycod
+from scipy.integrate import solve_ivp
+import numpy as np
+import matplotlib.pyplot as plt
+from pendulum import Pendulum
+
+problem = Pendulum(L=1)
+t_span = (0,10.0)
+u0 = (np.pi/4, 0)
+
+solution = solve_ivp(problem, t_span, u0)
+
+plt.plot(solution.t, solution.y[0,:])
+plt.plot(solution.t, solution.y[1,:])
+plt.legend([r'$\theta$',r'$\omega$'])
+plt.show()
+!ec
+# #if FORMAT != 'ipynb'
+[^scipy]: See https://scipy.org/
+# #endif
+
+
+FIGURE: [../chapters/figs_ch1/pendulum_scipy.pdf, width=600 frac=1] Solution of the simple pendulum problem, computed with the SciPy `solve_ivp` function and the default tolerance. label{fig:pendulum_scipy}
+
+Running this code will result in a plot similar to Figure ref{fig:pendulum_scipy}, and we observe that
+the solution does not look nearly as nice as the one we got from the `ForwardEuler` solver above. 
+The reason for this apparent error is that `solve_ivp` is an *adaptive* solver, which chooses the 
+time step automatically to satisfy a given error tolerance. The default value of this tolerance is relatively large, 
+which results in the solver using very few time steps and the solution plots looking edgy. 
+If we compare the plot with the exact solution, indicated by the two dotted curves
+Figure ref{fig:pendulum_scipy}, we see that the solution at the time points $t_n$ 
+is quite accurate, but the linear interpolation between the time points completely destroys the visual 
+appearance. A more visually appealing solution can be obtained in several ways. 
+We may, for instance, pass the function an additional argument `t_eval`, which is a NumPy array 
+containing the time points where we want to evaluate the solution: 
+!bc pycod
+t_eval = np.linspace(0,10.0,1001)
+solution = solve_ivp(problem, t_span, u0,t_eval=t_eval)
+!ec
+Alternatively, we can reduce the error tolerance of the solver, for instance setting
+!bc pycod
+rtol = 1e-6
+solution = solve_ivp(problem, t_span, u0,rtol=rtol)
+!ec
+This latter call will reduce the relative tolerance `rtol` from its default value of `1e-3` (0.001). 
+We could also adjust the absolute tolerance using the parameter `atol`. While we will not
+consider all the possible arguments and options to `solve_ivp` here, we mention that we can also 
+change the numerical method used by the function, by passing in a parameter named `method`. For instance, 
+a call like 
+!bc pycod
+rtol = 1e-6
+solution = solve_ivp(problem, t_span, u0,method='Radau')
+!ec
+will replace the default solver (called `rk45`) with an implicit Radau ODE solver, which we will introduce and
+explain in Chapter ref{ch:stiff}. For a complete description of parameters accepted by the `solve_ivp` 
+function we refer to the online SciPy documentation.
+
+
+

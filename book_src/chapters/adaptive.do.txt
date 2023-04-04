@@ -1,0 +1,253 @@
+# #if FORMAT == 'ipynb'
+========= Adaptive time step methods =========
+# #endif
+TODO:
+* Introduce the idea
+* Embedded methods
+* Controlling the time step
+
+
+In practical computations, one seeks to achieve a desired accuracy with the minimum 
+computational effort. For a given method, this requires finding the largest possible 
+value of the time step $\Delta t$. The step size is influenced by the required accuracy, 
+the method's order, and the solution's characteristics. In regions where the solution is smooth, 
+larger time steps can be used without introducing significant error, but in regions where the 
+solution has rapid variations, a smaller time step must be employed. We may illustrate this
+situation by considering a particular class of ODE models, which describe the so-called
+*action potential* of excitable cells. These ODE models, first introduced by
+Hodgkin and Huxley cite{Hodgkin}, are important tools for studying the electrophysiology 
+of cells such as neurons and different types of muscle cells. We will present the 
+ODEs of the Hodgkin-Huxley model below, and outline the main principles of the models
+here. The main variable of interest
+is usually the transmembrane potential, that is, the potential difference between
+the internals of a cell and its surroundings. When an excitable cell such as a neuron or
+a muscle cell is stimulated electrically, it triggers a cascade of processes in the
+cell membrane, leading to various ion channels opening and closing, and the membrane
+potential going from its resting negative state to approximately zero or slightly positive, 
+before returning to the resting value. This process of *depolarization* followed by 
+*repolarization* is called the action potential, and is illustrated in Figure ref{fig:hodgkinhuxley}.
+See, for instance, cite{KeenerSneyd}, for a comprehensive overview of the Hodgkin-Huxley model
+and action potential models in general.
+The potential utility of adaptive time step methods is obvious from Figure ref{fig:hodgkinhuxley}. 
+The solution changes rapidly during the action potential, but is approximately constant for long
+time intervals when the cell is at rest. Such behavior can be observed in many 
+types of ODE models, and  motivates methods that can adjust the time step to the properties of the
+solution. Commonly referred to as adaptive methods or methods with
+automatic time step control, these techniques are important parts of
+all modern ODE software.
+
+FIGURE: [../chapters/figs_ch4/hodgkinhuxley_AP.pdf, width=600 frac=1] Solution of the Hodgkin-Huxley model. The left panel shows a single action potential, while the right panel shows the result of stimulating the cell multiple times with a fixed period. label{fig:hodgkinhuxley}
+
+There are many possible approaches for selecting the time step automatically. One intuitive approach is to
+base the time step estimate on the dynamics of the solution, and select a small time step whenever rapid 
+variations occur. This approach is commonly applied in adaptive solvers for partial differential equations (PDEs), 
+where both the time step and space step can be chosen adaptively. It has also been successfully applied
+in specialized solvers for the action potential models mentioned above, see, e.g., cite{RushLarsen},
+where the time step is simply selected based on the variations of the transmembrane voltage. However, 
+this method may not be universally applicable and the criteria for choosing the time step must be 
+carefully selected based on the characteristics of the problem at hand. A more flexible and general 
+approach to adaptive time steps is to use error estimates to determine the step size. 
+The step size can then be adjusted so that the local error falls below a specified threshold. 
+This method can handle any system of ODEs, but the challenge lies in accurately estimating the error, 
+as the true solution is unknown. A common technique is to use two numerical solutions of varying 
+accuracy to approximate the error, and this approach forms the basis for all the methods discussed in this section.
+
+======= Error estimates via step doubling =======
+A simple method of estimating local error is *step doubling*, which works 
+for any numerical method. Given an initial value of $y(t_0) = y_0$, two steps of length $\Delta t$ are 
+taken using a method of order $p$. The error after the first step is given by
+!bt
+\begin{equation}
+e_1 = \| y_1 -y(t_0 + \Delta t) \| = \|\psi(t_n,y(t_n))\|\Delta t^{p+1}+O(\Delta t^{p+2}) ,
+\end{equation}
+!et
+where $\psi$ is called the principal error function; see, e.g., cite{AscherPetzold,ODEI} for further details. 
+The error $e_2$ after two steps consists of the error carried over from the first step as well as the error 
+introduced in the second step, and, following cite{AscherPetzold}, we here assume that the error 
+after two steps is twice as large as that after one step. We have
+!bt
+\begin{equation}
+e_2 = \|y(t_0 + 2\Delta t)-y_2 \| =   2\| \psi(t_n,y(t_n))\|\Delta t^{p+1}+O(\Delta t^{p+2}) . \label{ch4:error1}
+\end{equation}
+!et
+Similarly, we can estimate the error after one step of length $2\Delta t$ as
+!bt
+\begin{equation}
+\tilde{e}_2 = \| y(t_0 + 2\Delta t)-\tilde{y}_2  \|= \|\psi(t_n,y(t_n))\|(2\Delta t)^{p+1} +O(\Delta t^{p+2}) . \label{ch4:error2}
+\end{equation}
+!et
+From (ref{ch4:error1})-(ref{ch4:error2}), we get
+!bt
+\begin{equation}
+\|y_2-\tilde{y}_2 \| = (2^p-1)2\| \psi(t_n,y(t_n))\| h^{p+1} ,
+\end{equation}
+!et
+and this can be used to eliminate the unknown $\psi$ from $e_2$, to give
+!bt
+\begin{equation}
+e_2 = \frac{\| y_2 -\tilde{y}_2 \|}{2^p-1} .
+\end{equation}
+!et
+This estimated local error can now be compared to an error tolerance $tol$ specified for the given application. If we have
+!bt
+\begin{equation}
+e_2 \leq tol \label{ch4:tolerance}
+\end{equation}
+!et
+the step is accepted and the step size for the next step is computed from
+!bt
+\begin{equation}
+h_{new} = h \left(\frac{tol}{e_2}\right)^{1/(p+1)} . \label{ch4:next_step}
+\end{equation}
+!et
+If the estimated error does not satisfy (ref{ch4:tolerance}), the step is 
+rejected and is recomputed with a smaller step. The new step may also, in this case, 
+be based on a formula such as (ref{ch4:next_step}). In practice, a slightly modified version
+ (ref{ch4:next_step}) is usually applied, to introduce a safety factor and limit 
+the variation in step size from one step to the next. Further details can be found in, e.g., 
+cite{ODEI,AscherPetzold}.
+
+======= Error estimates from an embedded method =======
+The step-doubling procedure provides a good approximation of the local error, but it is also 
+computationally expensive. As a result, most modern ODE software uses other estimates for 
+automatic step size control. An alternative solution is to use two numerical solutions 
+computed with the same step size, but with different orders of accuracy. For a numerical 
+method of order $p$, a solution computed with a method of order $p+1$ can be used to estimate 
+the local error. By taking the difference between the two solutions, $|u_n - \tilde{u}_n|$, we 
+obtain an estimate of the local error for the solution $u_n$. This estimate can then be used to 
+control the time step using formulae such as (ref{ch4:next_step}).
+
+The remaining issue is how we should compute the two different solutions $u_n$ and $\tilde{u}_n$. 
+If we are to apply two entirely different methods to obtain these solutions, the adaptive time 
+step algorithm becomes very expensive. However, the error estimate can often be obtained more 
+efficiently through so-called *embedded methods*. An embedded method is a variation of a given 
+Runge-Kutta method that uses the same stage computations as the original method but achieves a 
+different order of accuracy. Since most of the computational work in Runge-Kutta methods occurs 
+in the stage computations, error estimates based on embedded methods are relatively cheap to evaluate.
+
+For the general Runge-Kutta method defined by 
+(ref{genrk0})-(ref{genrk1}), an embedded method can be introduced by adding one line, to give
+!bt
+\begin{align}
+k_i &= f(t_n+c_i\Delta t,y_n+\Delta t
+\sum_{j=1}^s a_{ij}k_j)  \mbox{ for } i = 1,\ldots ,s \label{ch4:rkpair1}\\
+y_{n+1} &= y_0 + \Delta t \sum_{i=1}^s b_i k_i, \label{ch4:rkpair2} \\
+\hat{y}_{n+1}&= y_0 + \Delta t \sum_{i=1}^s \hat{b}_i k_i . \label{ch4:rkpair3}
+\end{align}
+!et
+Although the main idea is to reuse the same stage computations to compute both 
+$\hat{y}_{n+1}$ and $y_{n+1}$, it is not uncommon to introduce one additional 
+stage in the method to obtain the error estimate. A Runge-Kutta method
+with an embedded error estimator is often referred to as a Runge-Kutta
+pair of order $n(m)$, where $n$ is the order of the main method
+and $m$ the order of the error estimator.
+
+The simplest Runge-Kutta pair is obtained by combining Heun's method with the
+forward Euler method. The method is defined by the Butcher Tableau 
+!bt
+\begin{equation}
+\begin{array}{c|cc}
+0 & 0 & \\ 
+1 & 1 & \\ \hline
+ & 1/2 & 1/2 \\
+ & 1 & 0
+\end{array} ,
+\label{heun_euler0}
+\end{equation}
+!et
+where we see that we include an additional line at the bottom for defining the additional 
+coefficients $\hat{b}_i$. We can use this simple method to illustrate the
+implementation of adaptive methods, before moving to more advanced adaptive RK solvers. 
+
+===== Implementing an adaptive solver =====
+Additional requirements:
+
+* Estimate error 
+* Accept/reject step
+* Compute next step
+
+
+
+
+
+
+
+
+===== More advanced adaptive methods =====
+
+(NBNB what about an embedded method for the RK4 method considered earlier)
+(NBNB introduce the idea with a simpler method)
+
+A quite famous and widely used pair of ERK methods is the Dormand-Prince 
+method, which is a seven-stage method with the following 
+coefficients:
+!bt
+\[
+\renewcommand\arraystretch{1.2}
+\begin{array}{c|ccccccc}
+0 & & & & & & &\\ %\vspace{0.2cm}
+\frac{1}{5} & \frac{1}{5} & & & & & & \\ %\vspace{0.2cm}
+\frac{3}{10}& \frac{3}{40} & \frac{9}{40} & & & & & \\ %\vspace{0.2cm}
+\frac{4}{5} & \frac{44}{45} & -\frac{56}{15} & \frac{32}{9} & & & &  \\ %\vspace{0.2cm}
+\frac{8}{9} & \frac{19372}{6561} &-\frac{25360}{2187}&
+\frac{64448}{6561}
+& -\frac{212}{729} & & &\\ %\vspace{0.2cm}
+1 & \frac{9017}{3168} & -\frac{355}{33} & \frac{46732}{5247} &
+\frac{49}{176} &
+-\frac{5103}{18656} & & \\
+1 & \frac{35}{84} & 0 & \frac{500}{1113} & \frac{125}{192}
+&-\frac{2187}{6784} & \frac{11}{84}  & \\ \hline y_n  &
+\frac{35}{384} & 0 & \frac{500}{1113} & \frac{125}{192} &
+-\frac{2187}{6784} & \frac{11}{84} & 0\\ \hline \hat{y}_n &
+\frac{5179}{57600} & 0 & \frac{7571}{16695}& \frac{393}{640} &
+-\frac{92097}{339200} & \frac{187}{2100} & \frac{1}{40}
+\end{array} \hspace{1cm} 
+\]
+!et
+We see that the seventh step is only used only for the error
+estimator $\hat{y}_n$. A particular feature of this method, and
+of many other explicit RK methods, is that the
+highest-order method is used to advance the solution, while
+the lower-order
+method is used only for error estimation. A Runge-Kutta method
+with an embedded error estimator is often referred to as an RK
+pair of order $n(m)$, where $n$ is the order of the main method
+and $m$ the order of the error estimator.
+
+Implicit RK methods can also be equipped with embedded methods.
+NBNB fix this:
+* Radau here 
+* then SDIRK??
+
+
+Consider, for instance, the SDIRK method given by
+(NB reference). This can be extended to an
+SDIRK pair of order 3(2) of the form
+\[
+\begin{array}{c|cccc}
+0 &  & & & \\
+c_2 & a_{21} & \gamma  & & \\
+c_3 & a_{31} & a_{32} & \gamma & \\
+c_4 & a_{41} & a_{42}& a_{43} & \gamma \\ \hline
+ & b_1 & b_2 & b_3 & b_4 \\ \hline
+ & \hat{b}_1& \hat{b}_2 & \hat{b}_3 & \hat{b}_4
+\end{array}\hspace{1cm}
+\]
+where again the coefficients can be found in Appendix
+\ref{app:ode_coeff}. This method uses the same technique as the
+Dormand-Prince pair; the highest-order method is used to
+advance the solution while the lowest-order method is used
+only for error estimation. 
+
+Although the idea of error estimation and time step control that
+is based on embedded methods is very simple, there are numerous
+matters to be considered regarding its practical use. While
+(ref{ch4:next_step}) offers a very simple formula for the next
+step size, improved formulae have been derived that may give
+better results, in particular for stiff problems. Also particular
+to stiff problems is the fact that the stability properties of
+both the main method and the embedded error estimator must be
+good, in order to ensure reliable error estimates. The reader is
+referred to cite{AscherPetzold} and cite{ODEI,ODEII} for a
+detailed discussion of automatic time step control for ODEs.
+

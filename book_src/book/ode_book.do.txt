@@ -18,27 +18,42 @@ label{ch:preface}
 TOC: on
 
 !split
-========= Programming of difference equations =========
-label{ch:diff_eq}
-# #include "../chapters/diffeq.do.txt"
-
-!split
-========= Solving ordinary differential equations =========
+========= Programming a simple ODE solver =========
 label{ch:ode_intro}
 # #include "../chapters/ode_intro.do.txt"
+# #include "../chapters/ode_systems.do.txt"
+# #include "../chapters/scipy.do.txt"
+
 
 !split
-========= Solving systems of ODEs =========
-label{ch:ode_sys}
-# #include "../chapters/ode_systems.do.txt"
+========= Improving the accuracy =========
+label{ch:runge_kutta}
+# #include "../chapters/rungekutta1.do.txt"
+
+
+
+!split
+========= Stable solvers for stiff ODE systems =========
+label{ch:stiff}
+# #include "../chapters/rungekutta2.do.txt"
+
+!split
+========= Adaptive time step methods =========
+label{ch:adaptive}
+# #include "../chapters/adaptive.do.txt"
+
 
 !split
 ========= Modeling infectious diseases =========
 label{ch:disease_models}
 # #include "../chapters/disease_modeling.do.txt"
 
+!split
+========= Appendix: Programming of difference equations =========
+label{ch:diff_eq}
+# #include "../chapters/diffeq.do.txt"
 
+!split
+========= References =========
+BIBFILE: ../bib/papers.pub
 
-# !split
-# ========= References =========
-# BIBFILE: ../chapters/papers.pub
