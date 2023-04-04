@@ -1,0 +1,411 @@
+# #if FORMAT == 'ipynb'
+========= High-order explicit ODE solvers =========
+# #endif
+
+As mentioned earlier, the FE method derived in Chapter ref{ch:ode_intro} is not the
+most sophisticated ODE solver, although it is sufficiently accurate for
+most of the applications we will consider in this book. Many alternative methods
+exist, which have better accuracy and stability and are therefore better suited
+for solving challenging ODE systems. In this chapter we will focus
+on improving the accuracy, which means that we will stick with explicit
+methods. Implicit methods, which have better stability properties and are more
+suitable for so-called *stiff* ODEs, will be
+considered in Chapter ref{ch:stiff}.
+
+In Chapter ref{ch:ode_intro} we demonstrated the FE method is a
+first order accurate method, which means that the error in the numerical
+solution is proportional to the time step size $\Delta t$. In this chapter
+we will derive solvers of higher order, for which the numerical error
+is proportional to a higher power of $\Delta t$.
+To illustrate how such higher order ODE solvers can be derived, we return to the
+general formulation of the ODE system:
+!bt
+\[
+u' = f(t,u), \quad u(t_0) = u_0 .
+\]
+!et
+We derived the FE method by simply replacing
+the derivative with a finite difference approximation, but in the present 
+chapter we will apply a slightly different approach to motivate higher order solvers.
+Assuming that we know the solution
+$u_n$ at time $t_n$, the solution at time $t_{n+1}$ can  be found by
+integrating both sides of the equation. We have 
+!bt
+\[
+\int_{t_n}^{t_{n+1}} \frac{du}{dt} dt =  \int_{t_n}^{t_{n+1}}
+f(t,u(t)) dt ,
+\]
+!et
+which gives us the exact solution at time $t_{n+1}$ as
+!bt
+\begin{equation}
+u(t_{n+1}) = u(t_n) + \int_{t_n}^{t_{n+1}} f(t,u(t)) dt .
+\label{ode_integral0}\end{equation}
+!et
+It is in general not possible to compute the integral on the right-hand side
+analytically, since $f$ is often non-linear and the function $u(t)$ is unknown.
+However, we can approximate the integral using a variety of numerical
+integration techniques. The simplest approximation is to set
+!bt
+\[
+f(t,u(t)) \approx f(t_n,u_n), \text{ for } t_n < t < t_{n+1},
+\]
+!et
+i.e., approximate the integrand as a constant on the interval $t_n$ to $t_n +\Delta t$.
+Inserting this choice in (ref{ode_integral0}) gives the update formula
+!bt
+     \[ u_{n+1} = u_n + \Delta t\, f(t_n, u_n), \]
+!et
+which we recognize as the FE method introduced in Chapter ref{ch:ode_intro}.
+Approximating the function $f(t_n,u_n)$ as constant on the interval
+$t_n < t < t_{n+1}$ is obviously not the most accurate choice, and we shall see
+that more accurate approximations of this integrand gives rise to ODE solvers
+of higher order.
+
+The classical way to approximate the integral of a general non-linear function is
+to approximate the function by a polynomial, and then integrating this polynomial
+analytically. This approach forms the basis for standard quadrature rules for numerical
+integration, and has also been used to derive accurate ODE solvers. Two main ideas 
+have been explored for constructing the polynomial approximation of $f(t,u)$, and have
+led to two important classes of ODE solvers. The first approach is to approximate $f(t,u)$ 
+by a polynomial which interpolates $f$ in previous time points, i.e., 
+$f(t_{n-1}), u_{n-1}, f(t_{n-2}, u_{n-2}),\ldots $. This method gives rise to the so-called
+*multistep* methods, which are widely used for solving ODEs. We will not consider multistep
+methods in these notes, but the interested reader is referred to, for instance, cite{ODEI,AscherPetzold}.
+The second approach is to compute a number of intermediate approximations of $f(t,u)$ on the
+interval $t_n < t < t_{n+1}$, and use these values to define the polynomial approximation of $f$.
+This idea is similar to how classical quadrature rules for numerical integration are derived, 
+and gives rise to a class of ODE solvers known as Runge-Kutta methods. Runge-Kutta methods come in
+many forms, with very different accuracy and stability properties, and will be the main topic of the
+remaining chapters. 
+
+
+======= Explicit Runge-Kutta methods =======
+idx{Runge-Kutta method !explicit}
+An intuitive way to improve the accuracy of the approximate integral is
+to compute a number of intermediate approximations of $f(t_*, u_*)$ for
+ $t_n \leq t_* \leq t_{n+1}$, and compute the integral as a weighted sum of
+these $u_*$ values. This approach builds on standard techniques of numerical
+integration, and gives rise to a very popular class of ODE solvers
+known as *Runge-Kutta methods*. The simplest example of a Runge-Kutta method
+is in fact the FE method, which is an example of a one-stage, first-order,
+explicit Runge-Kutta method. An alternative formulation of the FE method is
+!bt
+\begin{align*}
+k_1 &= f(t_n, u_n), \\
+u_{n+1} &= u_n + \Delta t k_1 .
+\end{align*}
+!et
+It can easily be verified that this is the same formula as introduced
+above, and there is no real benefit from writing the formula in two lines
+rather than one. However, this second formulation is more in line with
+how Runge-Kutta methods are usually written, and it makes it easy to see the
+relation between the FE method and more advanced solvers. The intermediate
+value $k_1$ is often referred to as a *stage derivative* in the
+ODE literature.
+idx{stage derivative} idx{stages (of Runge-Kutta methods)}
+
+idx{midpoint method !explicit}
+We can easily improve the accuracy of the FE method to
+second order, i.e., error proportional to $\Delta t^2$, by introducing more
+accurate approximations of the integral in (ref{ode_integral0}). One option
+is to keep the assumption that $f(t,u(t))$ is constant 
+over $t_n \leq t_* \leq t_{n+1}$, but to approximate it at the middle of the
+interval rather than the left end. This approach requires one additional stage:
+!bt
+\begin{align}
+k_1 & = f(t_n, u_n), \label{midpoint0}\\
+k_2 & = f(t_n+\frac{\Delta t}{2}, u_n+\frac{\Delta t}{2} k_1), \label{midpoint1}\\
+u_{n+1} &= u_n + \Delta t\, k_2 . \label{midpoint2}
+\end{align}
+!et
+This method is known as the explicit midpoint method or the modified Euler method.
+The first step is identical to that of the FE method, but instead
+of using the stage derivate $k_1$ to advance the solution to the next step,
+we use it to compute a new stage derivative $k_2$, which is an
+approximation of the derivative of $u$ at time $t_n+\Delta t/2$. Finally,
+we use this midpoint derivative to advance the solution to $t_{n+1}$.
+
+idx{Heun's method}idx{trapezoidal method !explicit}
+An alternative second order method is Heun's method,
+also referred to as the explicit trapezoidal method, which can be derived
+by approximating the integral in (ref{ode_integral0}) by a trapezoidal rule:
+!bt
+\begin{align}
+k_1 & = f(t_n, u_n), \\
+k_2 & = f(t_n+\Delta t, u_n+\Delta t k_1), \\
+u_{n+1} &= u_n + \frac{\Delta t}{2} (k_1 + k_2) .
+\end{align}
+!et
+This method also computes two stage derivatives $k_1$ and $k_2$, but from the
+formula for $k_2$ we see that it approximates the derivative at $t_{n+1}$ rather
+than at the midpoint $t_{n}+\Delta t/2$. The solution is then advanced from
+$t_n$ to $t_{n+1}$ using the mean value of $k_1$ and $k_2$.
+
+All Runge-Kutta methods follow the same recipe as the two second-order methods considered
+above; we compute one or more intermediate values (i.e., stage derivatives), and then advance the
+solution using a combination of these stage derivatives. The accuracy of the method can
+be improved by adding more stages. A general Runge-Kutta method with $s$ stages
+can be written as
+!bt
+\begin{align}
+k_i &= f(t_n+c_i\Delta t, u_n+\Delta t \sum_{j=1}^s a_{ij}k_j),  \mbox{\  for } i = 1,\ldots ,s \label{genrk0}\\
+u_{n+1} &= u_0 + \Delta t \sum_{i=1}^s b_i k_i .\label{genrk1}
+\end{align}
+!et
+Here $c_i, b_i, a_{ij}$, for $i,j, = 1,\ldots ,s$ are
+method-specific coefficients. All Runge-Kutta methods can be written
+in this form, and a method is uniquely determined by the
+number of stages $s$ and the values of the coefficients. 
+idx{Runge-Kutta method !general formula}
+
+As mentioned above there exists a wide variety of Runge-Kutta methods
+exist, where the coefficients are typically chosen to optimize the accuracy for
+a given number of stages. It can be shown that the $b_i$ coefficients must be chosen to satisfy
+$\sum_{i=1}^s b_i = 1$ in order to have a consistent method. This condition follows quite
+naturally from our motivation for Runge-Kutta methods as numerical integrators 
+applied to (ref{ode_integral0}). When approximating the integral as a weighted sum, the sum of the weights must
+obviously be one. Another common constraint on the coefficients is to 
+set $c_i = \sum_{j=1}^s a_{ij}$. While this constraint
+is not strictly needed, it may simplify the derivation of the methods and 
+follows naturally from our interpretation of the stage derivative $k_i$ as 
+approximations of the right-hand side $f(t,u)$ at time $t_n+c_i\Delta t$. 
+It is possible to derive general *order conditions* that the coefficients must satisfy for a method
+to be of a given order, see, for instance, cite{AscherPetzold,ODEI} for details. 
+In this chapter we only consider explicit Runge-Kutta methods, which means that $a_{ij} = 0$
+for $j\geq i$. It can be shown that the order $p$ of an explicit Runge-Kutta method with $s$ 
+stages satisfies $p\leq s$, and for $p \geq 5$ we must have $s\geq s+1$. However, it is not known
+whether the last bound is sharp, and it may be even stricter for methods of very high order. For 
+instance, all known methods with $p=8$ have at least eleven stages, and it is not known whether eight-order methods
+with nine or ten stages exist. 
+
+idx{Butcher tableau}
+In the ODE literature the method coefficients are often specified in the
+form of a *Butcher tableau*, which offers a compact definition of any Runge-Kutta method.
+Te Butcher tableau is simply a specification of all the method coefficients, and
+for a general Runge-Kutta method it is written as
+!bt
+\[
+\begin{array}{c|ccc}
+c_i & a_{11} & \cdots & a_{1s}\\
+\vdots & \vdots & & \vdots \\
+c_s & a_{s1} & \cdots & a_{ss} \\ \hline
+ & b_1 & \cdots & b_s
+\end{array} 
+\]
+!et
+The Butcher tableaus of the three methods considered above; FE, explicit midpoint, and Heun's method, are
+!bt
+\[
+\begin{array}{c|cc}
+0 & 0 \\ \hline
+ & 1
+\end{array} \hspace{1mm}, \hspace{1cm}
+\begin{array}{c|cc}
+0 & 0& 0 \\
+1/2 & 1/2 & 0 \\ \hline
+ & 0 & 1
+\end{array} \hspace{1mm},\hspace{1cm}
+\begin{array}{c|cc}
+0 & 0& 0 \\
+1 & 1 & 0 \\ \hline
+ & 1/2 & 1/2
+\end{array} \hspace{1mm},
+\]
+!et
+respectively. To grasp the concept of Butcher tableaus, it is a good exercise to
+insert the coefficients from these three tableaus into (ref{genrk0})-(ref{genrk1})
+and verify that you arrive at the correct formulae for the three methods.
+As an example of a higher order method, we may consider the "original" Runge-Kutta 
+method, which is a fourth-order, four-stage method defined by 
+!bt
+\[
+\begin{array}{c|cccc}
+0 & 0& 0 & 0 & 0\\
+1/2 & 1/2 & 0 & 0 & 0\\
+1/2 & 0 & 1/2 & 0 & 0 \\
+1  & 0 & 0 & 1 & 0 \\ \hline
+ & 1/6 & 1/3 & 1/3 & 1/6
+\end{array} ,
+\]
+!et
+which gives the formulas
+!bt
+\begin{align}
+k_1 &= f(t_n, u_n) , \label{rk4_0}\\
+k_2 &= f(t_n + \frac{\Delta t}{2}, u_n + \frac{\Delta t}{2}k_1),\\
+k_3 &= f(t_n + \frac{\Delta t}{2}, u_n + \frac{\Delta t}{2}k_2),\\
+k_4 &= f(t_n + \Delta t, u_n + \Delta t k_3), \\
+u_{n+1} &= u_n + \frac{\Delta t}{6} \left( k_1 + 2k_2 + 2k_3 + k_4\right) .\label{rk4_5}
+\end{align}
+!et
+As mentioned above, all the methods considered in this chapter are 
+explicit methods, which means that $a_{ij} = 0$ for $j \geq i$. As may be observed from 
+(ref{rk4_0})-(ref{rk4_5}), or from a more careful inspection of the general formula (ref{genrk0}),
+this means that the expression for computing each stage derivative $k_i$ only includes
+previously computed stage derivatives. Therefore, all $k_i$ can be computed sequentially
+using explicit formulae. For implicit Runge-Kutta methods, on the other hand,
+we have $a_{ij} \neq 0$ for some $j\geq i$. We see from
+(ref{genrk0}) that the formula for computing $k_i$ will then include $k_i$
+on the right-hand side, as part of the argument to the function $f$. We
+therefore need to solve equations to compute the stage derivatives, and since
+$f$ is typically non-linear we need to solve these equations with an iterative solver
+such as Newton's method. These steps make implicit
+Runge-Kutta methods more complex to implement and more computationally expensive per time step,
+but they are also more stable than explicit methods and perform much better
+for certain classes of ODEs. We will consider implicit Runge-Kutta methods in
+Chapter ref{ch:stiff}.
+
+======= A class hierarchy of Runge-Kutta methods =======
+idx{class ! hierarchy} idx{class !superclass/base class} 
+We now want to implement Runge-Kutta methods as classes,
+similar to the FE classes introduced above. When inspecting the `ForwardEuler`
+class, we quickly observe that most of the code is common to all ODE solvers, and
+not specific to the FE method. For instance, we
+always need to create an array for holding the solution,
+and the general solution method using a for-loop is always the same. In fact, the only
+difference between the different methods is how the solution is advanced from one
+step to the next. Recalling the ideas of Object-Oriented Programming, it becomes
+obvious that a class hierarchy is convenient for implementing such a collection
+of ODE solvers. In this way we can collect all common code in a superclass (base class), and rely on
+inheritance to avoid code duplication. The superclass can handle most of the
+more administrative steps of the ODE solver, such as
+  * Storing the solution $u_n$ and the time points $t_n$, $k=0,1,2,\ldots,n$
+  * Storing the right-hand side function $f(t,u)$
+  * Storing and applying the initial condition
+  * Running the loop over all time steps
+
+idx{`ODESolver` class}
+We can introduce a superclass `ODESolver` to handle these parts, and implement
+the method-specific details in subclasses. It should now become quite obvious why
+we chose to isolate the code to perform a single step in the `advance` method,
+since this will then be the only method we need to implement in the subclasses.
+The implementation of the superclass can be quite similar to the `ForwardEuler`
+class introduced earlier:
+!bc pycod
+import numpy as np
+
+class ODESolver:
+    def __init__(self, f):
+        # Wrap user's f in a new function that always
+        # converts list/tuple to array (or let array be array)
+        self.f = lambda t, u: np.asarray(f(t,u), float)
+
+    def set_initial_condition(self, u0):
+        if isinstance(u0, (float,int)):  # scalar ODE
+            self.neq = 1                 # no of equations
+            u0 = float(u0)
+        else:                            # system of ODEs
+            u0 = np.asarray(u0)
+            self.neq = u0.size           # no of equations
+        self.u0 = u0
+
+    def solve(self,t_span,N):
+        """Compute solution for 
+        t_span[0] <= t <= t_span[1],
+        using N steps."""
+        t0,T = t_span
+        self.dt = T/N
+        self.t = np.zeros(N+1) #N steps ~ N+1 time points
+        if self.neq == 1:
+            self.u = np.zeros(N+1)
+        else:
+            self.u = np.zeros((N+1,self.neq))
+        
+        self.t[0] = t0
+        self.u[0] = self.u0
+    
+        for n in range(N):
+            self.n = n
+            self.t[n+1] = self.t[n] + self.dt
+            self.u[n+1] = self.advance()
+        return self.t, self.u
+!ec
+Notice that the `ODESolver` is meant to be a pure superclass, and the implementation of the
+`advance` method is left for subclasses. Trying to use `ODESolver` as a stand-alone solver
+will give an error message in the line `self.u[n+1] = self.advance()`. It should be noted
+that there are ways in Python to make the abstract nature of the `ODESolver` class explicit, 
+for instance using the module `abc` (for "Abstract Base Class"). This would improve the
+readability of the code and would give more informative error messages if the class is
+not used as intended. However, we have decided not to use this module here, in the interest of
+keeping the code simple and compact. 
+!idx{class !abstract base class}
+
+With the superclass at hand, the implementation of a `ForwardEuler` subclass
+becomes very simple:
+!bc pycod
+class ForwardEuler(ODESolver):
+    def advance(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = self.dt
+        unew = u[n] + dt*f(t[n], u[n])
+        return unew
+!ec
+Similarly, the explicit midpoint method and the fourth-order Runge-Kutta method can be subclasses, each
+implementing a single method:
+!bc pycod
+class ExplicitMidpoint(ODESolver):
+    def advance(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = self.dt
+        dt2 = dt/2.0
+        k1 = f(t[n], u[n])
+        k2 = f(t[n] + dt2, u[n] + dt2*k1)
+        unew = u[n] + dt*k2
+        return unew
+
+class RungeKutta4(ODESolver):
+    def advance(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = self.dt
+        dt2 = dt/2.0
+        k1 = f(t[n], u[n],)
+        k2 = f(t[n] + dt2, u[n] + dt2*k1, )
+        k3 = f(t[n] + dt2, u[n] + dt2*k2, )
+        k4 = f(t[n] + dt,  u[n] + dt*k3, )
+        unew = u[n] + (dt/6.0)*(k1 + 2*k2 + 2*k3 + k4)
+        return unew
+!ec
+
+The use of these classes is nearly identical to the FE class introduced
+in Section ref{sec:ode_sys}. Considering
+the same simple ODE used above; $u'= u$, $u(0)=1$, $t\in [0,3]$, $\Delta t=0.5$,
+the code looks like:
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+from ODESolver import ForwardEuler, ExplicitMidpoint, RungeKutta4
+
+def f(t,u):
+    return u
+
+t_span = (0,3) 
+N = 6
+
+fe = ForwardEuler(f)
+fe.set_initial_condition(u0=1)
+t1, u1 = fe.solve(t_span,N)
+plt.plot(t1, u1, label='Forward Euler')
+
+em = ExplicitMidpoint(f)
+em.set_initial_condition(u0=1)
+t2, u2 = em.solve(t_span,N)
+plt.plot(t2, u2, label='Explicit Midpoint')
+
+rk4 = RungeKutta4(f)
+rk4.set_initial_condition(u0=1)
+t3, u3 = rk4.solve(t_span,N)
+plt.plot(t3, u3, label='Runge-Kutta 4')
+
+#plot the exact solution in the same plot
+time_exact = np.linspace(0,3,301) 
+plt.plot(time_exact,np.exp(time_exact),label='Exact')
+plt.title('RK solvers for exponential growth, $\Delta t = 0.5$')
+plt.xlabel('$t$')
+plt.ylabel('$u(t)$')
+plt.legend()
+plt.show()
+!ec
+This code will solve the same simple equation using three different methods, and plot the solutions
+in the same window. The time step is deliberately chosen very 
+large ($\Delta t = 0.5$), to highlight the difference in accuracy between the methods.
