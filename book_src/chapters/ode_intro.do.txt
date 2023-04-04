@@ -149,7 +149,7 @@ The solution is shown in Figure ref{fig:ode0}, for two different choices of the 
 approximate solution improves as $\Delta t$ is reduced, although both the solutions are quite inaccurate. However, reducing the
 time step further will easily create a solution that cannot be distinguished from the exact solution.
 
-FIGURE: [../chapters/fig-ode2/FE_n_10_20, width=600 frac=1] Solution of $u' = u, u(0) = 1$ with $\Delta t = 0.4 (N=10)$ and $\Delta t=0.2 (N=20)$. label{fig:ode0}
+FIGURE: [../chapters/figs_ch1/FE_n_10_20, width=600 frac=1] Solution of $u' = u, u(0) = 1$ with $\Delta t = 0.4 (N=10)$ and $\Delta t=0.2 (N=20)$. label{fig:ode0}
 
 === Extending the solver to the general ODE. ===
 As stated above, the purpose of this chapter is to create general-purpose ODE solvers, that can solve any ODE written
@@ -348,4 +348,4 @@ solver.set_initial_condition(problem.u0)
 t, u = solver.solve(T=40,N=400)
 !ec
 
-FIGURE: [../chapters/fig-ode2/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model. label{fig:logistic}
+FIGURE: [../chapters/figs_ch1/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model. label{fig:logistic}

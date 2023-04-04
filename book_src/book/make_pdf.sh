@@ -32,12 +32,6 @@ else
   spellcheck=spell
 fi
 
-# No spellchecking of local files here since book.do.txt just includes files.
-# Spellcheck all *.do.txt files in each chapter.
-#if [ "$spellcheck" != 'nospell' ]; then
-#python -c 'import scripts; scripts.spellcheck()'
-#fi
-
 #preprocess -DFORMAT=pdflatex ../chapters/newcommands.p.tex > newcommands_keep.tex
 
 opt="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX"
@@ -48,7 +42,7 @@ system doconce format pdflatex $name $opt $encoding --device=paper --exercise_nu
 #doconce replace 'linecolor=black,' 'linecolor=darkblue,' $name.tex
 #doconce subst 'frametitlebackgroundcolor=.*?,' 'frametitlebackgroundcolor=blue!5,' $name.tex
 
-#rm -rf $name.aux $name.ind $name.idx $name.bbl $name.toc $name.loe
+rm -rf $name.aux $name.ind $name.idx $name.bbl $name.toc $name.loe
 
 system pdflatex $name
 system bibtex $name
