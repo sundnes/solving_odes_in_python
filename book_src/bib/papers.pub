@@ -1,0 +1,294 @@
+* articles
+** Effects of Rapid Buffers on $\textrm{Ca}^{2+}$ Diffusion and $\textrm{Ca}^{2+}$ Oscillations
+   key:       wagner
+   author:    J. Wagner, J. Keizer
+   year:      1994
+   journal:   Biophysical Journal
+   volume:    67
+   pages:     447-456
+   status:    published
+   entrytype: article
+** Mechanisms of Altered Excitation-Contraction Coupling in Canine Tachycardia-Induced Heart Failure, {II}. Model Studies
+   key:       winslowODE
+   author:    R. L. Winslow, J. Rice, S. Jafri, E. Marban, B. O'Rourke
+   year:      1999
+   journal:   Circulation Research
+   status:    published
+   entrytype: article
+** Efficient Solution of Ordinary Differential Equations Modeling Electrical Activity in Cardiac Cells
+   key:       ODEart
+   author:    J. Sundnes, G. T. Lines, A. Tveito
+   year:      2001
+   journal:   Mathematical Biosciences
+   status:    published
+   entrytype: article
+** Stage Value Predictors and Efficient {N}ewton Iterations in Implicit Runge-Kutta Methods
+   key:       HansO2
+   author:    H. Olsson
+   year:      1997
+   journal:   SIAM Journal on Scientific Computing
+   status:    published
+   entrytype: article
+** An Explicit Two-Step Method for Solving Stiff Systems of Ordinary Differential Equations
+   key:       lopez
+   author:    L. Lopez
+   year:      1987
+   journal:   International Journal of Computer Mathematics
+   status:    published
+   entrytype: article
+** A Special Stability Problem for Linear Multistep Methods
+   key:       dahlquist
+   author:    G. Dahlquist
+   year:      1963
+   journal:   BIT
+   status:    published
+   entrytype: article
+** An Introduction to "Almost {Runge}-{Kutta}" Methods
+   key:       butcher
+   author:    J.C. Butcher
+   year:      1997
+   journal:   Applied Numerical Mathematics
+   volume:    24
+   pages:     331-342
+   status:    published
+   entrytype: article
+** Stiff Differential Equations Solved by Radau Methods
+   key:       hairwann99
+   author:    E. Hairer, G. Wanner
+   year:      1999
+   journal:   Journal of Computational and Applied Mathematics
+   volume:    111
+   pages:     93-111
+   status:    published
+   entrytype: article
+** Klassische Runge-Kutta Formeln F\"{u}nfter Und Siebenter Ordnung Mit Scrittweitencontrolle
+   key:       fehlberg
+   author:    E. Fehlberg
+   year:      1969
+   journal:   Computing
+   volume:    4
+   pages:     93-106
+   status:    published
+   entrytype: article
+** Integration Processes Based on {Radau} Quadrature Formulas
+   key:       Butcher64
+   author:    J. C. Butcher
+   year:      1964
+   journal:   Mathematics of Computation
+   volume:    18
+   pages:     233-244
+   status:    published
+   entrytype: article
+** Efficiency Comparisons of Methods for Integrating {ODE}s
+   key:       hosea
+   author:    M. E. Hosea, L. F. Shampine
+   year:      1994
+   journal:   Computers \& Mathematics with Applications
+   volume:    28
+   pages:     45-55
+   status:    published
+   entrytype: article
+** Benchmarking Stiff {ODE} Solvers for Atmospheric Chemistry Problems - {I}. {I}mplicit Vs Explicit
+   key:       sandu1
+   author:    A. Sandu, J. G. Verwer, M. van Loon, G. R. Carmichael, F. A. Potra, D. Dabdub, J. H. Seinfeld
+   year:      1997
+   journal:   Athmospheric environment
+   volume:    31
+   pages:     3151-3166
+   status:    published
+   entrytype: article
+** Benchmarking Stiff {ODE} Solvers for Atmospheric Chemistry Problems - {II}. {R}osenbrock Solvers
+   key:       sandu2
+   author:    A. Sandu, J. G. Verwer, J. G. Blom, E. J. Spee, G. R. Carmichael, F. A. Potra
+   year:      1997
+   journal:   Athmospheric environment
+   volume:    31
+   pages:     3459-3472
+   status:    published
+   entrytype: article
+** Integration of Stiff Equations
+   key:       Curtiss52
+   author:    C. F. Curtiss, J. O. Hirschfelder
+   year:      1952
+   journal:   Proc. Nat. Acad. Sci.
+   volume:    38
+   pages:     235-243
+   status:    published
+   entrytype: article
+** Analysis and Implementation of TR-BDF2
+   key:       hosea1996analysis
+   author:    ME Hosea, LF Shampine
+   year:      1996
+   journal:   Applied Numerical Mathematics
+   publisher: Elsevier
+   volume:    20
+   number:    1-2
+   pages:     21--37
+   status:    published
+   entrytype: article
+** A Practical Algorithm for Solving Dynamic Membrane Equations
+   key:       RushLarsen
+   author:    S. Rush, H. Larsen
+   year:      1978
+   journal:   IEEE Transactions on Biomedical Engineering
+   volume:    25
+   number:    4
+   pages:     389-392
+   status:    published
+   entrytype: article
+** A Quantitative Description of of Membrane Current and Its Aplication to Conduction and Excitation in Nerve
+   key:       Hodgkin
+   author:    A.L. Hodgkin, A. F. Huxley
+   year:      1952
+   journal:   J Physiol
+   volume:    117
+   pages:     500-544
+   status:    published
+   entrytype: article
+** Contributions to the Mathematical Theory of Epidemics-I. 1927
+   key:       SIR1
+   author:    WO Kermack, AG McKendrick
+   year:      1991
+   journal:   Bulletin of mathematical biology
+   volume:    53
+   number:    1-2
+   status:    published
+   DOI:       10.1007/bf02464423
+   ISSN:      0092-8240
+   entrytype: article
+** A Family of Embedded Runge-Kutta Formulae
+   key:       dormand
+   author:    J. R. Dormand, P. J. Prince
+   year:      1980
+   journal:   J. Comput. Appl. Math.
+   volume:    6
+   pages:     19-26
+   status:    published
+   entrytype: article
+** Singly Diagonally Implicit Runge-Kutta Methods With an Explicit First Stage
+   key:       kvaerno2004singly
+   author:    Anne Kv{\ae}rn{\o}
+   year:      2004
+   journal:   BIT Numerical Mathematics
+   publisher: Springer
+   volume:    44
+   pages:     489--502
+   status:    published
+   entrytype: article
+** Using Control Theory to Improve Stepsize Selection in Numerical Integration of {ODE}
+   key:       gustafsson1990using
+   author:    Kjell Gustafsson
+   year:      1990
+   journal:   IFAC Proceedings Volumes
+   publisher: Elsevier
+   volume:    23
+   number:    8
+   pages:     405--410
+   status:    published
+   entrytype: article
+** Klassische Runge-Kutta-Formeln Vierter Und Niedrigerer Ordnung Mit Schrittweiten-Kontrolle Und Ihre Anwendung Auf W{\"a}rmeleitungsprobleme
+   key:       fehlberg1970
+   author:    E. Fehlberg
+   year:      1970
+   journal:   Computing
+   volume:    6
+   number:    1
+   pages:     61--71
+   doi:       10.1007/BF02241732
+   url:       https://doi.org/10.1007/BF02241732
+   status:    published
+   entrytype: article
+* books
+** Solving Ordinary Differential Equations I, Nonstiff Problems
+   key:       ODEI
+   author:    E. Hairer, S. P. N\o rsett, G. Wanner
+   year:      1991
+   publisher: Springer
+   status:    published
+   entrytype: book
+** Solving Ordinary Differential Equations II, Stiff and Differential Algebraic Problems
+   key:       ODEII
+   author:    E. Hairer, G. Wanner
+   year:      1991
+   publisher: Springer
+   status:    published
+   entrytype: book
+** Computer Methods for Ordinary Differential Equations and Differential-Algebraic Equtions
+   key:       AscherPetzold
+   author:    U. M. Ascher, L. R. Petzold
+   year:      1998
+   publisher: SIAM
+   status:    published
+   entrytype: book
+** Iterative Methods and Preconditioners for Systems of Linear Equations
+   key:       ciaramella2022iterative
+   author:    Gabriele Ciaramella, Martin J. Gander
+   year:      2022
+   publisher: SIAM
+   status:    published
+   entrytype: book
+** Mathematical Physiology
+   key:       KeenerSneyd
+   author:    J. Keener, J. Sneyd
+   year:      2009
+   publisher: Springer
+   status:    published
+   entrytype: book
+** A Primer on Scientific Programming With {P}ython
+   key:       langtangen2012primer
+   author:    Hans Petter Langtangen, Hans Petter Langtangen
+   year:      2012
+   publisher: Springer
+   volume:    6
+   status:    published
+   entrytype: book
+** Introduction to Scientific Programming With {P}ython
+   key:       sundnes2020introduction
+   author:    Joakim Sundnes
+   year:      2020
+   publisher: Springer
+   status:    published
+   entrytype: book
+** Scientific Computing With Ordinary Differential Equations
+   key:       deuflhard2012scientific
+   author:    Peter Deuflhard, Folkmar Bornemann
+   year:      2012
+   publisher: Springer
+   volume:    42
+   status:    published
+   entrytype: book
+* chapters
+** Stochastic Epidemic Modeling
+   key:       Greenwood2009
+   author:    Priscilla E. Greenwood, Luis F. Gordillo
+   editor:    Gerardo Chowell, James M. Hyman, Lu{\'i}s M. A. Bettencourt, Carlos Castillo-Chavez
+   year:      2009
+   publisher: Springer
+   pages:     31--52
+   status:    published
+   bookTitle: Mathematical and Statistical Estimation Approaches in Epidemiology
+   entrytype: inbook
+* reports
+** More, and to Be Hoped, Better {DIRK} Methods for the Solution of Stiff {ODEs}.
+   key:         DIRK
+   author:      A. {Kv\ae rn\o}
+   year:        1992
+   institution: Mathematical Sciences Div., Norwegian Institute of Technology, Trondheim
+   status:      published
+   entrytype:   techreport
+** An Investigation of Different Solvers for Stiff {ODE} Systems
+   key:         ODErep
+   author:      J. Sundnes, G. T. Lines, A. Tveito
+   year:        2000
+   institution: Department of Informatics, Faculty of Mathematics and Natural Sciences, University of Oslo
+   status:      published
+   entrytype:   techreport
+* theses
+** Runge-Kutta Solution of Initial Value Problems
+   key:        HansO
+   author:     H. Olsson
+   year:       1998
+   status:     published
+   entrytype:  phdthesis
+   school:     Department of Computer Science, Lund Institute of Technology, Lund University
+   thesistype: phd
