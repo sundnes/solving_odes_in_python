@@ -377,7 +377,7 @@ parameters, the program for solving the ODE is identical to the program
 for the difference equation considered here.
 
 # #if FORMAT in ("latex", "pdflatex")
-FIGURE: [../chapters/fig-diffeq/logistic_growth1, width=400 frac=0.7] Solution of the logistic growth model for $x_0 = 100, \rho = 5.0, R = 500$.
+FIGURE: [../chapters/figs_appA/logistic_growth1, width=400 frac=0.7] Solution of the logistic growth model for $x_0 = 100, \rho = 5.0, R = 500$.
 # #endif
 
 === The factorial as a difference equation. ===
