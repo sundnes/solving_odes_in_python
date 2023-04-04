@@ -4,7 +4,6 @@ including a class implementation of the logistic
 growth model.
 """
 import numpy as np
-import matplotlib.pyplot as plt
 
 class ForwardEuler_v0:
     def __init__(self, f): 
@@ -53,12 +52,14 @@ if __name__ == '__main__':
     Demonstrate how the class the class is used,
     by solving the logistic growth problem.
     """
+    import matplotlib.pyplot as plt
 
     problem = Logistic(alpha=0.2, R=1.0, u0=0.1)
     solver = ForwardEuler_v0(problem)
     solver.set_initial_condition(problem.u0)
     
-    t, u = solver.solve(T=40,N=400)
+    T = 40
+    t, u = solver.solve(t_span=(0,T),N=400)
     
     plt.plot(t,u)
     plt.title('Logistic growth, Forward Euler')

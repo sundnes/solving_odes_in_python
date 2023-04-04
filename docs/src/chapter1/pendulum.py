@@ -14,7 +14,7 @@ class Pendulum:
 
 
 if __name__ == '__main__':
-    from forward_euler_class_v1 import *
+    from forward_euler_class import *
     problem = Pendulum(L=1)
     solver = ForwardEuler(problem)
     solver.set_initial_condition([np.pi/4,0])
@@ -24,9 +24,8 @@ if __name__ == '__main__':
     
     plt.plot(t,u[:,0],label=r'$\theta$')
     plt.plot(t,u[:,1],label=r'$\omega$')
-    plt.title(r'Pendulum problem, Forward Euler, $\Delta t$ = {T/N}')
+    plt.title(f'Pendulum problem, Forward Euler, $\Delta t$ = {T/N}')
     plt.xlabel('t')
     plt.ylabel(r'Angle ($\theta$) and angular velocity ($\omega$)')
     plt.legend()
-    plt.savefig('pendulum_FE.pdf')
     plt.show()

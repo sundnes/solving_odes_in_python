@@ -345,7 +345,8 @@ problem = Logistic(alpha=0.2, R=1.0, u0=0.1)
 solver = ForwardEuler_v0(problem)
 solver.set_initial_condition(problem.u0)
     
-t, u = solver.solve(T=40,N=400)
+T = 40
+t, u = solver.solve(t_span=(0,T),N=400)
 !ec
 
 FIGURE: [../chapters/figs_ch1/logistic_func_mpl, width=600 frac=1.0] Solution of the logistic growth model. label{fig:logistic}

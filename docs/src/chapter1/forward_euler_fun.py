@@ -4,7 +4,6 @@ Implementation of the ForwardEuler method as a function.
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 def ForwardEuler(f, u0, T, N):
     """Solve u'=f(u,t), u(0)=U0, with n steps until t=T."""
     import numpy as np
