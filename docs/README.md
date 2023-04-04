@@ -20,9 +20,9 @@ and give more sensible output when running the files.
 All the chapters of the book are available as Jupyter notebooks.
 * Click [here](./ipynb.zip) to download all the notebooks in a  single zip file.
 * Or browse the individual chapter files [here](https://github.com/sundnes/solving_odes_in_python/tree/master/docs/ipynb).
-  The ipynb files will render nicely when you view them on github, but to run the
+  The ipynb files should render nicely when you view them on github, but to run the
   embedded Python code and make full use of the notebook format you need to
-  download the files and run them locally using jupyter-notebook.
+  download the files and run them locally using jupyter-notebook. 
 
 It should be noted that the notebooks have been automatically generated from the book
 source files and may contain minor bugs and inconsistencies. Be particularly aware
