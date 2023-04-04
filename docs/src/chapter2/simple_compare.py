@@ -26,7 +26,7 @@ plt.plot(t3, u3, label='Runge-Kutta 4')
 #plot the exact solution in the same plot
 time_exact = np.linspace(0,3,301) 
 plt.plot(time_exact,np.exp(time_exact),label='Exact')
-plt.title('Comparison of RK solvers for exponential growth, $\Delta t = 0.5$')
+plt.title('RK solvers for exponential growth, $\Delta t = 0.5$')
 plt.xlabel('$t$')
 plt.ylabel('$u(t)$')
 plt.legend()

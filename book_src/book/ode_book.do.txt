@@ -2,7 +2,7 @@
 # introduced in t4do.sty and svmonodo.sty (both are bundled with DocOnce).
 
 TITLE:  Solving Ordinary Differential Equations in  Python
-AUTHOR: Joakim Sundnes at Simula Research Laboratory & Department of Informatics, University of Oslo
+AUTHOR: Joakim Sundnes at Simula Research Laboratory 
 DATE: today
 
 ## Handy mako variables and functions for the preprocessing step

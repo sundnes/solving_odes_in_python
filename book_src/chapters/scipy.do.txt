@@ -1,6 +1,6 @@
 
-======= Using ODE solvers from *SciPy* =======
-
+======= Using ODE solvers from SciPy =======
+idx{SciPy} idx{`solve_ivp`}
 As mentioned in the preface to this book, there are numerous ODE solvers around that can 
 be used directly, so one may argue that there is no need to implement our own solvers. 
 This may indeed be true, but, as we have argued earlier, it is sometimes very useful to 

@@ -30,9 +30,13 @@ R0 = 0
 model = SIR(beta=0.001, nu=1/7.0, gamma = 1.0/50)
 solver= RungeKutta4(model)
 solver.set_initial_condition([S0,I0,R0])
-time_points = np.linspace(0, 100, 101)
+time_points = np.linspace(0, 100, 1001)
 u, t = solver.solve(time_points)
 S = u[:,0];  I = u[:,1]; R = u[:,2]
 
 plt.plot(t,S,t,I,t,R)
+plt.legend(['S','I','R'])
+plt.xlabel('Time (days)')
+plt.ylabel('Number of people')
+plt.savefig('SIR_immunity_loss.pdf')
 plt.show()

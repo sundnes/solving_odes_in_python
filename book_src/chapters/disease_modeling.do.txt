@@ -2,23 +2,39 @@
 ========= Modelling infectious diseases =========
 # #endif
 
-In this chapter we will look at a particular family of ODE systems
-that describe the spread of infectious diseases. Athough the spread of infections
-is a very complex physical and biological process, we shall see that it can be modeled
-with fairly simple systems of ODEs, which we can solve using the tools from the
-previous chapters.
+Throughout this book we have focused entirely on *solving* ODEs, and
+we have not spent much time considering the origin of the equations or
+what they may be used for. In the present chapter we focus on  
+*modeling* with ODEs, by considering a very famous and widely used class
+of ODE models that describe the spread of infectious diseases. 
+This group of models provides a good example of how a very complex phenomenon
+can be modeled with relatively simple systems of ODEs. We will derive the
+models from a set of fundamental assumptions, and discuss the limitations
+that result from these assumptions. Although we only consider one phenomenon 
+and one class of models, the fundamental steps of the modeling process are
+quite generic, and can be applicable for a wide range of real-world phenomena. 
+idx{epidemiology} idx{infectious diseases} idx{SIR model}
 
 ======= Derivation of the SIR model =======
 
-In order to derive a model we need to make a number of simplifying assumptions. The
-most important one is that we do not consider individuals, just populations. The
+We want to model how infectious diseases spread in a population. This is a topic 
+of obvious scientific and societal interest, which has been studied by scientists
+for centuries and, for obvious reasons, received enormous attention in recent years. 
+The classical model for predicting the dynamics of an epidemic was derived 
+by Kermack and McKendrick cite{SIR1} in the early 1900s, and is referred to as the SIR model,
+since it describes the three categories Susceptible, Infected, and Recovered (or, alternatively, Removed). 
+The spread of disease in a population is a very complex process, and in order to derive 
+an ODE based model we need to make a number of simplifying assumptions. The
+most important one is that we do not consider individuals, just the total population
+and the number of people that move between the three categories. The
 population is assumed to be perfectly mixed in a confined area, which means that we
 do not consider spatial transport of the disease, just temporal evolution. The first
 model we will derive is very simple, but we shall see that it can easily be extended to
 models that are used world-wide by health authorities to predict the
 spread of diseases such as Covid19, flu, ebola, HIV, etc.
 
-In the first version of the model we will keep track of three categories of people:
+In the first version of the model we will keep track of the three categories of people
+mentioned above:
  * _S_: susceptibles - who can get the disease
  * _I_: infected - who have developed the disease and can infect susceptibles
  * _R_: recovered - who have recovered and become immune
@@ -52,13 +68,14 @@ I(t+\Delta t) &= I(t) + \Delta t\,\beta \frac{S(t)I(t)}{N} .
 \end{align*}
 !et
 These two equations represent the key component of all the models considered
-in this chapter. More advanced models are typically derived by adding more
+in this chapter. They are formulated as *difference equations*, 
+and we will see below that they can easily be transformed to ODEs. More advanced models are typically derived by adding more
 categories and more transitions between them, but the individual transitions are
 very similar to the ones presented here.
 
-FIGURE: [../chapters/fig-ode2/SIR0, width=800 frac=0.8] Graphical representation of the simplest SIR-model, where people move from being susceptible ($S$) to being infected ($I$) and then reach the recovered ($R$) category with immunity against the disease.
+FIGURE: [../chapters/figs_ch5/SIR0, width=800 frac=0.8] Graphical representation of the simplest SIR-model, where people move from being susceptible ($S$) to being infected ($I$) and then reach the recovered ($R$) category with immunity against the disease.
 
-We also need to model the transition of people from the $I$ to the $R$ catogory.
+We also need to model the transition of people from the $I$ to the $R$ category.
 Again considering a small time interval $\Delta t$, it is natural to assume that
 a fraction $\Delta t\,\nu$ of the infected recover and move to the $R$ category.
 Here $\nu$ is a constant describing the time dynamics of the disease.
@@ -85,12 +102,12 @@ R(t+\Delta t) &= R(t) + \Delta t\,\nu I(t) .
 label{SIR1:R}
 \end{align}
 !et
-Although the notation is slightly different, we may recognize these equations
-as a system of difference equations of the same kind that we solved in Chapter
-ref{ch:diff_eq}. We could easily solve the equations as such, using techniques from
-Chapter ref{ch:diff_eq}, but models of this kind are more commonly formulated
-as systems of ODEs, which can be solved with the tools we developed in Chapter ref{ch:ode_sys}.
+These equations are a system of difference equations, as discussed in more detail 
+in Appendix ref{ch:diff_eq}. We could easily solve the equations as such, using techniques from
+Appendix ref{ch:diff_eq}, but it is even more convenient to formulate the model
+as a system of ODEs and apply the ODE solvers derived in previous chapters. 
 
+idx{difference equations ! SIR model}
 To turn the difference equations into ODEs, we first divide all equations
 by $\Delta t$ and rearrange, to get
 !bt
@@ -109,31 +126,41 @@ I'(t) &= \beta \frac{S I}{N} -\nu I  label{sir_ode1}\\
 R'(t) &= \nu I label{sir_ode2},
 \end{align}
 !et
-where as above $N=S+I+R$. Adding the equations together we see that
+where, as above, $N=S+I+R$.[^sir0] If we add the three equations we see that
 $N'(t) = S'(t)+I'(t)+R'(t)= 0$, so the total population $N$ is constant.
 The equations (ref{sir_ode0})-(ref{sir_ode2}) is a system of three ODEs,
 which we will solve for the unknown
 functions $S(t)$, $I(t)$, $R(t)$. To solve the equations we need
 to specify initial conditions $S(0)$ (many), $I(0)$ (few), and
-$R(0)$ (=0?), as well as the parameters $\beta$ and $\nu$.
+$R(0)$ (=0), as well as the parameters $\beta$ and $\nu$.
+
 For practical applications of the model, estimating the parameters is
 usually a major challenge. We can estimate
 $\nu$ from the fact that $1/\nu$ is the average recovery time for the disease,
 which is usually possible to determine from early cases.
 The infection rate $\beta$, on the other hand, lumps a lot of biological and
 sociological factors into a single number, and it is usually very difficult to estimate for a new disease.
-It depends both the biology of the disease itself, essentially how infectious it is,
+It depends both on the biology of the disease itself, essentially how infectious it is,
 and on the interactions of the population. In a global pandemic the
 behavior of the population varies between different countries, and it will typically
 change with time, so $\beta$ must usually be adapted to different regions and different
-phases of the disease outbreak.[^sir0]
+phases of the disease outbreak.
+
+idx{reproduction number}
+Epidemiologists often refer to the reproduction number $R$ of an epidemic,
+which is the average number of new persons that an infected person infects.
+The critical number is $R = 1$, since if $R < 1$ the epidemic will decline,
+while for $R > 1$ it will grow exponentially. In the simple model considered here,
+the relationship between $R$ and $\beta$ is $R = \beta/\nu$, since $\beta$ measures
+the number of disease transmissions per time, and  $1/\nu$ is the
+mean duration of the infectious period. 
 
 # #if FORMAT != 'ipynb'
 [^sir0]: A simpler version of the SIR model is also quite common, where the disease transmission term
 is not scaled with $N$. Eq. (ref{sir_ode1}) then reads $S' = - \beta S I$, and (ref{sir_ode1})
 is modified similarly. Since $N$ is constant the two models are equivalent,
 but the version in (ref{sir_ode0})-(ref{sir_ode2}) is more common in real-world applications
-and gives a closer relation between $\beta$ and key epidemic parameters.
+and gives a closer relation between $\beta$ and common parameters such as the reproduction number. 
 # #endif
 
 Although the system (ref{sir_ode0})-(ref{sir_ode2}) looks quite simple, analytical solutions
@@ -153,23 +180,21 @@ parameters of the model. In the early phase of an epidemic the number of infecte
 people typically follows an exponential curve, and we can fit the parameters of the model
 so that (ref{sir_exp0}) fits the observed dynamics. However, if we want to describe the
 full dynamics of the epidemic we need to solve the complete system of ODEs, and
-in this case numerical solvers are needed.
+then we need numerical solvers like the ones developed in the previous chapters. 
 
 === Solving the SIR model with the `ODESystem` class hierarchy. ===
-We could of course implement a numerical solution of the SIR equations directly, for
-instance by applying the forward Euler method to (ref{sir_ode0})-(ref{sir_ode2}), which
-will simply give us back the original difference equations in
-(ref{sir_diffeq0})-(ref{sir_diffeq2}). However, since the ODE solver
-tools we developed in Chapter ref{ch:ode_sys} are completely
-general, they can easily be used to solve the SIR model. To solve the system using the
-fourth-order RK method of the ODESolver hierarchy, the Python implementation
-may look as follows:
+idx{SIR model ! implementation}
+We can easily solve the SIR model given (ref{sir_ode0})-(ref{sir_ode2}) using the
+solver tools developed in the previous chapters. For typical parameter values the 
+models are not stiff, and the explicit RK solvers work well. For instance, a simple code
+which implements the SIR model as a function, and solves it using the fourth-order
+RK method, may look as follows:
 !bc pycod
 from ODESolver import RungeKutta4
 import numpy as np
 import matplotlib.pyplot as plt
 
-def SIR_model(u,t):
+def SIR_model(t,u):
     beta = 1.0
     nu = 1/7.0
     S, I, R = u[0], u[1], u[2]
@@ -185,25 +210,28 @@ R0 = 0
 
 solver= RungeKutta4(SIR_model)
 solver.set_initial_condition([S0,I0,R0])
-time_points = np.linspace(0, 100, 101)
-u, t = solver.solve(time_points)
+time_points = np.linspace(0, 100, 1001)
+t, u = solver.solve(time_points)
 S = u[:,0];  I = u[:,1]; R = u[:,2]
 
 plt.plot(t,S,t,I,t,R)
 plt.show()
 !ec
+The resulting plot is shown in Figure ref{fig:sir_sol0}.
 
 === A class implementation of the SIR model. ===
+idx{SIR model ! class implementation}
 As noted above, estimating the parameters in the model is often challenging.
-In fact, the most important application of models of this kind is to
-predict the dynamics of new diseases, for instance the global Covid19 pandemic.
-Accurate predictions of the number of disease cases can be extremely important
-in planning the response to the epidemic, but the challenge is that for a new
-disease all the parameters are largely unknown. Although there are ways to
-estimate the parameters from the early disease dynamics, the estimates will contain
+In fact, one of the most important application of models of this kind is to
+predict the dynamics of new and unknown diseases, for instance during 
+the global Covid19 pandemic. Accurate predictions of the number of disease 
+cases can be extremely important in planning the response to the epidemic, 
+but the challenge is that for a new disease all the parameters are largely unknown. 
+There are ways to
+estimate the parameters from the early disease dynamics, but the estimates will contain
 a large degree of uncertainty, and a common strategy is then to run the
-model for multiple parameters to get an idea of what disease outbreak
-scenarios to expect. We can easily run the code above for multiple values of
+model for multiple parameter sets to get an idea of the different disease outbreak
+scenarios that can be expected. We can easily run the code above for multiple values of
 `beta` and `nu`, but it is inconvenient that both parameters are hardcoded as local
 variables in the `SIR_model` function, so we need to edit the code for each new parameter value
 we want. As we have seen earlier, it is much better to represent such a parameterized
@@ -225,19 +253,26 @@ class SIR:
         return [dS,dI,dR]
 
 !ec
-The use of the class is very similar to the use of the `SIR_model` function above.
-We need to create an instance of the class with given values of `beta` and `nu`, and
-then this instance can be passed to the ODE solver just as any regular Python function.
+As for the models considered in earlier chapter, the use of the class is very similar to 
+the use of the `SIR_model` function above. We create an instance of the class with given 
+values of `beta` and `nu`, and then this instance can be passed to the ODE solver 
+just as any regular Python function. 
+
+
+FIGURE: [../chapters/figs_ch5/SIR_simple.pdf, width=800 frac=0.8] Solution of the simplest version of the SIR model, showing how the number of people in each category ($S,I$, and $R$) changes with time. label{fig:sir_sol0}
+
+
 
 ======= Extending the SIR model =======
 
-The SIR model itself is rarely used for predictive simulations of real-world diseases,
+The SIR model itself in its simplest form is rarely used for predictive simulations of real-world diseases,
 but various extensions of the model are used to a large extent. Many such extensions
 have been derived, in order to best fit the dynamics of different infectious diseases.
 We will here consider a few such extensions, which are all based on the building
 blocks of the simple SIR model.
 
 === A SIR model without life-long immunity. ===
+idx{SIR model ! immunity}
 One very simple modification of the model above is to remove the assumption of
 life-long immunity. The model (ref{sir_ode0})-(ref{sir_ode2}) describes a one-directional
 flux towards the R category, and if we solve the model for a sufficiently
@@ -258,15 +293,18 @@ exactly the same magnitude. The total population $S+I+R$ remains constant.
 The model can be implemented by a trivial extension of the `SIR` class shown above,
 by simply adding one additional parameter to the constructor and the extra terms
 in the `dS` and `dR` equations. Depending on the choice of the parameters, the model
-may show far more interesting dynamics than the simplest SIR model.
+may show far more interesting dynamics than the simplest SIR model. An example solution 
+is shown in Figure ref{fig:sir_sol1}. Here, we set $\beta=0.001, \nu=1/7.0$, 
+and $\gamma = 1.0/50$, thereby assuming that the mean duration of the disease is seven days
+and the mean duration of immunity is 50 days. 
 
-FIGURE: [../chapters/fig-ode2/SIR1, width=800 frac=0.8] Illustration of a SIR model without lifelong immunity, where people move from the R category back to S after a given time.
+FIGURE: [../chapters/figs_ch5/SIR_immunity_loss.pdf, width=800 frac=0.8] Illustration of a SIR model without lifelong immunity, where people move from the R category back to S after a given time. label{fig:sir_sol1}
 
 === A SEIR model to capture the incubation period. ===
+idx{SEIR model} idx{incubation period}
 For many important infections, there is a significant incubation period during
 which individuals have been infected, but they are not yet infectious themselves. To
-capture these dynamics in the model, we may add an
-additional category E (for exposed). When people are infected they will then move
+capture these dynamics in the model, we may add a category E (for exposed). When people are infected they will then move
 into the E category rather than directly to I, and then gradually move over
 to the infected state where they can also infect others. The model for how susceptible
 people get infected is kept exactly as in the ordinary SIR model. Such a SEIR model
@@ -279,8 +317,14 @@ I'(t) &= \mu E -\nu I,  \\
 R'(t) &= \nu I -\gamma R.
 \end{align*}
 !et
+Notice that the overall structure of the model remains the same. Since the total population is conserved,
+all terms are balanced in the sense that they occur twice in the model, with opposite signs. A decrease
+in one category is always matched with an identical increase in another category. It is always useful
+to be aware of such fundamental properties in a model, since they can easily be checked in the computed
+solutions and may reveal errors in the implementation. 
 
-FIGURE: [../chapters/fig-ode2/SEIR.pdf, width=800 frac=0.8] Illustration of the SEIR model, without life-long immunity.  label{fig:seir}
+
+FIGURE: [../chapters/figs_ch5/SEIR.pdf, width=800 frac=0.8] Illustration of the SEIR model, without life-long immunity.  label{fig:seir}
 
 
 Again, this small extension of the model does not make it much more
@@ -308,8 +352,6 @@ class SEIR:
         dR = self.nu*I - self.gamma*R
         return [dS,dE,dI,dR]
 
-
-
 S0 = 1000
 E0 = 0
 I0 = 1
@@ -327,15 +369,23 @@ plt.show()
 !ec
 
 ======= A model of the Covid19 pandemic =======
-The models considered above can typically be adapted to describe more complex
+idx{SEEIR model} idx{Covid19}
+The models considered above can be adapted to describe more complex
 disease behavior by adding more categories of people and possibly more interactions
 between the different categories. We will now consider an extension of the
-SEIR model above into a model that has been used by Norwegian health authorities
-to predict the spread of the 2020 Covid19 pandemic. We will here derive the model
+SEIR model above into a model that was used by Norwegian health authorities
+to predict the spread of the Covid19 pandemic through 2020 and 2021. We will here derive the model
 as a system of ODEs, just like the models considered above, while the real
 model that is used to provide Covid19 predictions for health authorities is a stochastic model.[^spread]
 A stochastic model is somewhat more flexible than the deterministic ODE version,
-and can more easily incorporate dynamics such as model parameters that vary with
+and considers the inherent randomness and variability in disease transmission. 
+The model assumes that disease transmission is a stochastic process, meaning that the 
+probability of an individual getting infected is not fixed, but depends on random events 
+and chance encounters with infected individuals. In a stochastic SIR model, the number of 
+individuals in each compartment is modeled using probability distributions rather than 
+deterministic equations, and transitions between compartments are modeled as stochastic
+processes rather than a continuous flux described by ODEs. One advantage of stochastic models
+is that one can more easily incorporate dynamics such as model parameters that vary with
 time after infection. For instance, the infectiousness ($\beta$) should typically
 follow a bell-shaped curve that increases gradually after infection, reaches a peak after
 a few days, and is then reduced. Such behavior is easier to incorporate in a stochastic
@@ -343,30 +393,36 @@ model than in the deterministic ODE model considered here, which
 essentially assumes a constant $\beta$ for everyone in the $I$ category. However,
 the overall structure and dynamics of the two model types are exactly the same, and
 for certain choices of the model parameters the stochastic and deterministic
-models become equivalent.
+models become equivalent. See, for instance, cite{Greenwood2009} for a discussion of stochastic
+and deterministic epidemiology models. 
 
 # #if FORMAT != 'ipynb'
 [^spread]: See https://github.com/folkehelseinstituttet/spread
 # #endif
 
-To describe Covid19, the SEIR model introduced above is modified to incorporate
-two important disease characteristics:
- * A certain number of people infected with Covid19 have no symptoms. These asymptomatic
+An important characteristic of Covid19 is that people may be infected, and able to infect others, 
+even if they experience no symptoms. This property obviously has a massive impact on 
+the disease spread, since people are unaware that they are infected and therefore take no 
+precautions against infecting others. To separate groups of asymptomatic yet infectious people
+have been identified:
+ * A certain number of people are infected, but never develop any symptoms, or the symptoms are so 
+   mild that they are mistaken for other mild airway infections. These asymptomatic
    people can still infect other, but with a lower infectiousness than the symptomatic group, and
    they need to be treated as a separate category.
- * A large number of infections occur before the infector experiences symptoms, which suggests
-   an additional *exposed* category where people are infectious but do not yet experience
-   symptoms.
-
-These characteristics can be modeled by adding more categories to the SEIR model introduced
-earlier. We include two exposed categories $E_1$ and $E_2$, with the first being non-infectious and
-the second being able to infect others. The I category is also divided in two; a symptomatic $I$
+ * The other group, which is probably even more important for the disease dynamics, consist of people
+   who are infected and will develop symptoms, but the symptoms have not developed yet. They are, however, 
+   still able to infect others, unlike the people in the *exposed* ($E$) category of the simple SEIR model above. 
+   
+These two groups can be modeled by adding to new compartments to the SEIR model introduced
+earlier. We split the exposed category in two, $E_1$ and $E_2$, with the first being non-infectious and
+the second being able to infect others. The $I$ category is also divided in two; a symptomatic $I$
 and an asymptomatic $I_a$. The flux from $S$ to $E_1$ will be similar to the SEIR model, but from $E_1$
 people will follow one of two possible trajectories. Some will move on to $E_2$ and then
 into $I$ and finally $R$, while others move directly into $I_a$ and then to $R$.
-The model is illustrated in Figure ref{fig:covid19}.
+The model is illustrated in Figure ref{fig:covid19}. Since there are two different $E$-categories
+and two different $i$-categories, we refer to the model as a SEEIIR model. 
 
-FIGURE: [../chapters/fig-ode2/SEEIIR.pdf, width=800 frac=0.8] Illustration of the Covid19 epidemic model, with two alternative disease trajectories. label{fig:covid19}
+FIGURE: [../chapters/figs_ch5/SEEIIR.pdf, width=800 frac=0.8] Illustration of the Covid19 epidemic model, with two alternative disease trajectories. label{fig:covid19}
 
 The derivation of the model equations is similar to the simpler models
 considered above, but there will be more equations as well as more terms in each equation.
@@ -376,14 +432,14 @@ interact with the $S$ category to create new infections, and we model each
 of these interactions exactly as we did above. In a time
 interval $\Delta t$, we have the following three contributions to the flux from
 $S$ to $E_1$:
-* Infected by people in $I$: $\Delta t\beta SI/N$.
-* Infected by people in $I_a$: $\Delta t r_{ia} \beta S I_a/N $
-* Infected by people in $E_2$: $\Delta t r_{e2} \beta S E_2/N $
+* Infected by people in $I$: $\beta  \Delta tSI/N$.
+* Infected by people in $I_a$: $r_{ia} \beta \Delta t  S I_a/N $
+* Infected by people in $E_2$: $r_{e2} \beta \Delta t  S E_2/N $
 We allow the infectiousness to be different between the three categories,
 incorporated through a main infectiousness parameter $\beta$ and
 two parameters $r_{ia}, r_{e2}$ that scale the infectiousness for the two respective groups.
 Considering all three contributions, and following the same steps as above
-to construct a difference equation and then a ODE, we get the following equation
+to construct a difference equation and then an ODE, we get the following equation
 for the $S$ category:
 !bt
 \begin{equation} \label{eq:1}
@@ -403,12 +459,13 @@ people in $E_1$ will move either to $E_2$ or $I_a$. We have
 Here, $p_a$ is a parameter describing the proportion of infected people that never develop symptoms, while
 $1/\lambda_1$ is the mean duration of the non-infectious incubation period. The term $\lambda_1(1-p_a)E_1$
 represents people moving to $E_2$, and $\lambda_1p_aE_1$ are people moving to $I_a$.
-In the equation for
+ In the equation for
 $E_1$ we can combine these two fluxes into a single term, but they must be considered
 separately in the equations for $E_2$ and $I_a$.
 
-The $E_2$ category will get an influx of people from $E_1$, and an outflux of people moving on to
-the infected $I$ category, while $I$ gets an influx from $E_2$ and an outflux to $R$. The ODEs for
+Moving to the next step in Figure ref{fig:covid19}, we need to consider the two trajectories separately. 
+Starting with the people that develop symptoms, the $E_2$ compartment will get an influx of people from $E_1$, and an outflux of 
+people moving on to the infected $I$ category, while $I$ gets an influx from $E_2$ and an outflux to $R$. The ODEs for
 these two categories become
 !bt
 \begin{align*}
@@ -417,7 +474,6 @@ these two categories become
 \end{align*}
 !et
 where $1/\lambda_2$ and $1/\mu$ are the mean durations of the $E_2$ and $I$ phases, respectively.
-
 The model for the asymptomatic disease trajectory is somewhat simpler, with $I_a$ receiving an
 influx from $E_1$ and losing people directly to $R$. We have
 !bt
@@ -433,10 +489,11 @@ Finally, the dynamics of the recovered category are governed by
 \]
 !et
 Notice that we do not consider flow from the $R$ category back to $S$, so
-we have effectively assumed life-long immunity. This assumption is probably not correct
-for Covid19, but since the duration of immunity is still largely unknown, and
-we are mostly interested in the early epidemic spread, we neglect the loss of immunity.
+we have effectively assumed life-long immunity. This assumption is not correct
+for Covid19, but in the early phase of the pandemic the duration of immunity was largely unknown, 
+and the loss of immunity was therefore not considered in the models. 
 
+idx{SEEIR model ! ODE system}
 To summarize, the complete ODE system of the SEEIIR model can be written as
 !bt
 \begin{align*}
@@ -452,7 +509,7 @@ A suitable choice of default parameters  for the model can be as follows:
 |--l-----------------l----------------|
 |Parameter     | Value                |
 |---l----------------r----------------|
-| $\beta$      | 0.5  |
+| $\beta$      | 0.33  |
 | $r_{ia}$     | 0.1                  |
 | $r_{e2}$     | 1.25                 |
 | $\lambda_1$  | 0.33                 |
@@ -460,65 +517,76 @@ A suitable choice of default parameters  for the model can be as follows:
 | $p_a$        | 0.4                  |
 | $\mu$        | 0.2                  |
 |-------------------------------------|
-These parameters are based on the early phase of the Covid19 outbreak and
-can  tell us quite a bit about the disease dynamics. The
-parameters $\mu, \lambda_1$, and $\lambda_2$ are given in units of days$^{-1}$,
+These parameters are similar to the ones used by the health authorities to model
+the early phase of the Covid19 outbreak in Norway. At this time the behavior of 
+the disease was largely unknown, and it was also difficult to estimate the number of 
+disease cases in the population. It was therefore challenging to 
+fit the parameter values, and they were all associated with considerable 
+uncertainty. As mentioned earlier, the hardest parameters to estimate are the
+ones related to infectiousness and disease spread, which in the present model 
+are $\beta, r_{ia}$, and $r_{e2}$. These have been updated many times through the
+course of the pandemic, both to reflect new knowledge about the disease and actual
+changes in disease spread caused by new mutations or changes in the behavior 
+of the population. Notice that we have set $r_{e2} >1$, which means that people
+in the $E_2$ category are more infectious than the infected group in $I$. This assumption
+reflects the fact that the $E_2$ group is asymptomatic, so people in this group are
+expected to move around more and therefore potentially infect more people than the $I$
+group. The $I_a$ group, on the other hand, is also  asymptomatic and therefore likely to
+have normal social interactions, but it is assumed that these people have a 
+very low virus count. They are therefore less infectious than the people that 
+develop symptoms, which is reflected in the low value of $r_{ia}$.
+
+The parameters $\mu, \lambda_1$, and $\lambda_2$ are given in units of days$^{-1}$,
 so the mean duration of the symptomatic disease period is five days ($1/\mu$),
 the non-infectious incubation period lasts three days on average, while the
-mean duration of the infectious incubation period ($E_2$) is two days. Furthermore,
-we see that the mean infectiousness of asymptomatic people is 10\% of
-the infectiousness of the symptomatic cases. However, the infectiousness of the
-$E_2$ category is 25\% higher than the infectiousness of the $I$ category. This
-increased infectiousness is most likely the result of the $E_2$ category being
-asymptomatic, so these people will move around a lot more than the symptomatic $I$
-category. The $I_a$ group is also, of course, asymptomatic and therefore likely to
-move around more, but it is assumed that these people have a very low virus count and
-are therefore less infectious than the people that develop symptoms.
+mean duration of the infectious incubation period ($E_2$) is two days. In the present model, 
+which has multiple infectious categories, the basic reproduction number is given by
+\[
+R = r_{e2}\beta/\lambda_2 + r_{ia}\beta/\mu + \beta/\mu,
+\]
+since the mean durations of the $E_2$ period is $1/\lambda_2$ and the mean duration
+of both $I$ and $Ia$ is $1/\mu$. The parameter choices listed above gives $R \approx 2.62$, which
+is the value used by the Institute of Public Health (FHI) to model the early
+stage of the outbreak in Norway, from mid-February to mid-March 2020. 
 
-A function implementation of the SEEIIR model can look as follows
+idx{SEEIIR model ! class implementation}
+Although the present model is somewhat more complex than the previous ones, the 
+implementation is not very different. A class implementation may look as follows:
 !bc pycod
-def SEEIIR_model(u,t):
-    beta = 0.5; r_ia = 0.1; r_e2=1.25;
-    lmbda_1=0.33; lmbda_2=0.5; p_a=0.4; mu=0.2;
+class SEEIIR:
+    def __init__(self, beta=0.33, r_ia = 0.1, 
+                r_e2=1.25, lmbda_1=0.33, 
+                lmbda_2=0.5, p_a=0.4, mu=0.2):
+        
+        self.r_ia = r_ia
+        self.r_e2 = r_e2
+        self.lmbda_1 = lmbda_1
+        self.lmbda_2 = lmbda_2
+        self.p_a = p_a
+        self.mu = mu
 
-    S, E1, E2, I, Ia, R = u
-    N = sum(u)
-    dS  = -beta*S*I/N - r_ia*beta*S*Ia/N - r_e2*beta*S*E2/N
-    dE1 = beta*S*I/N + r_ia*beta*S*Ia/N + r_e2*beta*S*E2/N - lmbda_1*E1
-    dE2 = lmbda_1*(1-p_a)*E1 - lmbda_2*E2
-    dI  = lmbda_2*E2 - mu*I
-    dIa = lmbda_1*p_a*E1 - mu*Ia
-    dR  = mu*(I + Ia)
-    return [dS, dE1, dE2, dI, dIa, dR]
+    def __call__(self,t,u):
+        beta = self.beta; r_ia = self.r_ia; r_e2 = self.r_e2;
+        lmbda_1 = self.lmbda_1; lmbda_2 = self.lmbda_2;
+        p_a = self.p_a; mu = self.mu;
+
+        S, E1, E2, I, Ia, R = u
+        N = sum(u)
+        dS  = -beta*S*I/N - r_ia*beta*S*Ia/N - r_e2*beta*S*E2/N
+        dE1 = beta*S*I/N + r_ia*beta*S*Ia/N + r_e2*beta*S*E2/N - lmbda_1*E1
+        dE2 = lmbda_1*(1-p_a)*E1 - lmbda_2*E2
+        dI  = lmbda_2*E2 - mu*I
+        dIa = lmbda_1*p_a*E1 - mu*Ia
+        dR  = mu*(I + Ia)
+        return [dS, dE1, dE2, dI, dIa, dR]
 !ec
-Just as the simpler models, the SEEIIR model can be solved with
-methods in the `ODEsolver` class hierarchy:
-!bc pycod
-import numpy as np
-import matplotlib.pyplot as plt
-from ODESolver import *
-
-S_0 = 5e6
-E1_0 = 0
-E2_0 = 100
-I_0 = 0
-Ia_0 = 0
-R_0 = 0
-U0 = [S_0, E1_0, E2_0, I_0, Ia_0, R_0]
-
-solver = RungeKutta4(SEEIIR_model)
-solver.set_initial_condition(U0)
-time_points = np.linspace(0, 100, 101)
-u, t = solver.solve(time_points)
-S = u[:,0]; E1 = u[:,1]; E2 = u[:,2];
-I = u[:,3]; Ia = u[:,4]; R = u[:,5]
-
-plt.plot(t,S,label='S')
-plt.plot(t,E1,label='E1')
-plt.plot(t,E2,label='E2')
-plt.plot(t,I,label='I')
-plt.plot(t,Ia,label='Ia')
-plt.plot(t,R,label='R')
-plt.legend()
-plt.show()
-!ec
+The model can be solved with the methods in the `ODESolver` hierarchy, just as the
+simpler models considered earlier. Since the parameters listed above are based on the
+very first stage of the pandemic, when no restrictions were in place, the solution 
+may be interpreted as a potential worst case scenario for the pandemic in Norway
+if no restrictions were imposed by the government. As we all know by now, severe restrictions
+were put in place from March 2020, which makes it impossible to know whether this 
+worst case scenario would ever materialize. If we want to match the actual dynamics of the pandemic
+in Norway, we would need to incorporate the effect of societal changes and altered infectiousness
+by making the $\beta$ parameter a function of time. For instance, we can define it as
+a piecewise constant function to match the $R$-numbers estimated and published by the health authorities.

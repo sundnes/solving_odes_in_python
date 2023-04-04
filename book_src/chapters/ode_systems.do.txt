@@ -1,5 +1,6 @@
 ======= Systems of ODEs =======
 label{sec:ode_sys}
+idx{systems of odes} idx{ordinary differential equation ! system of}
 So far we have only considered ODEs with a single solution component, often called scalar ODEs.
 Many interesting processes can be described
 by systems of ODEs, i.e., multiple ODEs where the right-hand side of one equation depends on the solution of the others. Such equation
@@ -54,6 +55,7 @@ implementation just as general. The generalization of our ODE solvers is facilit
 arrays and vectorized computations.
 
 ======= A `ForwardEuler` class for systems of ODEs =======
+idx{`ForwardEuler` class}
 The `ForwardEuler_v0` class above was written for scalar ODEs, and we now want to make it work for a system
 $u'=f$, $u(0)=u_0$, where $u$, $f$ and $u_0$ are vectors (arrays). To identify how the code needs to be changed, 
 let us first revisit the underlying numerical method. Using the general notation introduced above, 
@@ -198,6 +200,7 @@ initialized to a one- or two-dimensional array of the correct size. The
 actual for-loop and the `advance` method are both identical to the previous version of the class.
 
 === Example: ODE model for a pendulum. ===
+idx{pendulum problem}
 To demonstrate the use of
 the updated `ForwardEuler` class, we consider a system of ODEs describing the motion 
 of a simple pendulum, as illustrated in Figure ref{fig:pendulum}. This nonlinear system
@@ -218,7 +221,7 @@ the gravitational force acting on the pendulum, divided by its mass.
 To solve the system we need to define initial conditions for both unknowns,
 i.e., we need to know the initial position and velocity of the pendulum. 
 
-FIGURE: [../chapters/figs_ch1/pendulum.png, width=100 frac=0.2] Illustration of the pendulum problem. The main variables of interest are the angle $\theta$ and the angular velocity $\omega$. label{fig:pendulum}
+FIGURE: [../chapters/figs_ch1/pendulum.png, width=100 frac=0.2] Illustration of the pendulum problem. The main variables of interest are the angle $\theta$ and its derivative $\omega$ (the angular velocity). label{fig:pendulum}
 
 Since the right-hand side defined by (ref{pendulum1})-(ref{pendulum2}) includes the 
 parameters $L$ and $g$, it is convenient to implement it as a class, as illustrated for the logistic
@@ -278,6 +281,7 @@ FIGURE: [../chapters/figs_ch1/pendulum_FE.pdf, width=600 frac=1] Solution of the
 
 ======= Checking the error in the numerical solution =======
 label{sec:error_taylor}
+idx{error analysis} idx{Taylor expansion} idx{convergence} 
 Recall from Section ref{sec:fe_intro} that we derived the FE method by approximating the
 derivative with a finite difference;
 !bt
@@ -409,9 +413,7 @@ compute a very accurate numerical solution using a high-order solver and small t
 solution as the reference for computing the error. For accurate error estimates it is of course essential
 that the reference solution is considerably more accurate than the numerical solution we want to evaluate. 
 The reference solution therefore typically requires very small time steps and can take some time to 
-compute, but in most cases the computation time will not be a problem. We will revisit this method for 
-some example problems in Chapter ref{ch:disease_models}. (NBNB check that this reference is correct).
-
+compute, but in most cases the computation time will not be a problem. 
 
 
 
