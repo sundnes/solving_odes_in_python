@@ -1,8 +1,18 @@
 import numpy as np
 from ODESolver import *
 
+
 class HodgkinHuxley:
-    def __init__(self, Cm=1.0, gK=36, gNa=120.0, gL=0.3, EK=-77.0, ENa=50.0, EL=-54.4,I_stim=None):
+    def __init__(
+            self,
+            Cm=1.0,
+            gK=36,
+            gNa=120.0,
+            gL=0.3,
+            EK=-77.0,
+            ENa=50.0,
+            EL=-54.4,
+            I_stim=None):
 
         self.Cm = Cm    # Membrane capacitance, in uF/cm^2
         self.gK = gK    # Maximum conductance of potassium ion channels, in mS/cm^2
@@ -11,7 +21,7 @@ class HodgkinHuxley:
         self.EK = EK    # Nernst potential of potassium ions, in mV
         self.ENa = ENa  # Nernst potential of sodium ions, in mV
         self.EL = EL    # Nernst potential of leak channels, in mV
-        if I_stim == None:
+        if I_stim is None:
             self.I_stim = lambda t: 0
         else:
             self.I_stim = I_stim
@@ -45,10 +55,9 @@ class HodgkinHuxley:
 
     def __call__(self, t, u):
         V, n, m, h = u
-        dVdt = -(self.INa(V, m, h) + self.IK(V, n) + self.IL(V) - self.I_stim(t)) / self.Cm
+        dVdt = -(self.INa(V, m, h) + self.IK(V, n) +
+                 self.IL(V) - self.I_stim(t)) / self.Cm
         dndt = self.alpha_n(V) * (1.0 - n) - self.beta_n(V) * n
         dmdt = self.alpha_m(V) * (1.0 - m) - self.beta_m(V) * m
         dhdt = self.alpha_h(V) * (1.0 - h) - self.beta_h(V) * h
         return [dVdt, dndt, dmdt, dhdt]
-    
-    
