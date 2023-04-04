@@ -1,7 +1,7 @@
 These lecture were originally based on the book *A Primer on Scientific Programming with Python* by
 Hans Petter Langtangen cite{langtangen2012primer}, mainly covering topics from Appendix A, C,
-and E. They have later been extended with more material on implicit solvers and 
-methods and automatic time-stepping methods, to provide a more complete and balanced
+and E. They have later been extended with more material on implicit solvers and
+ automatic time-stepping methods, to provide a more complete and balanced
 overview of state-of-the-art solvers for ordinary differential equations (ODEs). The 
 main purpose of the notes is to serve as a brief and gentle introduction to solving
 differential equations in Python, for use in the course
@@ -12,7 +12,7 @@ fundamental understanding of ODEs.
 
 These notes provide the foundation for writing your own ODE solvers
 in Python. One may ask why this is useful, since there are already
-multiple such solvers available, for instance in the *SciPy* library. However, no single ODE
+multiple such solvers available, for instance in the SciPy library. However, no single ODE
 solver is the best and most efficient tool for all possible ODE problems, and the choice
 of solver should always be based on the characteristics of the problem. To make such choices
 it is extremely useful to know the strengths and weaknesses of the different solvers,
@@ -28,7 +28,7 @@ mathematical formulation used throughout the book, both for scalar ODEs and syst
 and is essential reading for everyone with little prior experience with ODEs and ODE solvers.
 The chapter also briefly explains how to use the ODE solvers from the SciPy library.
 Readers already familiar with the fundamentals of the forward Euler method and its 
-implementation may consider moving straight to Chapter ref{ch:rungekutta}, which presents
+implementation may consider moving straight to Chapter ref{ch:runge_kutta}, which presents
 explicit Runge-Kutta methods. The fundamental ideas of the methods are introduced, and 
 the main focus of the chapter is how a collection of ODE solvers can be implemented as
 a class hierarchy with minimal code duplication. Chapter ref{ch:stiff} introduces so-called
@@ -71,7 +71,7 @@ go straight to the ODEs and leave Appendix ref{ch:diff_eq} for later.
 ## Just dump native latex
 \noindent
 \ \\
-{\it March 2023}  \hfill  {\it Joakim Sundnes}
+{\it April 2023}  \hfill  {\it Joakim Sundnes}
 # #else
-*Joakim Sundnes*, March 2023
+*Joakim Sundnes*, April 2023
 # #endif

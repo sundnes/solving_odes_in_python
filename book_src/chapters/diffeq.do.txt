@@ -1,7 +1,7 @@
 # #if FORMAT == 'ipynb'
 ========= Programming of difference equations =========
 # #endif
-
+idx{difference equations}
 Although the main focus of these notes is on solvers for *differential equations*, we find it useful
 to include a chapter on the closely related class of problems known as *difference equations*. 
 The main motivation for including this topic in a book on ODEs is to highlight the similarity 
@@ -15,6 +15,7 @@ also touch upon famous sequences and series, which have important applications b
 numerical solution of ODEs and elsewhere. 
 
 ======= Sequences and Difference Equations =======
+idx{sequences}
 Sequences is a central topic in mathematics, which has important applications in numerical analysis
 and scientific computing. In the most general sense, a sequence is simply a collection of numbers:
 !bt
@@ -42,7 +43,7 @@ Other examples of sequences include
 & 1,\ 1+x,\ 1+x+{1\over2}x^2,\ 1+x+{1\over2}x^2+{1\over6}x^3,\ \ldots\quad (x_n)_{n=0}^\infty,\ x_n=\sum_{j=0}^n {x^j\over j!} .
 \end{align*}
 !et
-These are all formulated as inifite sequences, which is common in mathematics, but
+These are all formulated as infinite sequences, which is common in mathematics, but
 in real-life applications sequences are usually finite: $(x_n)_{n=0}^N$.
 Some familiar examples include the annual value of a loan or an investment.
 
@@ -56,6 +57,7 @@ a calculator, but on a computer the equation is easy to solve with a for-loop. C
 equations with programming therefore enables us to consider far more interesting and useful cases.
 
 === A difference equation for computing interest. ===
+idx{difference equations ! implementation}
 To start with a simple example, consider the problem of computing how an invested sum of money grows over time.
 In its simplest form, this problem can be written as putting $x_0$ money in a bank at year 0, with interest rate
 $p$ percent per year. What is then the value after $n$ years? You may recall from earlier in IN1900
@@ -257,6 +259,7 @@ As noted above, sequences, series, and difference equations have countless appli
 in mathematics, science, and engineering. Here we present a selection of well known examples.
 
 === Fibonacci numbers as a difference equation ===
+idx{Fibonacci numbers}
 The sequence defined by the difference equation
 !bt
 \[ x_n = x_{n-1} + x_{n-2},\quad x_0=1,\ x_1=1 .\]
@@ -293,6 +296,7 @@ We can fix the problem by avoiding NumPy arrays and instead use
 the standard Python `int` type, but we will not go into these details here.
 
 === Logistic growth ===
+idx{logistic growth ! difference equation}
 If we return to the initial problem of calculating growth of money in a bank, we can write the
 classical solution formula more compactly as
 !bt
@@ -445,6 +449,7 @@ other difference equations considered earlier.
 
 
 ======= Systems of Difference Equations  =======
+idx{difference equations ! systems of}
 All the examples considered so far have been scalar difference equations, which describe how a single quantity
 changes from one step to the next. However, many applications require tracking multiple variables
 simultaneously, and dynamics of these variables may be coupled in the sense that the value of one variable
@@ -558,6 +563,7 @@ We
 
 
 ======= Taylor Series and Approximations =======
+idx{Taylor series}
 One extremely important use of sequences and series is for approximating
 functions. For instance, commonly used functions such as
 $\sin x, \ln x$, and $e^x$ have been defined to have some desired mathematical
@@ -592,16 +598,15 @@ f(x) \approx \sum_{k=0}^{N}
 The approximation improves as $N$ is increased, but the most popular
 choice is actually $N=1$, which gives a reasonable approximation close to $x=0$ and
 has been essential in developing physics and technology. By a shift of variables
-we can make these truncated Taylor series accurate asround any value $x=a$:
+we can make these truncated Taylor series accurate around any value $x=a$:
 !bt
 \[
 f(x) \approx \sum_{k=0}^{N}
 \frac{1}{k!}(\frac{d^kf(a)}{dx^k} )(x-a)^k .
 \]
 !et
-In chapter ref{ch:rk1}
-we will use such truncated Taylor series to derive solvers for ODEs and
-to analyze their accuracy. 
+One of many applications of truncated Taylor series is to derive numerical methods for ODEs, and to analyze
+their accuracy, as we briefly introduced in Chapter ref{ch:runge_kutta}.
 
 As a specific example of a Taylor series, consider the exponential function, where
 we know that $d^k e^x/dx^k = e^x$ for all $k$, and $e^0 = 1$. 
@@ -622,18 +627,15 @@ e^x&\approx 1 + x + \frac{1}{2}x^2 + \frac{1}{6}x^3,
 respectively.
 These approximations are obviously not very accurate for large $x$,
 but close to $x=0$ they are sufficiently accurate for many
-applications.
-
-#NBNB not sure if this should be included or not:
-#Taylor series approximations for other functions can be constructed by similar arguments.
-#Consider, for instance, $sin(x)$, where the derivatives follow the repetivive pattern
-#$sin'(x) = cos(x), sin''(x) = -sin(x), sin'''(x) = -cos(x), \dots...$. We also have $sin(0)=0, cos(0)=1$,
-#so in general we have 
-#$d^k sin(0)/dx^k = (-1)^k mod(k,2)$, where $mod(k,2)$ is zero for $k$ even and
-#one for $k$ odd.Inserting this into (ref{taylor0}), we get
-#!bt
-#\[ \sin x = \sum_{k=0}^\infty (-1)^k\frac{x^{2k+1}}{(2k+1)!} .\]
-#!et
+applications. Taylor series approximations for other functions can be constructed by similar arguments.
+Consider, for instance, $sin(x)$, where the derivatives follow the repetitive pattern
+$sin'(x) = cos(x), sin''(x) = -sin(x), sin'''(x) = -cos(x), \dots...$. We also have $sin(0)=0, cos(0)=1$,
+so in general we have 
+$d^k sin(0)/dx^k = (-1)^k mod(k,2)$, where $mod(k,2)$ is zero for $k$ even and
+#one for $k$ odd. Inserting this expression into (ref{taylor0}), we get
+!bt
+\[ \sin x = \sum_{k=0}^\infty (-1)^k\frac{x^{2k+1}}{(2k+1)!} .\]
+!et
 
 === Taylor series formulated as difference equations.  ===
 We consider again the Taylor series for $e^x$ around $x=0$, given by
@@ -710,5 +712,5 @@ n = 5, approx. 1.64844, error = 0.00028
 This small program first prints the exact value $e^x$ for $x=0.5$, and then
 the Taylor approximation and associated error for $n=1$ to $n=5$. The Taylor series
 approximation is most accurate close to $x=0$, so choosing a larger value
-of $x$ leads to larger errors, and we need to also increase $n$ for the appoximation
+of $x$ leads to larger errors, and we need to also increase $n$ for the approximation
 to be accurate.

@@ -1,25 +1,29 @@
 # #if FORMAT == 'ipynb'
 ========= Adaptive time step methods =========
 # #endif
-TODO:
-* Introduce the idea
-* Embedded methods
-* Controlling the time step
-
 
 In practical computations, one seeks to achieve a desired accuracy with the minimum 
 computational effort. For a given method, this requires finding the largest possible 
-value of the time step $\Delta t$. The step size is influenced by the required accuracy, 
-the method's order, and the solution's characteristics. In regions where the solution is smooth, 
-larger time steps can be used without introducing significant error, but in regions where the 
-solution has rapid variations, a smaller time step must be employed. We may illustrate this
-situation by considering a particular class of ODE models, which describe the so-called
-*action potential* of excitable cells. These ODE models, first introduced by
+value of the time step $\Delta t$. In the previous chapters we always kept the
+step size constant through the solution interval, but this is rarely the most 
+efficient approach, since the error depends on the characteristics of the 
+solution in addition to the step size. In regions where the solution is smooth, 
+large time steps can be used without introducing significant error, and in regions where the 
+solution has rapid variations, a smaller time step must be employed. In this chapter we
+will extend the Runge-Kutta methods from the previous chapters, to methods that select
+the time step automatically to control the error in the solution. 
+idx{adaptive methods}
+
+
+======= A motivating example =======
+idx{action potential}idx{Hodgkin-Huxley model}
+Many ODE models of dynamic systems have solutions that vary rapidly in some intervals and are
+nearly constant in others. As a motivating example, we may consider a particular class of ODE 
+models that which describe the so-called *action potential* of excitable cells. These models, 
+first introduced by
 Hodgkin and Huxley cite{Hodgkin}, are important tools for studying the electrophysiology 
-of cells such as neurons and different types of muscle cells. We will present the 
-ODEs of the Hodgkin-Huxley model below, and outline the main principles of the models
-here. The main variable of interest
-is usually the transmembrane potential, that is, the potential difference between
+of cells such as neurons and different types of muscle cells. The main variable of interest
+is usually the transmembrane potential, which is the difference in electrical potential between
 the internals of a cell and its surroundings. When an excitable cell such as a neuron or
 a muscle cell is stimulated electrically, it triggers a cascade of processes in the
 cell membrane, leading to various ion channels opening and closing, and the membrane
@@ -45,142 +49,411 @@ where both the time step and space step can be chosen adaptively. It has also be
 in specialized solvers for the action potential models mentioned above, see, e.g., cite{RushLarsen},
 where the time step is simply selected based on the variations of the transmembrane voltage. However, 
 this method may not be universally applicable and the criteria for choosing the time step must be 
-carefully selected based on the characteristics of the problem at hand. A more flexible and general 
-approach to adaptive time steps is to use error estimates to determine the step size. 
-The step size can then be adjusted so that the local error falls below a specified threshold. 
-This method can handle any system of ODEs, but the challenge lies in accurately estimating the error, 
-as the true solution is unknown. A common technique is to use two numerical solutions of varying 
-accuracy to approximate the error, and this approach forms the basis for all the methods discussed in this section.
+carefully selected based on the characteristics of the problem at hand. 
 
-======= Error estimates via step doubling =======
-A simple method of estimating local error is *step doubling*, which works 
-for any numerical method. Given an initial value of $y(t_0) = y_0$, two steps of length $\Delta t$ are 
-taken using a method of order $p$. The error after the first step is given by
-!bt
-\begin{equation}
-e_1 = \| y_1 -y(t_0 + \Delta t) \| = \|\psi(t_n,y(t_n))\|\Delta t^{p+1}+O(\Delta t^{p+2}) ,
-\end{equation}
-!et
-where $\psi$ is called the principal error function; see, e.g., cite{AscherPetzold,ODEI} for further details. 
-The error $e_2$ after two steps consists of the error carried over from the first step as well as the error 
-introduced in the second step, and, following cite{AscherPetzold}, we here assume that the error 
-after two steps is twice as large as that after one step. We have
-!bt
-\begin{equation}
-e_2 = \|y(t_0 + 2\Delta t)-y_2 \| =   2\| \psi(t_n,y(t_n))\|\Delta t^{p+1}+O(\Delta t^{p+2}) . \label{ch4:error1}
-\end{equation}
-!et
-Similarly, we can estimate the error after one step of length $2\Delta t$ as
-!bt
-\begin{equation}
-\tilde{e}_2 = \| y(t_0 + 2\Delta t)-\tilde{y}_2  \|= \|\psi(t_n,y(t_n))\|(2\Delta t)^{p+1} +O(\Delta t^{p+2}) . \label{ch4:error2}
-\end{equation}
-!et
-From (ref{ch4:error1})-(ref{ch4:error2}), we get
-!bt
-\begin{equation}
-\|y_2-\tilde{y}_2 \| = (2^p-1)2\| \psi(t_n,y(t_n))\| h^{p+1} ,
-\end{equation}
-!et
-and this can be used to eliminate the unknown $\psi$ from $e_2$, to give
-!bt
-\begin{equation}
-e_2 = \frac{\| y_2 -\tilde{y}_2 \|}{2^p-1} .
-\end{equation}
-!et
-This estimated local error can now be compared to an error tolerance $tol$ specified for the given application. If we have
-!bt
-\begin{equation}
-e_2 \leq tol \label{ch4:tolerance}
-\end{equation}
-!et
-the step is accepted and the step size for the next step is computed from
-!bt
-\begin{equation}
-h_{new} = h \left(\frac{tol}{e_2}\right)^{1/(p+1)} . \label{ch4:next_step}
-\end{equation}
-!et
-If the estimated error does not satisfy (ref{ch4:tolerance}), the step is 
-rejected and is recomputed with a smaller step. The new step may also, in this case, 
-be based on a formula such as (ref{ch4:next_step}). In practice, a slightly modified version
- (ref{ch4:next_step}) is usually applied, to introduce a safety factor and limit 
-the variation in step size from one step to the next. Further details can be found in, e.g., 
-cite{ODEI,AscherPetzold}.
+======= Choosing the time step based on the local error =======
+The goal of an adaptive time stepping method is to control the error in the solution, and it is natural to 
+base the step selection on some form of error estimate. In Chapter ref{ch:ode_intro} we
+computed the global error in the solution, which may of course also be useful for selecting the
+time step. If the global error is too large, we simply redo the computation with a smaller time step. 
+However, the goal for the adaptive time step methods is to select the time step dynamically 
+as the solution progresses, to ensure that the final solution satisfies a given error tolerance. 
+This goal requires a different approach, which is based on estimates of the local error for each 
+step rather than the global error. 
 
-======= Error estimates from an embedded method =======
-The step-doubling procedure provides a good approximation of the local error, but it is also 
-computationally expensive. As a result, most modern ODE software uses other estimates for 
-automatic step size control. An alternative solution is to use two numerical solutions 
-computed with the same step size, but with different orders of accuracy. For a numerical 
-method of order $p$, a solution computed with a method of order $p+1$ can be used to estimate 
-the local error. By taking the difference between the two solutions, $|u_n - \tilde{u}_n|$, we 
-obtain an estimate of the local error for the solution $u_n$. This estimate can then be used to 
-control the time step using formulae such as (ref{ch4:next_step}).
+Assuming that we are able to compute an estimate for the local error for a given step, $e_n$,  
+the goal is to choose the time step $\Delta t_n$ so that the inequality
+!bt
+\begin{equation}
+e_n < tol
+\label{error0}\end{equation}
+!et
+is satisfied for all steps. There are two essential parts to the process of choosing
+$\Delta t_n$ so that (ref{error0}) is always satisfied. The first is that we always
+check the inequality after a step is performed. If it is satisfied we accept the step and
+proceed with step $n+1$ as normal, and if it is not satisfied we reject the step and 
+try again with a smaller $\Delta t_n$. The second part of the procedure is to choose the
+next time step, that is, either $\Delta t_{n+1}$ if the current step was accepted, or a new
+guess for $\Delta t_n$ if it was rejected. We shall see that the same formula, derived
+from what we know about the local error, can be applied in both cases.
 
-The remaining issue is how we should compute the two different solutions $u_n$ and $\tilde{u}_n$. 
-If we are to apply two entirely different methods to obtain these solutions, the adaptive time 
-step algorithm becomes very expensive. However, the error estimate can often be obtained more 
-efficiently through so-called *embedded methods*. An embedded method is a variation of a given 
-Runge-Kutta method that uses the same stage computations as the original method but achieves a 
-different order of accuracy. Since most of the computational work in Runge-Kutta methods occurs 
+idx{time step selection}
+We first assume, for simplicity of notation, that step $n$ was accepted with a time step
+$\Delta t$ and a local error estimate $e_n < tol$. Our aim is now to choose $\Delta t_{n+1}$
+so that (ref{error0}) is satisfied as sharply as possible to avoid wasting
+computations, so we want to choose $\Delta t_{n+1}$ so that $e_{n+1} \lessapprox tol$. 
+For a method of order $p$, the local error is of order $p+1$, so we have
+!bt
+\begin{align}
+e_n &\approx C (\Delta t_n)^{p+1}  \label{error_0}\\
+e_{n+1} &\approx C (\Delta t_{n+1})^{p+1}  \label{error_1}
+\end{align}
+!et
+where we have assumed that the error constant $C$ is constant from one step to the next. 
+Eq. (ref{error_0}) gives
+!bt
+\[
+C =  \frac{e_n}{(\Delta t_n)^{p+1}} ,
+\]
+!et
+and inserting into (ref{error_1}) gives 
+!bt
+\[
+  e_{n+1} \approx \frac{e_n}{(\Delta t_n)^{p+1}} (\Delta t_{n+1})^{p+1}  .
+\]
+!et
+We want to have $e_{n+1} \approx tol$, so we set 
+!bt
+\[
+  tol = e_{n+1} = \frac{e_n}{\Delta t_n^{p+1}} \Delta t_{n+1}^{p+1}  
+\]
+!et
+and rearrange to get the standard formula for time step selection
+!bt
+\[
+\Delta t_{n+1} = \left( \frac{tol}{e_n} \Delta t_n^{p+1}  \right)^{1/(p+1)} .
+\]
+!et
+We see that if $e_n \ll tol$ this formula will select a larger step size for the next step,
+while if $e_n \approx tol$ we get $\Delta t_{n+1} \approx \Delta t_n$. In practice,
+the formula is usually modified with a safety factor, i.e., we set
+!bt
+\begin{equation}
+\Delta t_{n+1} = \eta \left( \frac{tol}{e_n} \Delta t_n^{p+1}  \right)^{-(p+1)} .
+\label{step_size0}\end{equation}
+!et
+for some $\eta < 1$. The exact same formula can be used to choose a new step size $\Delta t_n$ 
+if the step was rejected, i.e., if $e_n > tol$.  
+
+While (ref{step_size0}) gives a simple formula for the step size, and we shall see later that it
+works well for our example problems, more sophisticated methods have been derived. The 
+problem of choosing the time step to control the error is an optimal control problem, and
+successful methods have been derived based on control theory, in order to control the error while
+avoiding rapid variations in the step size. See, for instance, cite{ODEII} for details and examples 
+of such methods. 
+
+======= Estimating the local error =======
+idx{local error} idx{error estimates} idx{step doubling}
+The inequality (ref{error0}) and formula (ref{step_size0}) gives the necessary tools to select the time
+step based on the local error $e_n$. The remaining task is to come up with a method to estimate this
+error. It is, of course, not possible to compute it directly since the analytical solution is
+not available, but it can instead be estimated based on two numerical solution of different accuracy.
+We described in Chapter ref{ch:ode_intro} how the global error could be estimated in this way, and
+the idea is exactly the same for the local error. We simply advance the solution
+from $t_{n-1}$ to $t_{n}$ twice, using two methods of different accuracy, giving us our regular
+solution $u_{n}$ and a more accurate one $\hat{u}_{n}$. The difference $|\hat{u}_{n}-u_{n}|$ can 
+then be used to estimate the local error for the solution $u_{n}$. The more accurate 
+solution $\hat{u}_{n}$ can be computed in two ways; either by taking several "internal" time steps to advance
+from $t_n$ to $t_{n}$, or by using a method with higher order of accuracy. The first approach is
+the foundation for a technique referred to as *step doubling*, where the solution $\hat{u}_{n+1}$
+is computed with the same method used for $u_{n+1}$, but using two steps of length $\Delta t/2$
+instead of one step $\Delta t$. This obviously makes $\hat{u}_{n+1}$ more accurate than $u_{n+1}$,
+but the difference is not very large, so the difference $|\hat{u}_{n+1}-u_{n+1}|$ cannot be used directly
+as an error estimate. However, an error estimate may be derived by combining this difference with
+the known order of the method, see cite{AscherPetzold} for details. The step doubling method is
+completely general and can be used to provide a local error estimate for all ODE solvers. However, 
+it is also computationally expensive, and most modern ODE software are based on other techniques. 
+The second approach for computing $\hat{u}_n$, to use a method with higher order of accuracy, 
+turns out to be particularly attractive for RK methods. We shall see in the next section that it
+is possible to construct so-called *embedded methods*, which provides an error estimate with 
+very little additional computation. 
+
+
+===== Error estimates from embedded methods =====
+idx{embedded method} idx{Runge-Kutta method ! embedded pair}
+For a numerical method of order $p$, a solution computed with a method of higher order
+for instance $p+1$, can be used to estimate the local error. Since $\Delta t $ is small, 
+we have $\Delta t^{p+1} \ll \Delta t^p$, and the error can be estimated directly as 
+$e_{n} = |u_n - \hat{u}_n|$. It would be very expensive to compute these two solutions using
+two entirely different methods, but the error estimate can often be obtained more 
+efficiently by embedded methods. An embedded method is a variation of a given 
+RK method that uses the same stage computations as the original method, but achieves a 
+different order of accuracy. Since most of the computational work in RK methods occurs 
 in the stage computations, error estimates based on embedded methods are relatively cheap to evaluate.
 
-For the general Runge-Kutta method defined by 
-(ref{genrk0})-(ref{genrk1}), an embedded method can be introduced by adding one line, to give
+For the general RK method defined by 
+(ref{genrk0})-(ref{genrk1}), an embedded method can be introduced by defining a separate 
+set of weights $\hat{b}_i$, which advance the solution using the same $k_i$ as the main method:
 !bt
 \begin{align}
 k_i &= f(t_n+c_i\Delta t,y_n+\Delta t
 \sum_{j=1}^s a_{ij}k_j)  \mbox{ for } i = 1,\ldots ,s \label{ch4:rkpair1}\\
-y_{n+1} &= y_0 + \Delta t \sum_{i=1}^s b_i k_i, \label{ch4:rkpair2} \\
-\hat{y}_{n+1}&= y_0 + \Delta t \sum_{i=1}^s \hat{b}_i k_i . \label{ch4:rkpair3}
+u_{n+1} &= u_n + \Delta t \sum_{i=1}^s b_i k_i, \label{ch4:rkpair2} \\
+\hat{u}_{n+1}&= u_n + \Delta t \sum_{i=1}^s \hat{b}_i k_i . \label{ch4:rkpair3}
 \end{align}
 !et
 Although the main idea is to reuse the same stage computations to compute both 
-$\hat{y}_{n+1}$ and $y_{n+1}$, it is not uncommon to introduce one additional 
-stage in the method to obtain the error estimate. A Runge-Kutta method
-with an embedded error estimator is often referred to as a Runge-Kutta
+$\hat{u}_{n+1}$ and $u_{n+1}$, it is not uncommon to introduce one additional 
+stage in the method to obtain the error estimate. An RK method
+with an embedded method for error estimation is often referred to as an RK
 pair of order $n(m)$, where $n$ is the order of the main method
-and $m$ the order of the error estimator.
+and $m$ the order of the method used for error estimation. 
+Butcher tableaus for RK pairs are written exactly as before, but with one 
+extra line for the additional coefficients $\hat{b}$:
+!bt
+\[
+\begin{array}{c|ccc}
+c_i & a_{11} & \cdots & a_{1s}\\
+\vdots & \vdots & & \vdots \\
+c_s & a_{s1} & \cdots & a_{ss} \\ \hline
+ & b_1 & \cdots & b_s \\
+ & \hat{b}_1 & \cdots & \hat{b}_s   
+\end{array} .
+\]
+!et
 
-The simplest Runge-Kutta pair is obtained by combining Heun's method with the
-forward Euler method. The method is defined by the Butcher Tableau 
+idx{RK pair}
+As an example we may consider the simplest possible embedded RK pair, which is obtained by 
+combining Heun's method with the forward Euler method. The method is defined by the Butcher Tableau 
 !bt
 \begin{equation}
 \begin{array}{c|cc}
 0 & 0 & \\ 
 1 & 1 & \\ \hline
- & 1/2 & 1/2 \\
- & 1 & 0
+& 1 & 0 \\ \hline
+& 1/2 & 1/2 
 \end{array} ,
 \label{heun_euler0}
 \end{equation}
 !et
-where we see that we include an additional line at the bottom for defining the additional 
-coefficients $\hat{b}_i$. We can use this simple method to illustrate the
-implementation of adaptive methods, before moving to more advanced adaptive RK solvers. 
+which translates to the following formulas for advancing the two solutions:
+!bt
+\begin{align*}
+k_1 &= f(t_n,u_n),\\
+k_2 &= f(t_n+\Delta t,u_n+\Delta t k_1), \\
+u_{n+1} &= u_n + \Delta t k_1, \\
+\hat{u}_{n+1} &= u_n + \Delta t/2 (k_1+k_2) . 
+\end{align*}
+!et
+In the next section we will see how this method pair can be implemented 
+as an extension of the `ODESolver` hierarchy introduced earlier, before
+we introduce more advanced embedded RK methods in Section ref{sec:embedded2}.
+idx{Euler-Heun method}
 
-===== Implementing an adaptive solver =====
-Additional requirements:
+======= Implementing an adaptive solver =======
+idx{`AdaptiveODESolver`}
+In the previous chapters we have been able to reuse significant parts of the original `ODESolver` base class for all
+the RK method. The subclasses for the explicit RK methods needed to reimplement the `advance` method, 
+while the implicit methods required a few additional methods, and it was also convenient to redesign the classes to 
+define the method coefficients as attributes in the constructor. However, all the subclasses could reuse the `solve` 
+method which contained the main solver loop. A quick inspection of this method reveals that the assumption of a fixed number
+of time steps is quite fundamental to the implementation, since it is based on a for-loop and NumPy arrays with fixed size. 
+With an adaptive step size the number of steps is obviously not fixed, and we therefore need to change the `solve` method significantly. 
+In fact, the only part of the original `ODESolver` class that can be reused directly is the `set_initial_condition`, which is 
+obviously a very moderate benefit. However, it can still make sense to implement the adaptive methods as subclasses of `ODESolver`, to 
+benefit from this tiny code reuse and to highlight that an adaptive solver is in fact a special case of a general ODE solver. 
+Since most of the new functionality needed by adaptive solvers is generic to all adaptive solvers, it makes sense to implement them
+in a general base class. In summary, the following changes and additions are needed:
 
-* Estimate error 
-* Accept/reject step
-* Compute next step
+* A complete rewrite of the `solve` method, to replace the for-loop and NumPy arrays with lists and a while loop. Lists
+  are usually not preferred for computational tasks, but for adaptive time step methods their flexible size makes them
+  attractive. It is also natural to add more parameters to the `solve` function, to let the user specify the tolerance and a 
+  maximum and minimum step size.
+* The `advance` method needs to be updated to return both the updated solution and the error estimate.
+* The step selection formula in (ref{step_size0}) must be implemented in a separate method.
+* Adaptive methods usually include a number of additional parameters, such as the safety factor $\eta$ and the order $p$ used 
+  in (ref{step_size0}). These parameters are conveniently defined as attributes in the constructor.
+
+An implementation of the adaptive base class may look as follows:
+!bc pycod
+from ODESolver import *
+from math import isnan, isinf 
+
+class AdaptiveODESolver(ODESolver):
+    def __init__(self, f, eta=0.9):
+        super().__init__(f)
+        self.eta = eta
+  
+    def new_step_size(self,dt,loc_error):
+        eta = self.eta
+        tol = self.tol
+        p = self.order
+        if isnan(loc_error) or isinf(loc_error):
+            return self.min_dt
+
+        new_dt = eta * (tol/loc_error)**(1/(p+1)) * dt
+        new_dt = max(new_dt,self.min_dt)
+        return min(new_dt,self.max_dt)
+        
+
+    def solve(self,t_span,tol=1e-3,max_dt=np.inf,min_dt=1e-5):
+        """Compute solution for t_span[0] <= t <= t_span[1]"""
+        t0,T = t_span
+        self.tol = tol
+        self.min_dt = min_dt
+        self.max_dt = max_dt
+        self.t = [t0] 
+        
+        if self.neq == 1:
+            self.u = [np.asarray(self.u0).reshape(1)]
+        else:
+            self.u = [self.u0]
+        
+        self.n = 0
+        self.dt = 0.1/np.linalg.norm(self.f(t0,self.u0))
+        
+        loc_t = t0
+        while loc_t < T:
+            u_new, loc_error = self.advance()
+            if loc_error < tol or self.dt < self.min_dt:
+                loc_t += self.dt
+                self.t.append(loc_t)
+                self.u.append(u_new)
+                self.dt = self.new_step_size(self.dt,loc_error)
+                self.dt = min(self.dt, T-loc_t, max_dt)
+                self.n += 1
+            else:
+                self.dt = self.new_step_size(self.dt,loc_error)
+        return np.array(self.t), np.array(self.u)      
 
 
+!ec
+The constructor should be self-explanatory, but the other two methods deserve a few comments. The `step_size` method 
+is essentially a Python implementation of (ref{step_size0}), with tests to ensure that the selected step size 
+is within the user defined range. We have also added a check which ensures
+that if the computed error is infinity or not a number (`inf` or `nan`) the new step size is automatically 
+set to the minimum step size. This test is important for the robustness of the solver, since explicit methods
+will often diverge and return `inf` or `nan` values if applied to very stiff problems. Checking for these values
+and setting a low step size if they occur will therefore reduce the risk of complete solver failure. The small step
+size will still make the computation inefficient, but this is far better than unexpected failure. 
+The `solve` method has also been substantially changed from the `ODESolver` version. 
+First, the parameter list has been expanded to include the tolerance as
+well as the maximum and minimum time step. These are all stored as attributes and used in the main loop. The truly significant
+changes start with the initialization of the attributes `self.t` and `self.u`, which are now lists of 
+length one rather than fixed size NumPy arrays. Notice also the somewhat cumbersome initialization 
+of `self.u`, which includes an if-test that checks if we solve a scalar ODE or a system. This initialization 
+ensures that for scalar equations, `self.u[0]` is a one-dimensional array of length one, rather than a 
+zero-dimensional array. The actual contents of these two data structures is the same, i.e., a single number,
+but they are treated differently by some NumPy tools and it is useful to make sure that `self.u[0],self.u[1]`, 
+and so forth all have the same dimensions. The first step size is then calculated using a simplified 
+version of the algorithm outlined in cite{ODEI}. The for-loop has been replaced by a while-loop, since the number of steps is initially unknown. The call to the
+`advance`-method gives the updated solution and the estimated local error, and we proceed to check if the local error is lower 
+than the tolerance. If it is, the new time point and solution are appended to the corresponding lists, and the next time step 
+is chosen based on the current one and the local error. The min and max operations are included to ensure that the time
+step is within the selected bounds, and that the simulation actually ends at the final time `T`. If the constraint 
+`loc_error < tol` is not satisfied, we simply compute a new time step and try again, without updating the lists for the time
+and the solution. 
+
+While the `solve` loop in the `AdaptiveODESolver` class is obviously a lot more complex than the earlier versions, it should be
+noted that it is still a very simple version of an adaptive solver. The aim here is to present the fundamental ideas 
+and promote the general understanding of how these solvers are implemented, and we therefore only include the most essential parts. 
+Important limitations and simplifications include the following:
+* As noted above, the step size selection in (ref{step_size0}), implemented in `step_size`, could be replaced with more sophisticated
+  versions. See, for instance, cite{ODEII,deuflhard2012scientific} for details. 
+* The formula for selecting the initial step is very simple, and is mainly suitable for avoiding extremely bad choices for the
+  initial step size. More sophisticated algorithms have been derived, and we refer to, for instance, cite{ODEI,ODEII} for details.
+* The first `if`-test inside the solver loop is not the most robust, since it will accept the stem and move forward if the minimum
+  step size is reached, even if the error is too large. A robust solver should in this case give the user a warning that the requested
+  tolerance cannot be reached.
+In spite of these and other limitations, the adaptive solver class works as intended, and captures the essential behavior of
+adaptive ODE solvers. 
+
+idx{Euler-Heun method ! implementation}
+With the `AdaptiveODESolver` base class at hand, subclasses for specific solvers can be implemented by writing specific 
+versions of the `advance` method and the constructor, since the order of the method is used in the time step selection and therefore
+needs to be defined as an attribute. For the Euler-Heun method pair listed above, a suitable implementation may look as follows:
+!bc pycod
+class EulerHeun(AdaptiveODESolver):  
+    def __init__(self, f, eta=0.9):
+        super().__init__(f,eta)
+        self.order = 1
+
+    def advance(self):
+        u, f, t = self.u, self.f, self.t
+        dt = self.dt 
+        k1 = f(t[-1], u[-1])
+        k2 = f(t[-1] + dt, u[-1] + dt*k1)
+        high = dt/2*(k1+k2)
+        low = dt*k1
+        
+        unew = u[-1] + low
+        error = np.linalg.norm(high-low)
+        return unew, error
+!ec
+After computing the two stage derivatives `k1` and `k2`, the method computes the high and low order solution updates. The low order is
+used to advance the solution, while the difference between the two provides the error estimate. The method returns the updated solution
+and the error, as needed by the `solve` method implemented in the base class above. 
+
+idx{local extrapolation}
+Since we have two methods with different accuracy, we may ask whether it would be better to advance the solution using the 
+most accurate rather than the least accurate method. This choice will, of course, give a reduced local error, but the obvious downside
+is that we would no longer have a proper error estimate. We can use the more accurate solution to estimate the error of the
+less accurate, but not the other way around. However, the approach, known as *local extrapolation* cite{ODEI} is still 
+used by many popular RK pairs, as we shall see in examples below. Even if the error estimate is then no longer a proper error 
+estimate for the method used to integrate the solution, it still works well as a tool for selecting the time step. In the implementation
+above it is very easy to play around with this choice, by replacing `low` with `high` in the assignment of `unew`, and check 
+the effect on the error and the number of time steps. 
 
 
+======= More advanced embedded RK methods =======
+label{sec:embedded2}
+idx{RKF45} idx{Fehlberg method}
+There are numerous examples of explicit RK pairs of higher order than the 1(2) pair 
+defined by (ref{heun_euler0}). We will not provide an exhaustive list here, but mention
+two particularly popular methods, which have been implemented in various software packages.
+The first is a method by Fehlberg, often referred to as the Fehlberg 4(5) or simply the RKF45 
+method cite{fehlberg1970}. The Butcher tableau is 
+!bt
+\begin{equation}
+\begin{array}{r|cccccc}
+  0&&&&&&\\
+  \frac{1}{4}&\frac{1}{4}&&&&\\
+  \frac{3}{8}&\frac{3}{32}&\frac{9}{32}&&&\\
+  \frac{12}{13}&\frac{1932}{2197}&-\frac{7200}{2197}&\frac{7296}{2197}&&\\
+  1&\frac{439}{216}&-8&\frac{3680}{513}&-\frac{845}{4104}&&\\
+  \frac{1}{2}&-\frac{8}{27}&2&-\frac{3544}{2565}&\frac{1859}{4104}&-\frac{11}{40}&\\ \hline 
+  &\frac{25}{216}&0&\frac{1408}{2565}&\frac{2197}{4104}&-\frac{1}{5}&0 \\
+  &\frac{16}{135}&0&\frac{6656}{12825}&\frac{28561}{56430}&-\frac{9}{50}&\frac{2}{55} 
+\end{array}\hspace{0.5cm}, 
+\label{rkf45}\end{equation}
+!et
+Here, the first line of $b$-coefficients ($b_i$) yields a fourth order method, while the 
+bottom line ($\hat{b}_i$) gives a method of order five. 
+The implementation of the RKF45 method is similar to the Euler-Heun pair, although the number
+of stages and coefficients makes the `advance` method considerably more complex: 
+!bc pycod
+class RKF45(AdaptiveODESolver):
+    def __init__(self, f, eta=0.9):
+        super().__init__(f, eta)
+        self.order = 4
 
+    def advance(self):
+        u, f, t = self.u, self.f, self.t
+        dt = self.dt 
+        c2 = 1/4; a21 = 1/4; 
+        c3 = 3/8; a31 = 3/32; a32 = 9/32
+        c4 = 12/13; a41 = 1932/2197; a42 = -7200/2197; a43 = 7296/2197
+        c5 = 1; a51 = 439/216; a52 = -8; a53 = 3680/513; a54 = -845/4104
+        c6 = 1/2; a61 = -8/27; a62 = 2; a63 = -3544/2565; 
+        a64 = 1859/4104; a65 = -11/40
+        b1 = 25/216; b2 = 0; b3 = 1408/2565; b4 = 2197/4104; 
+        b5 = -1/5; b6 = 0
+        bh1 = 16/135; bh2 = 0; bh3 = 6656/12825; bh4 = 28561/56430; 
+        bh5 = -9/50; bh6 = 2/55
 
+        k1 = f(t[-1], u[-1])
+        k2 = f(t[-1] + c2*dt, u[-1] + dt*(a21*k1))
+        k3 = f(t[-1] + c3*dt, u[-1] + dt*(a31*k1+a32*k2))
+        k4 = f(t[-1] + c4*dt, u[-1] + dt*(a41*k1+a42*k2+a43*k3))
+        k5 = f(t[-1] + c5*dt, u[-1] + dt*(a51*k1+a52*k2+a53*k3+a54*k4))
+        k6 = f(t[-1] + c6*dt, u[-1] + 
+               dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
 
+        low  = dt*(b1*k1+b3*k3+b4*k4+b5*k5)
+        high = dt*(bh1*k1+bh3*k3+bh4*k4+bh5*k5+bh6*k6)
+        
+        unew = u[-1] + low
+        error = np.linalg.norm(high-low)
 
-===== More advanced adaptive methods =====
+        return unew, error
+!ec
+The `advance` method could obviously be written more compactly, but we chose to keep the structure of
+the explicit RK methods introduced earlier. 
+idx{RKF45 ! implementation}
 
-(NBNB what about an embedded method for the RK4 method considered earlier)
-(NBNB introduce the idea with a simpler method)
-
-A quite famous and widely used pair of ERK methods is the Dormand-Prince 
-method, which is a seven-stage method with the following 
-coefficients:
+idx{Dormand-Prince method}
+Another famous and widely used pair of ERK methods is the Dormand-Prince method cite{dormand}, which is a 
+seven-stage method with the following coefficients:
 !bt
 \[
 \renewcommand\arraystretch{1.2}
@@ -201,53 +474,213 @@ coefficients:
 -\frac{2187}{6784} & \frac{11}{84} & 0\\ \hline \hat{y}_n &
 \frac{5179}{57600} & 0 & \frac{7571}{16695}& \frac{393}{640} &
 -\frac{92097}{339200} & \frac{187}{2100} & \frac{1}{40}
-\end{array} \hspace{1cm} 
+\end{array} \hspace{0.5cm}. 
 \]
 !et
-We see that the seventh step is only used only for the error
-estimator $\hat{y}_n$. A particular feature of this method, and
-of many other explicit RK methods, is that the
-highest-order method is used to advance the solution, while
-the lower-order
-method is used only for error estimation. A Runge-Kutta method
-with an embedded error estimator is often referred to as an RK
-pair of order $n(m)$, where $n$ is the order of the main method
-and $m$ the order of the error estimator.
+This method has been optimized for the local extrapolation approach mentioned above, 
+where the highest order method is used to advance the solution and the less accurate method
+is only used for step size selection. The implementation is otherwise similar to the RKF45 method.
+The Dormand-Prince method has been implemented in numerous software tools, including the popular
+`ode45` function in Matlab (The Math Works, Inc. MATLAB. Version 2023a).
 
-Implicit RK methods can also be equipped with embedded methods.
-NBNB fix this:
-* Radau here 
-* then SDIRK??
+Implicit RK methods can also be equipped with embedded methods. The fundamental idea is exactly the same as
+for explicit methods, although the step size selection tends to be more challenging for stiff problems. 
+The most obvious constraint is that for stiff problems, both the main method and the error estimator need to have good
+stability properties. Stiff problems are also known to be more challenging for the error control algorithms, and
+simple algorithms such as (ref{step_size0}) often suffer from large fluctuations in step size and local error. 
 
+Implicit RK methods can also be equipped with time step control based on embedded error estimators. For instance, the
+TR-BDF2 method in (ref{butcher-tr-bdf2}) can be extended to include a third order method for error estimation. 
+The extended Butcher tableau is
+!bt
+\begin{equation}
+\begin{array}{c|ccc}
+    0 & 0&  & \\
+    2\gamma & \gamma & \gamma & 0\\ 
+    1 & \beta & \beta & \gamma \\ \hline
+     & \beta & \beta & \gamma \\
+     & \frac{1-\beta}{3} & \frac{3\beta + 1}{3} & \frac{\gamma}{3}
+    \end{array} ,\hspace{0.5cm} 
+    \label{butcher-tr-bdf23}
+\end{equation}
+!et
+with $\gamma = 1-\sqrt{2}/2$ and $\beta = \sqrt{2}/4$, and the bottom line of coefficients defines 
+the third order method. This third order method is not L-stable, and for stiff problems it is
+therefore preferable to advance the solution using the second-order method and use the more
+accurate one for time step control. Ideally we would like both methods of an embedded RK pair 
+to be L-stable, but this is often impossible to achieve and we need to accept somewhat
+weaker stability requirements for the error estimator, see, for instance, 
+cite{kvaerno2004singly}. 
 
-Consider, for instance, the SDIRK method given by
-(NB reference). This can be extended to an
-SDIRK pair of order 3(2) of the form
-\[
-\begin{array}{c|cccc}
-0 &  & & & \\
-c_2 & a_{21} & \gamma  & & \\
-c_3 & a_{31} & a_{32} & \gamma & \\
-c_4 & a_{41} & a_{42}& a_{43} & \gamma \\ \hline
- & b_1 & b_2 & b_3 & b_4 \\ \hline
- & \hat{b}_1& \hat{b}_2 & \hat{b}_3 & \hat{b}_4
-\end{array}\hspace{1cm}
-\]
-where again the coefficients can be found in Appendix
-\ref{app:ode_coeff}. This method uses the same technique as the
-Dormand-Prince pair; the highest-order method is used to
-advance the solution while the lowest-order method is used
-only for error estimation. 
+idx{multiple inheritance} idx{`AdaptiveESDIRK` class}
+When implementing the adaptive TR-BDF2 and other implicit methods, 
+we need to combine features of the `AdaptiveODESolver` class above with the tools 
+from the `ImplicitRK` hierarchy introduced in Chapter ref{ch:stiff}. Specifically,
+an adaptive implicit RK methods needs the `solve` and `new_step_size` method 
+from `AdaptiveODESolver`, while all the code for computing the stage derivatives can
+be reused directly from the `ImplicitRK` classes. A convenient way to reuse
+functionality from two different classes is to use *multiple inheritance*, where
+we define a new class a subclass of two different base classes. For instance, a base class
+for adaptive ESDIRK methods may look like 
+a class may look like
+!bc pycod
+class AdaptiveESDIRK(AdaptiveODESolver,ESDIRK):
+!ec
+which simply states that the new class inherits all the methods from both the `AdaptiveODESolver` class
+and the `ImplicitRK` class. The general design of the `ImplicitRK` class above was to define 
+the method coefficients in the constructor and use a generic `advance` method, and it is convenient to 
+use the same method for the adaptive implicit methods. We then need to override the `advance` method
+from `ImplicitRK` in our `AdaptiveImplicitRK` base class, since we need the method to return the 
+error in addition to the updated solution. All other methods can be reused directly from either
+`AdaptiveODESolver` or `ImplicitRK`, so a suitable implementation of the new class may look like
+!bc pycod
+class AdaptiveESDIRK(AdaptiveODESolver,ESDIRK):  
+    def advance(self):
+        b = self.b
+        e = self.e
+        u = self.u
+        dt = self.dt 
+        k = self.solve_stages()
+        u_step = dt*sum(b_*k_ for b_,k_ in zip(b,k)) 
+        error = dt*sum(e_*k_ for e_,k_ in zip(e,k))
+        u_new = u[-1] + u_step
+        error_norm = np.linalg.norm(error)
+        return u_new, error_norm
+!ec
+Here, we assume that the constructor defines all the RK method parameters used earlier, and in addition 
+a set of parameters `self.e`, defined by $e_i = b_i-\hat{b}_i$, for $i=1,\ldots, n$, which are used in the
+error calculations. Except for the two lines computing the error, the method is identical to 
+the generic `advance` method from the `ImplicitRK` class, which was used by all the subclasses. Therefore,
+it may be natural to ask whether we should have put this method in a general base class for implicit RK
+methods, for instance named `AdaptiveImplicitRK`, and then it could be used in adaptive versions of both
+the SDIRK, ESDIRK, and Radau classes. However, adaptive versions of the Radau methods use a slightly 
+different calculation of the error, since for a Radau method of order $p$ it is not possible to 
+construct an embedded method of order $p-1$. For the adaptive solvers the advance method 
+is therefore slightly less general, and it is convenient to implement it separately for the ESDIRK methods. 
+We will not present adaptive versions of the Radau methods here, but the details may be found in 
+cite{ODEII}.
 
-Although the idea of error estimation and time step control that
-is based on embedded methods is very simple, there are numerous
-matters to be considered regarding its practical use. While
-(ref{ch4:next_step}) offers a very simple formula for the next
-step size, improved formulae have been derived that may give
-better results, in particular for stiff problems. Also particular
-to stiff problems is the fact that the stability properties of
-both the main method and the embedded error estimator must be
-good, in order to ensure reliable error estimates. The reader is
-referred to cite{AscherPetzold} and cite{ODEI,ODEII} for a
-detailed discussion of automatic time step control for ODEs.
+idx{multiple inheritance ! diamond problem}
+Although multiple inheritance provides a convenient way to reuse the functionality of our existing classes, 
+it comes with the risk of somewhat complex and confusing class hierarchies. In particular, the fact that
+our `AdaptiveESDIRK` class inherits from `AdaptiveODESolver` and `ESDIRK`, which are both subclasses
+of `ODESolver`, may give rise to a well-known ambiguity referred to as the *diamond problem*. 
+The problem would arise if, for instance, we were to define a method in `ODESolver`, override it with special versions in 
+both `AdaptiveODESolver` and `ESDIRK`, and then call it from an instance of `AdaptiveESDIRK`. Would we then
+call the version implemented in `AdaptiveODESolver` or the one in `ESDIRK`?
+The answer is determined by Python's so-called *method resolution order* (MRO), which decides 
+which method to inherit first based on its "closeness" in the class hierarchy and then on the 
+order of the base classes in the class definition. In our particular example the 
+`AdaptiveESDIRK` class is equally close to `AdaptiveODESolver` and `ESDIRK`, since it is a direct subclass
+of both. The method called would therefore be the version from `AdaptiveODESolver`, 
+since this is listed first in the class definition. In our relatively simple class hierarchy 
+there are no such ambiguities, and even if we use multiple inheritance it should not be too challenging to 
+determine which methods are called, but it is a potential source of confusion that is worth being aware of. 
 
+idx{TR-BDF2 method ! adaptive}
+With the `AdaptiveESDIRK` base class available, an adaptive version of the TR-BDF2 method may be 
+implemented as
+!bc pycod
+class TR_BDF2_Adaptive(AdaptiveESDIRK):
+    def __init__(self,f,eta=0.9):
+        super().__init__(f,eta) #calls AdaptiveODESolver.__init__
+        self.stages = 3
+        self.order = 2
+        gamma = 1-np.sqrt(2)/2
+        beta = np.sqrt(2)/4
+        self.gamma = gamma
+        self.a = np.array([[0,0,0],
+                            [gamma, gamma,0],
+                            [beta,beta,gamma]])
+        self.c = np.array([0,2*gamma,1])
+        self.b = np.array([beta,beta,gamma])
+        bh = np.array([(1-beta)/3,(3*beta + 1)/3, gamma/3])
+        self.e = self.b-bh
+!ec
+To illustrate the use of this solver class, we may return to the Hodgkin-Huxley model considered at the 
+start of this chapter. Assuming that we have implemented the model as a class in a file `hodgkinhuxley.py`, 
+the following code solves the model and plots the transmembrane potential:
+'' class implementation of this model may look like
+!bc pycod
+from AdaptiveImplicitRK import *
+from hodgkinhuxley import *
+import matplotlib.pyplot as plt
+
+model = HodgkinHuxley()
+u0 = [-45,0.31,0.05,0.59]
+t_span = (0,50)
+tol = 0.01
+
+solver = TR_BDF2_Adaptive(model)
+solver.set_initial_condition(u0)
+    
+t,u = solver.solve(t_span,tol)
+
+plt.plot(t,u[:,0])
+plt.show()
+!ec
+
+FIGURE: [../chapters/figs_ch4/hh_adaptive_tr_bdf2.pdf, width=600 frac=1] Solution of the Hodgkin-Huxley model. The solid line is a reference solution computed with SciPy `solve_ivp`, while the $+$-marks are the time steps chosen by the adaptive TR-BDF2 solver. label{fig:hh_adap}
+
+A plot of the solution is shown in Figure ref{fig:hh_adap}. The $+$-marks show the time steps chosen by the 
+adaptive TR-BDF2 solver, and it is easy to see that large time steps are used in quiescent regions while smaller
+steps are used where the solution varies rapidly. A more quantitative view of the solver behavior, for 
+three different solvers, is shown in the table below. Each method has been applied with three different
+tolerance values, for the time interval from 0 to 50ms, and with 
+default choices of the maximum and minimum time steps. The column marked "Error"
+is then an estimate of the global error, based on a reference solution computed with SciPy's `solve_ivp`, 
+the "Steps" column is the number of accepted time steps, "Rejected" is the total number of rejected
+steps, and the two last columns are the minimum and maximum time steps that occurred during the computation. 
+
+|----l----------c----------c----------c-------c---------------c-----c-------|
+| Solver \hspace{1.0cm}  | Tolerance |  Error   | $\hspace{3mm}$Steps $\hspace{3mm}$|  Rejected |  $\hspace{3mm}\Delta t_{max}$ \hspace{3mm}|$\Delta t_{min}$ |
+|----l----------c-------------c------c---------c-----------c---------c------|
+| TR-BDF2  |   1.000   | 0.0336961 |  24  |     9   |  10.533     |  0.00791   |
+| TR-BDF2   | 0.100      | 0.0175664 |   43 |  14     |   9.705    |  0.00791      |
+| TR-BDF2   | 0.010      | 0.0028838  |   83 |  22     |   5.328    | 0.00791       |
+|---------------------------------------------------------------------------|
+| RKF45   |   1.000      | 0.6702536  |   192 |  113     |   2.204  | $1.0\cdot10^{-5}$         |
+| RKF45   |   0.100      | 0.0934201  |   118 |  58     |   1.093   | $1.0\cdot10^{-5}$        |
+| RKF45   |   0.010      | 0.0054336  |   123 |  34     |   1.297   | 0.00791        |
+|----------------------------------------------------------------------------|
+| EulerHeun   | 1.000    | 0.7790353  |   158 |  35     |   1.849   |   0.00791     |
+| EulerHeun   | 0.100    | 0.0016577  |   220 |  40     |   0.836   |  0.00791      |
+| EulerHeun   | 0.010    | 0.0014654  |   432 |  36     |   0.918   |  0.00251      |
+|----------------------------------------------------------------------------|
+
+The numbers in this table illustrate a number of well-known properties and limitations
+of adaptive ODE solvers. First, we may observe that there is
+no close relationship between the selected tolerance and the resulting error. 
+The error gets smaller when we reduce the tolerance, and for this particular case
+the error is always smaller than the specified tolerance, but the error varies
+substantially between the different methods. As described at the start of this
+chapter, the time step is selected to control the *local error*, and although we
+expect the global error to decrease as we reduce the tolerance, we have no 
+guarantee that the global error is lower than the tolerance. A second observation
+we can make is that the RKF45 and EulerHeun methods both perform rather poorly, 
+and show somewhat inconsistent behavior as the tolerance is reduced. For instance,
+the RKF45 method uses the largest number of steps, and also rejects the largest number of 
+steps, for the highest tolerance. This behavior is caused by the fact that the 
+Hodgkin-Huxley model is stiff, and the time step for the explicit methods is caused 
+mainly by stability and not accuracy. The $\Delta t_{min}$ of $1.0\cdot10^{-5}$ is 
+caused by divergence issues which automatically sets the time step to the specified
+lower bound. For most of the other combinations of method and tolerance the
+smallest time step observed is the first one, selected by the simple formula inside 
+the `solve` method. This could obviously be improved, and the general performance of RKF45 
+for stiff problems could be improved by a sophisticated step size controller. However, 
+the performance will never be on the level of implicit solvers, since the time
+step will be dictated by stability rather than accuracy.  
+
+The ideas and tools introduced in this chapter are fundamental for all RK methods
+with error control and automatic time step selection. The 
+main ideas are fairly simple, and, as illustrated in Figure ref{fig:hh_adap}, give
+rise to methods that effectively adapt the time step to control the error. There are, however, 
+numerous matters to be considered regarding the practical implementation of the methods, 
+and we have merely scratched the surface of these. As mentioned above, obvious 
+points of improvement include the time step control formula in (ref{step_size0}), for which
+more sophisticated models have been derived based on control theory. cite{gustafsson1990using}
+The simple formula used for selecting the first time could also be improved, as indicated by the
+fact that the smallest step $\Delta t_{min}$ is the first one for most of the solvers in the
+table above. Furthermore, adjusted error estimates have been proposed, see cite{ODEII}, which 
+are more suitable for stiff systems. For a more detailed and complete discussion of automatic
+time step control, we refer to cite{AscherPetzold} and cite{ODEI,ODEII}.

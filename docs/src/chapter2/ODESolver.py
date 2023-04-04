@@ -9,6 +9,7 @@ class ODESolver:
     def __init__(self, f):
         # Wrap user's f in a new function that always
         # converts list/tuple to array (or let array be array)
+        self.model = f
         self.f = lambda t, u: np.asarray(f(t,u), float)
 
     def set_initial_condition(self, u0):
@@ -24,7 +25,7 @@ class ODESolver:
         """Compute solution for t_span[0] <= t <= t_span[1],
         using N steps."""
         t0,T = t_span
-        self.dt = T/N
+        self.dt = (T-t0)/N
         self.t = np.zeros(N+1) #N steps ~ N+1 time points
         if self.neq == 1:
             self.u = np.zeros(N+1)
@@ -44,14 +45,23 @@ class ForwardEuler(ODESolver):
     def advance(self):
         u, f, n, t = self.u, self.f, self.n, self.t
 
-        dt = t[n+1] - t[n]
+        dt = self.dt
         unew = u[n] + dt*f(t[n], u[n])
+        return unew
+
+class Heun(ODESolver):
+    def advance(self):
+        u, f, n, t = self.u, self.f, self.n, self.t
+        dt = self.dt
+        k1 = f(t[n], u[n])
+        k2 = f(t[n] + dt, u[n] + dt*k1)
+        unew = u[n] + dt/2*(k1+k2)
         return unew
 
 class ExplicitMidpoint(ODESolver):
     def advance(self):
         u, f, n, t = self.u, self.f, self.n, self.t
-        dt = t[n+1] - t[n]
+        dt = self.dt
         dt2 = dt/2.0
         k1 = f(t[n], u[n])
         k2 = f(t[n] + dt2, u[n] + dt2*k1)
@@ -61,7 +71,7 @@ class ExplicitMidpoint(ODESolver):
 class RungeKutta4(ODESolver):
     def advance(self):
         u, f, n, t = self.u, self.f, self.n, self.t
-        dt = t[n+1] - t[n]
+        dt = self.dt
         dt2 = dt/2.0
         k1 = f(t[n], u[n],)
         k2 = f(t[n] + dt2, u[n] + dt2*k1, )

@@ -1,7 +1,7 @@
 # #if FORMAT == 'ipynb'
 ========= Programming a simple ODE solver =========
 # #endif
-
+idx{ordinary differential equation} 
 Ordinary differential equations (ODEs) are widely used in science and engineering, in particular for modeling dynamic
 processes. While simple ODEs can be solved with analytical methods, non-linear ODEs are generally not possible
 to solve in this way, and we need to apply numerical methods. In this chapter we will see how we can program
@@ -39,6 +39,7 @@ mathematical equations, but it is very convenient when we start programming, and
 for a wide range of ODE models. We will discuss this in more detail later. 
 Our aim is now to write functions and classes that take $f$ as input, and solve the corresponding ODE to produce
 $u$ as output.
+idx{exponential growth} idx{logistic growth}
 
 In order for (ref{ode0}) to have a unique solution we need to specify the *initial condition* for $u$, which is 
 the value of the solution at time $t=t_0$. The resulting mathematical problem is written as
@@ -58,6 +59,7 @@ Specifying an initial condition $u(t_0)=u_0$ gives $C=u_0$, and we get the uniqu
 We shall see that, when solving the equation numerically, we need to define $u_0$ in order to start our method and
 compute a solution at all.
 
+idx{forward Euler method} idx{Euler method !explicit}
 === A simple and general solver; the Forward Euler method. ===
 A numerical method for (ref{ode0}) can be derived by simply approximating the derivative
 in the equation $u'=f(t,u)$ by a finite difference. To introduce the idea, assume that we have 
@@ -114,7 +116,7 @@ we perform the following steps:
  o For $n=0,1,2,\ldots,N-1$:
   * `t[n+1] = t[n] + dt`
   * `u[n+1] = (1 + dt)*u[n]`
-
+idx{NumPy array}
 # #if FORMAT != 'ipynb'
 [^steps_note]: For $N$ time steps, the length of the arrays needs to be $N+1$ since
 we need to store both end points, i.e., $t_0,t_1, \ldots, t_n$ and $u_0,u_1, \ldots, u_n$. 
@@ -237,8 +239,8 @@ in most cases this will give the accuracy we need with a negligible increase in 
 
 
 ======= The ODE solver implemented as a class =======
-label{sec:fe_class}
-
+label{sec:fe_class} 
+idx{`ForwardEuler` class}
 We can increase the flexibility of the `forward_euler`
 solver function by implementing it as a class. There are many ways to implement
 and such a class, but one possible usage can be as follows:
@@ -248,6 +250,7 @@ method.set_initial_condition(u0)
 t, u = method.solve(t_span=(0,10),N=100)
 plot(t, u)
 !ec
+idx{class !for ODE solver}
 The benefits of using a class instead of a function may not be obvious at this
 point, but it will become clear when we introduce different ODE solvers later. 
 For now, let us just look at how such a solver class would need to be implemented in 
@@ -303,7 +306,7 @@ class ForwardEuler_v0:
         unew = u[n] + dt*f(t[n],u[n])
         return unew
 !ec
-This class does essentially the same tasks as the `ForwardEuler` function above,
+This class does essentially the same tasks as the `forward_euler` function above,
 and the main advantage of the class implementation is
 the increased flexibility that comes with the `advance` method. As we shall see
 later, implementing a different numerical method typically only requires
@@ -335,6 +338,7 @@ class Logistic:
     def __call__(self, t, u):   # f(t,u)
         return self.alpha*u*(1 - u/self.R)
 !ec
+idx{class !for right-hand side}
 The main program for solving the logistic growth problem may now look like:
 !bc pycod
 problem = Logistic(alpha=0.2, R=1.0, u0=0.1)
