@@ -1,3 +1,12 @@
+"""
+Simple implementation of the Backward Euler 
+and Crank-Nicolson methods, which are both implicit RK 
+solvers. A more general implementation of implicit RK
+solvers is found in the file ImplicitRK.py
+"""
+
+
+
 from ODESolver import *
 from scipy.optimize import root
 

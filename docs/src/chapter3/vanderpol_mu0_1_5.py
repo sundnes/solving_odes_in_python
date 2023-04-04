@@ -18,6 +18,4 @@ for i,mu in enumerate([0,1,5]):
     t,u  = solver.solve(t_span=(0,20),N=100)
     axs[i].plot(t, u)
     axs[i].set(title =f'$\mu={mu}$')
-
-plt.savefig('vanderpol1.pdf')
 plt.show()
