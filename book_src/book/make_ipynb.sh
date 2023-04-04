@@ -33,21 +33,25 @@ else
 fi
 
 cd ../chapters
-for name in diffeq ode_intro ode_systems disease_modeling
+for name in ode_intro rungekutta1 rungekutta2 adaptive disease_modeling diffeq 
 do
   cp $name.do.txt tmp.do.txt
   #doconce subst 'FIGURE: +\[fig-(.+?)/(.+?),' 'FIGURE: [https://raw.githubusercontent.com/hplgit/scipro-primer/master/slides/\g<1>/html/fig-\g<1>/\g<2>.png,' tmp.do.txt
   doconce replace "../chapters/" "./" tmp.do.txt
   #hacks to fix references to other chapters
-  doconce replace ref{ch:diff_eq} 1 tmp.do.txt
-  doconce replace ref{ch:ode_intro} 2 tmp.do.txt
-  doconce replace ref{ch:ode_sys} 3 tmp.do.txt
-  doconce replace ref{ch:ch:disease_models} 4 tmp.do.txt
+  doconce replace ref{ch:ode_intro} 1 tmp.do.txt
+  doconce replace ref{ch:runge_kutta} 2 tmp.do.txt
+  doconce replace ref{ch:stiff} 3 tmp.do.txt
+  doconce replace ref{ch:adaptive} 4 tmp.do.txt
+  doconce replace ref{ch:disease_models} 5 tmp.do.txt
+  doconce replace ref{ch:diff_eq} A tmp.do.txt
+
+  doconce replace ref{sec:ode_sys} 1.4 tmp.do.txt
 
   #more hacks to remove footnote labels, not supported by notebook format
   #footnote bodies should be removed by preprocessor if statements
   system doconce subst "\[\^.*\]" "" tmp.do.txt
-  system doconce format ipynb tmp  #$opt
+  system doconce format ipynb tmp  --allow_refs_to_external_docs #$opt
   mv -f tmp.ipynb ../../docs/ipynb/$name.ipynb
 done
 
