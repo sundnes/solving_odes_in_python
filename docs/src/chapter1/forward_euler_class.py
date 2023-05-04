@@ -10,13 +10,8 @@ class ForwardEuler:
         self.f = lambda t, u: np.asarray(f(t, u), float)
 
     def set_initial_condition(self, u0):
-        if isinstance(u0, (float, int)):  # scalar ODE
-            self.neq = 1  # number of eqs.
-            u0 = float(u0)
-        else:
-            u0 = np.asarray(u0)
-            self.neq = u0.size
-        self.u0 = u0
+        self.u0 = np.asarray(u0)
+        self.neq = self.u0.size
 
     def solve(self, t_span, N):
         """Compute solution for
@@ -25,10 +20,7 @@ class ForwardEuler:
         t0, T = t_span
         self.dt = (T - t0) / N
         self.t = np.zeros(N + 1)
-        if self.neq == 1:
-            self.u = np.zeros(N + 1)
-        else:
-            self.u = np.zeros((N + 1, self.neq))
+        self.u = np.zeros((N + 1, self.neq))
 
         self.t[0] = t0
         self.u[0] = self.u0
@@ -42,14 +34,11 @@ class ForwardEuler:
     def advance(self):
         """Advance the solution one time step."""
         u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
-
-        unew = u[n] + dt * f(t[n], u[n])
-        return unew
-
+        return  u[n] + dt * f(t[n], u[n])
 
 class Logistic:
-    def __init__(self, alpha, R, u0):
-        self.alpha, self.R, self.u0 = alpha, float(R), u0
+    def __init__(self, alpha, R):
+        self.alpha, self.R = alpha, R
 
     def __call__(self, t, u):
         return self.alpha * u * (1 - u / self.R)
@@ -64,9 +53,10 @@ if __name__ == '__main__':
     """
     import matplotlib.pyplot as plt
 
-    problem = Logistic(alpha=0.2, R=1.0, u0=0.1)
+    problem = Logistic(alpha=0.2, R=1.0)
     solver = ForwardEuler(problem)
-    solver.set_initial_condition(problem.u0)
+    u0 = 0.1
+    solver.set_initial_condition(u0)
 
     T = 40
     t, u = solver.solve(t_span=(0, T), N=400)

@@ -36,13 +36,13 @@ class ForwardEuler_v0:
         # the numerical formula
         u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
 
-        unew = u[n] + dt * f(t[n], u[n])
-        return unew
+        return u[n] + dt * f(t[n], u[n])
+        
 
 
 class Logistic:
-    def __init__(self, alpha, R, u0):
-        self.alpha, self.R, self.u0 = alpha, float(R), u0
+    def __init__(self, alpha, R):
+        self.alpha, self.R = alpha, float(R)
 
     def __call__(self, t, u):
         return self.alpha * u * (1 - u / self.R)
@@ -55,9 +55,10 @@ if __name__ == '__main__':
     """
     import matplotlib.pyplot as plt
 
-    problem = Logistic(alpha=0.2, R=1.0, u0=0.1)
+    problem = Logistic(alpha=0.2, R=1.0)
     solver = ForwardEuler_v0(problem)
-    solver.set_initial_condition(problem.u0)
+    u0 = 0.1
+    solver.set_initial_condition(u0)
 
     T = 40
     t, u = solver.solve(t_span=(0, T), N=400)

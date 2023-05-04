@@ -1,6 +1,6 @@
 from math import sin
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 class Pendulum:
     def __init__(self, L, g=9.81):
@@ -15,7 +15,7 @@ class Pendulum:
 
 
 if __name__ == '__main__':
-    from forward_euler_class import *
+    from forward_euler_class import ForwardEuler
     problem = Pendulum(L=1)
     solver = ForwardEuler(problem)
     solver.set_initial_condition([np.pi / 4, 0])

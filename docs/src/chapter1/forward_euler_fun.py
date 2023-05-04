@@ -28,10 +28,11 @@ def f(t, u):
 
 
 U0 = 1
-T = 3
-N = 30
-t, u = ForwardEuler(f, U0, T, N)
+T = 4
+N in 20
+t, u = forward_euler(f, U0, T, N)
 plt.plot(t, u, label=f'$\\Delta t$ = {T/N}')
+plt.plot(t, np.exp(t), label='Exact')
 plt.title('Exp. growth, Forward Euler')
 plt.xlabel('t')
 plt.ylabel('u')
