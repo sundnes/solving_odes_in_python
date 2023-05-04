@@ -12,7 +12,7 @@ methods. Implicit methods, which have better stability properties and are more
 suitable for so-called *stiff* ODEs, will be
 considered in Chapter ref{ch:stiff}.
 
-In Chapter ref{ch:ode_intro} we demonstrated the FE method is a
+In Chapter ref{ch:ode_intro} we demonstrated that the FE method is a
 first order accurate method, which means that the error in the numerical
 solution is proportional to the time step size $\Delta t$. In this chapter
 we will derive solvers of higher order, for which the numerical error
@@ -157,18 +157,20 @@ can be written as
 !bt
 \begin{align}
 k_i &= f(t_n+c_i\Delta t, u_n+\Delta t \sum_{j=1}^s a_{ij}k_j),  \mbox{\  for } i = 1,\ldots ,s \label{genrk0}\\
-u_{n+1} &= u_0 + \Delta t \sum_{i=1}^s b_i k_i .\label{genrk1}
+u_{n+1} &= u_n + \Delta t \sum_{i=1}^s b_i k_i .\label{genrk1}
 \end{align}
 !et
 Here $c_i, b_i, a_{ij}$, for $i,j, = 1,\ldots ,s$ are
 method-specific coefficients. All Runge-Kutta methods can be written
 in this form, and a method is uniquely determined by the
 number of stages $s$ and the values of the coefficients. 
-idx{Runge-Kutta method !general formula}
+ idx{Runge-Kutta method !general formula}
 
-As mentioned above there exists a wide variety of Runge-Kutta methods, 
+As mentioned above, there exists a wide variety of Runge-Kutta methods, 
 where the coefficients are typically chosen to optimize the accuracy for
-a given number of stages. It can be shown that the $b_i$ coefficients must be chosen to satisfy
+a given number of stages. We will not dive into the details of how the
+methods are constructed here, but some of the principles can be quite useful to know about.
+For instance, it can be shown that the $b_i$ coefficients must be chosen to satisfy
 $\sum_{i=1}^s b_i = 1$ in order to have a convergent method. This condition follows quite
 naturally from our motivation for Runge-Kutta methods as numerical integrators 
 applied to (ref{ode_integral0}). When approximating the integral as a weighted sum, the sum of the weights must
@@ -176,7 +178,9 @@ obviously be one. Another common constraint on the coefficients is to
 set $c_i = \sum_{j=1}^s a_{ij}$. While this constraint
 is not strictly needed, it may simplify the derivation of the methods and 
 follows naturally from our interpretation of the stage derivative $k_i$ as 
-approximations of the right-hand side $f(t,u)$ at time $t_n+c_i\Delta t$. 
+approximations of the right-hand side $f(t,u)$ at time $t_n+c_i\Delta t$. When implementing a 
+new solver it is very easy to introduce errors in the coefficient values, and it may be useful to 
+include tests to verify that the most fundamental conditions on the coefficients are satisfied.
 It is possible to derive general *order conditions* that the coefficients must satisfy for a method
 to be of a given order, see, for instance, cite{AscherPetzold,ODEI} for details. 
 In this chapter we only consider explicit Runge-Kutta methods, which means that $a_{ij} = 0$
@@ -297,10 +301,11 @@ class ODESolver:
     def __init__(self, f):
         # Wrap user's f in a new function that always
         # converts list/tuple to array (or let array be array)
-        self.f = lambda t, u: np.asarray(f(t,u), float)
+        self.model = f
+        self.f = lambda t, u: np.asarray(f(t, u), float)
 
     def set_initial_condition(self, u0):
-        if isinstance(u0, (float,int)):  # scalar ODE
+        if np.isscalar(u0):              # scalar ODE
             self.neq = 1                 # no of equations
             u0 = float(u0)
         else:                            # system of ODEs
@@ -308,25 +313,24 @@ class ODESolver:
             self.neq = u0.size           # no of equations
         self.u0 = u0
 
-    def solve(self,t_span,N):
-        """Compute solution for 
-        t_span[0] <= t <= t_span[1],
+    def solve(self, t_span, N):
+        """Compute solution for t_span[0] <= t <= t_span[1],
         using N steps."""
-        t0,T = t_span
-        self.dt = T/N
-        self.t = np.zeros(N+1) #N steps ~ N+1 time points
+        t0, T = t_span
+        self.dt = (T - t0) / N
+        self.t = np.zeros(N + 1)  # N steps ~ N+1 time points
         if self.neq == 1:
-            self.u = np.zeros(N+1)
+            self.u = np.zeros(N + 1)
         else:
-            self.u = np.zeros((N+1,self.neq))
-        
+            self.u = np.zeros((N + 1, self.neq))
+
         self.t[0] = t0
         self.u[0] = self.u0
-    
+
         for n in range(N):
             self.n = n
-            self.t[n+1] = self.t[n] + self.dt
-            self.u[n+1] = self.advance()
+            self.t[n + 1] = self.t[n] + self.dt
+            self.u[n + 1] = self.advance()
         return self.t, self.u
 !ec
 Notice that the `ODESolver` is meant to be a pure superclass, and the implementation of the
@@ -346,8 +350,7 @@ class ForwardEuler(ODESolver):
     def advance(self):
         u, f, n, t = self.u, self.f, self.n, self.t
         dt = self.dt
-        unew = u[n] + dt*f(t[n], u[n])
-        return unew
+        return u[n] + dt * f(t[n], u[n])
 !ec
 Similarly, the explicit midpoint method and the fourth-order Runge-Kutta method can be subclasses, each
 implementing a single method:
@@ -356,23 +359,21 @@ class ExplicitMidpoint(ODESolver):
     def advance(self):
         u, f, n, t = self.u, self.f, self.n, self.t
         dt = self.dt
-        dt2 = dt/2.0
+        dt2 = dt / 2.0
         k1 = f(t[n], u[n])
-        k2 = f(t[n] + dt2, u[n] + dt2*k1)
-        unew = u[n] + dt*k2
-        return unew
+        k2 = f(t[n] + dt2, u[n] + dt2 * k1)
+        return u[n] + dt * k2
 
 class RungeKutta4(ODESolver):
     def advance(self):
         u, f, n, t = self.u, self.f, self.n, self.t
         dt = self.dt
-        dt2 = dt/2.0
-        k1 = f(t[n], u[n])
-        k2 = f(t[n] + dt2, u[n] + dt2*k1)
-        k3 = f(t[n] + dt2, u[n] + dt2*k2)
-        k4 = f(t[n] + dt,  u[n] + dt*k3)
-        unew = u[n] + (dt/6.0)*(k1 + 2*k2 + 2*k3 + k4)
-        return unew
+        dt2 = dt / 2.0
+        k1 = f(t[n], u[n],)
+        k2 = f(t[n] + dt2, u[n] + dt2 * k1, )
+        k3 = f(t[n] + dt2, u[n] + dt2 * k2, )
+        k4 = f(t[n] + dt, u[n] + dt * k3, )
+        return u[n] + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
 !ec
 
 The use of these classes is nearly identical to the FE class introduced
@@ -384,36 +385,38 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ODESolver import ForwardEuler, ExplicitMidpoint, RungeKutta4
 
-def f(t,u):
+def f(t, u):
     return u
 
-t_span = (0,3) 
+t_span = (0, 3)
 N = 6
 
 fe = ForwardEuler(f)
 fe.set_initial_condition(u0=1)
-t1, u1 = fe.solve(t_span,N)
+t1, u1 = fe.solve(t_span, N)
 plt.plot(t1, u1, label='Forward Euler')
 
 em = ExplicitMidpoint(f)
 em.set_initial_condition(u0=1)
-t2, u2 = em.solve(t_span,N)
+t2, u2 = em.solve(t_span, N)
 plt.plot(t2, u2, label='Explicit Midpoint')
 
 rk4 = RungeKutta4(f)
 rk4.set_initial_condition(u0=1)
-t3, u3 = rk4.solve(t_span,N)
+t3, u3 = rk4.solve(t_span, N)
 plt.plot(t3, u3, label='Runge-Kutta 4')
 
-#plot the exact solution in the same plot
-time_exact = np.linspace(0,3,301) 
-plt.plot(time_exact,np.exp(time_exact),label='Exact')
-plt.title('RK solvers for exponential growth, $\Delta t = 0.5$')
+# plot the exact solution in the same plot
+time_exact = np.linspace(0, 3, 301)
+plt.plot(time_exact, np.exp(time_exact), label='Exact')
+plt.title('RK solvers for exponential growth, $\\Delta t = 0.5$')
 plt.xlabel('$t$')
 plt.ylabel('$u(t)$')
 plt.legend()
 plt.show()
 !ec
 This code will solve the same simple equation using three different methods, and plot the solutions
-in the same window. The time step is deliberately chosen very 
-large ($\Delta t = 0.5$), to highlight the difference in accuracy between the methods.
+in the same window, as shown in Figure ref{fig:simplecompare}. We set `N = 6`, which corresponds to 
+a very large time step ($\Delta t = 0.5$), to highlight the difference in accuracy between the methods.
+
+FIGURE: [../chapters/figs_ch2/ch2_simplecompare.pdf, width=600 frac=1] Numerical solutions of the exponential growth problem, computed with `ForwardEuler`, `ImplicitMidpoint` and `RungeKutta4`. All the solvers use $\Delta t = 0.5$, to highlight the difference in accuracy. label{fig:simplecompare}
