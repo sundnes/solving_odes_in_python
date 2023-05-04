@@ -261,7 +261,9 @@ to introduce a stage derivative and make it obvious that the BE method is part o
     u_{n+1} &= u_n + \Delta t k_1 . \label{backward_euler1}
 \end{align}
 
-idx{midpoint method !implicit} idx{trapezoidal method ! implicit} idx{Crank-Nicolson method}
+idx{midpoint method !implicit} 
+idx{trapezoidal method ! implicit} 
+idx{Crank-Nicolson method}
 The explicit midpoint and
 trapezoidal methods mentioned above also have their implicit counterparts. The implicit midpoint method
 is given by
@@ -466,11 +468,11 @@ superior stability and accuracy for a given number of stages. A FIRK method with
 $s$ stages can have order at most $2s$, which was the case for the implicit midpoint
 method in (ref{imp_midpoint0})-(ref{imp_midpoint1}).
 
-!idx{collocation methods}
+idx{collocation methods}
 Many of the most popular FIRK methods are based on combining standard quadrature 
 methods for numerical integration with the idea of *collocation*. We present the
 basic idea of the derivation here, since many important methods are based on the
-same foundation. For the complete details we refer ti, for instance, cite{ODEII}.
+same foundation. For the complete details we refer to, for instance, cite{ODEII}.
 Recall from Chapter ref{ch:runge_kutta} that all Runge-Kutta methods
 can be viewed as approximations of (ref{ode_integral0}), where
 the integral is approximated by a weighted sum. We set
@@ -547,7 +549,7 @@ Euler method, while two- and three-stage versions are given by
         \end{array} .
 \]
 !et
-The Radau IIA methods have order $s-1$, and their stability functions are $(s-1,s)$ Padé approximations
+The Radau IIA methods have order $2s-1$, and their stability functions are $(s-1,s)$ Padé approximations
 to the exponential function cite{ODEII}. For the two- and three-stage methods
 above, the stability functions are
 !bt
@@ -588,11 +590,11 @@ A general DIRK method with $s$ stages has maximum order $s+1$, and methods optim
 typically have even lower order. 
 
 From the definition of the DIRK methods, we may observe that the implicit midpoint method
-introduced above is, technically, a DIRK method. However, is method is also a fully implicit
+introduced above is, technically, a DIRK method. However, this method is also a fully implicit
 Gauss method, and is not commonly referred to as a DIRK method. The distinction between FIRK and DIRK methods
 is only meaningful for $s>1$. The
 Crank-Nicolson (implicit trapezoidal) method given by (ref{cn_0})-(ref{cn_2}) is 
-also a DIRK method, which is evident from the leftmost Butcher tableau in (ref{irk_butcher0}). 
+also a DIRK method, which is evident from the rightmost Butcher tableau in (ref{irk_butcher0}). 
 These methods are, however, only A-stable, and it is possible to derive DIRK methods with
 better stability properties. An example of an L-stable, two-stage DIRK method of order two is given by
 !bt
@@ -604,18 +606,18 @@ better stability properties. An example of an L-stable, two-stage DIRK method of
     \end{array} ,
 \label{dirk2_v0}\end{equation}
 !et
-with $\gamma = 1\pm \sqrt(2)/2$. The stability function is 
+with stability function
 !bt
 \[
-R(z) = \frac{1+z(1-2\gamma)}{(1-z\gamma)^2},
+R(z) = \frac{1+z(1-2\gamma)}{(1-z\gamma)^2}.
 \]
 !et
-and are A-stable for $\gamma >1/4$. For $\gamma = 1\pm \sqrt(2)/2$ the method is L-stable and 
+The method is A-stable for $\gamma >1/4$, and for $\gamma = 1\pm \sqrt{2}/2$ the method is L-stable and 
 second order accurate. Note that 
 choosing $\gamma > 1$ means that we estimate the stage derivatives outside the 
 interval $(t_n,t_{n+1})$, and for the last step outside the time interval of interest. 
 While this does not affect the stability or accuracy of the method it may not make sense
-for all ODE problems, and the most popular choice is therefore $\gamma = 1-\sqrt(2)/2$.
+for all ODE problems, and the most popular choice is therefore $\gamma = 1-\sqrt{2}/2$ ($\approx 0.293$).
 Notice also that in this method the two diagonal entries of $a_{ij}$ 
 are identical, we have $a_{11}=a_{22}=\gamma$. This choice is very common in DIRK
 methods, and methods of this kind are usually referred to as *singly diagonally
@@ -727,7 +729,12 @@ class ImplicitRK(ODESolver):
 Note that we assume that the method parameters are assumed to be held in NumPy arrays 
 `self.a, self.b, self.c`, which need to be defined in subclasses. The `ImplicitRK` class
 is meant to be a pure base class for holding common code, and is not intended to be a usable solver
-class in itself.[^base_note] The three methods are generalizations of the
+class in itself. As described in Section ref{sec:rk_hierarchy}, we could make explicit this 
+abstract nature by using the `abc` module, but for the present text we 
+focus on the fundamentals of the solvers and the class structure, 
+and keep the code as simple and compact as possible. 
+
+ The three methods are generalizations of the
 same methods in `BackwardEuler` class, and perform the same tasks, but the abstraction level is higher and 
 the methods rely on a bit of NumPy magic: 
 * The `solve_stages` method is obviously a generalization of the `solve_stage` method above, and most of the
@@ -746,15 +753,6 @@ the methods rely on a bit of NumPy magic:
   The residual is returned as a single array of length `self.stages * self.neq`, as expected by the SciPy `root` function.
 * Finally, the `advance` method calls the `solve_stages` to compute all the stage derivatives, and then advances
   the solution using a general implementation of (ref{genrk1}).
-
-# #if FORMAT != 'ipynb'
-[^base_note]: There are ways in Python to make it more explicit and obvious that a class is intended to be 
-a pure base class. For instance, the module `abc` (short for *abstract base class*), enables the 
-implementation of abstract classes, which give an error if we try to make an instance of them. 
-Using these tools would be quite natural for the class hierarchies of this book, but we have 
-decided to focus on the fundamentals of the solvers and the class structure, 
-and keep the code as simple and compact as possible. 
-# #endif
 
 With the general base class at hand, we can easily implement new solvers, simply by writing the constructors
 that define the method coefficients. The following code implements the implicit midpoint and the two- and

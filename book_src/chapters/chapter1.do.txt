@@ -54,8 +54,8 @@ in this book are initial value problems. As an example, consider the very simple
 !bt
 \[ u'=u .\]
 !et
-This equation has the general solution $u=Ce^t$ for any constant $C$, so it has an infinite number of solutions.
-Specifying an initial condition $u(t_0)=u_0$ gives $C=u_0$, and we get the unique solution $u=u_0e^t$.  
+This equation has the general solution $u(t)=Ce^t$ for any constant $C$, so it has an infinite number of solutions.
+Specifying an initial condition $u(t_0)=u_0$ gives $C=u_0$, and we get the unique solution $u(t)=u_0e^t$.  
 We shall see that, when solving the equation numerically, we need to define $u_0$ in order to start our method and
 compute a solution at all.
 
@@ -83,7 +83,7 @@ This method is known as the *Forward Euler (FE) method* or the *Explicit Euler M
 and is the simplest numerical method for solving an ODE. The classification as a *forward*
 or *explicit* method refer to the fact that we have an explicit update formula for $u(t_{n+1})$,
 which only involves known quantities at time $t_n$. In contrast, for an *implicit* ODE solver
-the update formula will include terms on the form $f(t_{n+1},u(t_{n+1})$, and we need to solve 
+the update formula will include terms on the form $f(t_{n+1},u(t_{n+1}))$, and we need to solve 
 a generally nonlinear equation to determine the unknown $u(t_{n+1})$. We will visit other explicit ODE solvers in
 Chapter ref{ch:runge_kutta} and implicit solvers in Chapter ref{ch:stiff}. 
 
@@ -96,15 +96,21 @@ label{forw_euler}
 \end{equation}
 !et
 which, if we know the $u_0$ at time $t_0$, can be applied repeatedly to $u_1$, $u_2$, $u_3$ and so forth.
-If we again consider the very simple ODE given by $u' = u$, we have 
+If we again consider the very simple ODE given by $u' = u$ (i.e., $f(t,u) = u$) we have 
 !bt
 \begin{align*}
 u_1 &= u_0 + \Delta t u_0, \\
 u_2 &= u_1 + \Delta t u_1, \\
-u_3 &= u_2 + \ldots .
+u_3 &= u_2 + \ldots ,
 \end{align*}
 !et
-In a Python program, this repeated application
+and the general update formula
+!bt
+\[
+u_{n+1} = u_n +\Delta t u_n = (1+\Delta t) u_n  .  
+\]
+!et
+In a Python program, the repeated application
 of the same formula is conveniently implemented in a for-loop, and the solution can 
 be stored in a list or a NumPy array. See, for instance, cite{sundnes2020introduction} for an introduction to
 NumPy arrays and tools, which will be used extensively through these notes. 
@@ -112,7 +118,7 @@ For a given final time $T$ and number of time steps $N$,
 we perform the following steps:
  o Create arrays `t` and `u` of length $N+1$[^steps_note]
  o Set initial condition: `u[0]` $= u_0$, `t[0]` $= 0$
- o Compute the time step $\Delta t$ (`dt`) $= T/N$
+ o Compute the time step $\Delta t$ `dt = T/N`
  o For $n=0,1,2,\ldots,N-1$:
   * `t[n+1] = t[n] + dt`
   * `u[n+1] = (1 + dt)*u[n]`
@@ -144,7 +150,7 @@ plt.plot(t,u)
 plt.show()
 !ec
 Notice that there is no need to set `t[0]= 0` when `t` is created in this way, but updating `u[0]` is important. In fact, 
-forgetting to do so is a very common error in ODE programming, so it is worth taking note of the line `u[0] = u0`
+forgetting to do so is a very common error in ODE programming, so it is worth taking note of the line `u[0] = u0`.
 The solution is shown in Figure ref{fig:ode0}, for two different choices of the time step $\Delta t$. We see that the
 approximate solution improves as $\Delta t$ is reduced, although both the solutions are quite inaccurate. However, reducing the
 time step further will easily create a solution that cannot be distinguished from the exact solution.
@@ -165,9 +171,10 @@ In the previous case we had $f(t,u) = u$, and to create a
 general-purpose ODE solver we simply replace `u[n]` with the more general `f(t[n],u[n])`.
 The following Python function implements this generic version of the FE method:
 !bc pycod
+import numpy as np
+
 def forward_euler(f, u0, T, N):
     """Solve u'=f(t,u), u(0)=u0, with n steps until t=T."""
-    import numpy as np
     t = np.zeros(N+1)
     u = np.zeros(N+1)  # u[n] is the solution at time t[n]
 
@@ -193,14 +200,14 @@ def f(t, u):
     return u
 
 u0 = 1
-T = 3
+T = 4
 N = 30
 t, u = forward_euler(f, u0, T, N)
 !ec
 The `forward_euler` function returns the two arrays `u` and `t`, which we can
 plot or process further as we want. One thing worth noticing in this code is the definition of the
 right-hand side function `f`. As we mentioned above, this function should always be written
-with two arguments `u` and `t`, although in this case only `u` is used inside the function.
+with two arguments `t` and `u`, although in this case only `u` is used inside the function.
 The two arguments are needed because we want our solver to work for all ODEs on the
 form $u' = f(t,u)$, and the function is therefore called as `f(t[n], u[n])` inside
 the `forward_euler` function. If our right
@@ -232,8 +239,10 @@ as follows:
 It is worth mentioning that the FE method is the simplest of all
 ODE solvers, and many will argue that it is not very good. This is partly true,
 since there are many other methods that are more accurate and more stable when applied to
-challenging ODEs. We shall look at a few examples of such methods later in this
-book. However, the FE method is quite suitable for solving most ODEs.
+challenging ODEs. We shall see later that numerical solutions may not only be inaccurate, 
+as illustrated in Figure ref{fig:ode0}, but may also blow up and give completely meaningless results. 
+Solvers for avoiding such behavior, i.e., stable solvers, will be presented in Chapter ref{ch:stiff}.
+However, the FE method is quite suitable for solving a large number of interesting ODEs.
 If we are not happy with the accuracy we can simply reduce the time step, and
 in most cases this will give the accuracy we need with a negligible increase in computing time.
 
@@ -243,7 +252,7 @@ label{sec:fe_class}
 idx{`ForwardEuler` class}
 We can increase the flexibility of the `forward_euler`
 solver function by implementing it as a class. There are many ways to implement
-and such a class, but one possible usage can be as follows:
+such a class, but one possible usage can be as follows:
 !bc pycod-t
 method = ForwardEuler_v0(f) 
 method.set_initial_condition(u0)
@@ -432,7 +441,7 @@ Python code for the formula above may therefore look identical to the version fo
 !bc pycod
 u[k+1] = u[k] + dt*f(t[k], u[k])
 !ec
-with the important difference that both `u[k]` and `u[k+1]` are now arrays.[^numpy]
+with the important difference that both `u[k]`, `u[k+1]`, and `f(t[k], u[k])` are now arrays.[^numpy]
 Since these are arrays, the solution `u` must be a
 two-dimensional array, and `u[k],u[k+1]`, etc. are the rows of this array.
 The function `f` expects an array as its second argument, and must return a one-dimensional array,
@@ -649,7 +658,7 @@ which we will not cover in detail here, and the interested reader is referred to
 However, when implementing a numerical method it is very useful to know its theoretical accuracy, and
 in particular to be able to compute the error and verify that it behaves as expected.
 
-The Taylor expansion, also discussed briefly in Appendix ref{ch:diff_eq}, is an essential tool for 
+The Taylor expansion, also discussed briefly in Appendix ref{sec:diffeq_taylor}, is an essential tool for 
 estimating the error in numerical methods for ODEs. For any smooth function $\hat{u}(t)$, if we 
 can compute the function value and its derivatives at $t_n$, the value at $t_n+\Delta t$ 
 can be approximated by the series
@@ -659,7 +668,7 @@ can be approximated by the series
     \frac{\Delta t^3}{6}\hat{u}'''(t_n)+O(\Delta t^4).  
 \]
 !et
-We can include as many terms as we like, and since $\Delta t$ is small we always have $\Delta t^(n+1) \ll \Delta t^n$, so
+We can include as many terms as we like, and since $\Delta t$ is small we always have $\Delta t^{(n+1)} \ll \Delta t^n$, so
 the error in the approximation is dominated by the first neglected term.  
 The update formula of the FE method, derived from (ref{fd_approx}), was
 !bt
@@ -733,10 +742,16 @@ for _ in range(10):
     dt = T/N
     e = abs(u[-1]-exact(T))
     print(f'{dt:<14.7f}   {e:<12.7f}   {e/dt:5.4f}')
-    N = N*2
+    N = N*2     
 !ec 
-This program will produce the following output when it is run in the terminal:
-!bc
+Most of the lines are identical to the previous programs, but we have put the call to the `solve` method inside
+a for loop, and the last line ensures that the number of time steps `N` is doubled for each iteration of the
+loop. Notice also the f-string format specifiers, for instance `{dt:<14.7f}`, which sets the output to be 
+a left aligned decimal number with seven decimals, and occupying 14 characters in total. The purpose of these
+specifiers is to output the numbers as vertically aligned columns, which improves readability and 
+may be important for visually inspecting the convergence. See, for instance, cite{sundnes2020introduction} for
+a brief introduction to f-strings and format specifiers. 
+The program will produce the following output: 
 Time step (dt)   Error (e)      e/dt
 0.1000000        2.6361347      26.3613
 0.0500000        1.4063510      28.1270
@@ -822,8 +837,8 @@ Running this code will result in a plot similar to Figure ref{fig:pendulum_scipy
 the solution does not look nearly as nice as the one we got from the `ForwardEuler` solver above. 
 The reason for this apparent error is that `solve_ivp` is an *adaptive* solver, which chooses the 
 time step automatically to satisfy a given error tolerance. The default value of this tolerance is relatively large, 
-which results in the solver using very few time steps and the solution plots looking edgy. 
-If we compare the plot with the exact solution, indicated by the two dotted curves
+which results in the solver using very few time steps and the solution plots looking jagged. 
+If we compare the plot with a very accurate numerical solution, indicated by the two dotted curves
 Figure ref{fig:pendulum_scipy}, we see that the solution at the time points $t_n$ 
 is quite accurate, but the linear interpolation between the time points completely destroys the visual 
 appearance. A more visually appealing solution can be obtained in several ways. 
@@ -850,6 +865,5 @@ solution = solve_ivp(problem, t_span, u0,method='Radau')
 will replace the default solver (called `rk45`) with an implicit Radau ODE solver, which we will introduce and
 explain in Chapter ref{ch:stiff}. For a complete description of parameters accepted by the `solve_ivp` 
 function we refer to the online SciPy documentation.
-
 
 

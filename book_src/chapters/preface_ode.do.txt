@@ -1,25 +1,38 @@
-These lecture were originally based on the book *A Primer on Scientific Programming with Python* by
+This book was based on a set of lecture notes written for the book *A Primer on Scientific Programming with Python* by
 Hans Petter Langtangen cite{langtangen2012primer}, mainly covering topics from Appendix A, C,
-and E. They have later been extended with more material on implicit solvers and
- automatic time-stepping methods, to provide a more complete and balanced
+and E. The original notes have been extended with more material on implicit solvers and
+automatic time-stepping methods, to provide a more complete and balanced
 overview of state-of-the-art solvers for ordinary differential equations (ODEs). The 
 main purpose of the notes is to serve as a brief and gentle introduction to solving
 differential equations in Python, for use in the course
-*Introduction to programming for scientific applications* (IN1900) at the
-University of Oslo. To read these notes one should have basic knowledge of Python
+*Introduction to programming for scientific applications* (IN1900, 10 ETCS credits) at the
+University of Oslo. To read these notes one should have a basic knowledge of Python
 and NumPy, see for instance cite{sundnes2020introduction}, and it is also useful to have a 
 fundamental understanding of ODEs.
 
-These notes provide the foundation for writing your own ODE solvers
-in Python. One may ask why this is useful, since there are already
+One may ask why this is useful to learn how to write your own ODE solvers in Python, when there are already
 multiple such solvers available, for instance in the SciPy library. However, no single ODE
 solver is the best and most efficient tool for all possible ODE problems, and the choice
-of solver should always be based on the characteristics of the problem. To make such choices
+of solver should always be based on the characteristics of the problem. To make such choices,
 it is extremely useful to know the strengths and weaknesses of the different solvers,
 and the best way to obtain this knowledge is to program your own collection of ODE solvers.
 Different ODE solvers are also conveniently grouped into families and hierarchies of solvers,
 and provide an excellent example of how object-oriented programming (OOP) can be
 used to maximize code reuse and minimize duplication.
+
+The presentation style of the book is compact and pragmatic, and includes
+a large number of code examples to illustrate how the various ODE solvers can 
+be implemented and applied in practice. The complete source code for all examples,
+as well as Jupyter notebooks for all the chapters, is provided in the online resources 
+accompanying this book. All the
+programs and code examples are written in a simple and
+compact Python style, and generally avoid the use of advanced tools and features. 
+Experienced Python programmers will therefore surely find more elegant
+and modern solutions to many of the examples, including, for instance, abstract base
+classes, type hints and data classes, to mention a few. However, the main goal of
+the book is to introduce the fundamentals of ODE solvers and OOP as part of an
+introductory programming course, and we believe this purpose is best served by 
+focusing on the basics. 
 
 The chapters of the text are organized as follows. Chapter ref{ch:ode_intro} introduces the forward Euler method,
 and uses this simple method to introduce the fundamental ideas and principles that
@@ -60,11 +73,11 @@ difference equations. Solving difference equations can therefore be seen as
 a natural step on the way towards solving ODEs, and the standard formulation of 
 difference equations in mathematical textbooks is already in a "computer-friendly" form, 
 which is very easy to translate into a Python program using for-loops and arrays. 
-Appendix ref{ch:diff_eq} is quite independent of the other chapters, although 
-much of the solution framework and code is similar, and it can be read on its own. 
 Some students find difference equations easier to understand than differential equations, and
 may benefit from reading Appendix ref{ch:diff_eq} first, while others find it easier to
 go straight to the ODEs and leave Appendix ref{ch:diff_eq} for later.
+
+
 
 
 # #if FORMAT in ("latex", "pdflatex")

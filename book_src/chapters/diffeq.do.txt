@@ -49,7 +49,7 @@ Some familiar examples include the annual value of a loan or an investment.
 
 In many cases it is impossible to derive an explicit formula for the
 entire sequence, and $x_n$ is instead
-given by a relation involving $x_{n-1}$ and possibly $x_{n-2}$. Such equations
+given by a relation involving $x_{n-1}$ and possibly earlier terms. Such equations
 are called *difference equations*, and they
 can be challenging to solve with analytical methods, since in order to compute the $n$-th term of a sequence
 we need to compute the entire sequence $x_0, x_1, \ldots, x_{n-1}$. This can be very tedious to do by hand or using
@@ -60,9 +60,8 @@ equations with programming therefore enables us to consider far more interesting
 idx{difference equations ! implementation}
 To start with a simple example, consider the problem of computing how an invested sum of money grows over time.
 In its simplest form, this problem can be written as putting $x_0$ money in a bank at year 0, with interest rate
-$p$ percent per year. What is then the value after $n$ years? You may recall from earlier in IN1900
-(and from high school mathematics) that the solution to this problem is given by the simple
-formula
+$p$ percent per year. What is then the value after $n$ years? 
+If $p$ is constant, the solution to this problem is given by the simple formula
 $$x_n = x_0 (1 + p/100)^n,$$
 so there is really no need to formulate and solve the problem as
 a difference equation. However, very simple generalizations, such as a non-constant interest rate,
@@ -95,11 +94,15 @@ plt.xlabel('years')
 plt.ylabel('amount')
 plt.show()
 !ec
-This code only involves tools that we have introduced earlier in the course.[^plot] %IN1900
 The three lines starting with `x[0] = x0` make up the core of the program. We
 here initialize the first element in our solution array with the known `x0`, and
 then step into the for-loop to compute the rest. The loop variable `n` runs from
 1 to $N (=4)$, and the formula inside the loop computes `x[n]` from the known `x[n-1]`.
+Notice also that we pass a single array as argument to `plt.plot`, while in most of the
+examples in this book we sent two; typically representing time on the $x$-axis and the
+solution on the $y$-axis. When only one array of numbers is sent to `plot`, these are automatically
+interpreted as the $y$-coordinates of the points, and the $x$-coordinates will simply be the indices
+of the array, in this case the numbers from 0 to $N$.
 
 An alternative
 formulation of the for-loop would be
@@ -130,14 +133,6 @@ set to zero. Furthermore, if we insert the upper bound `n=4` we see that the for
 try to access `x[5]`, but this does not exist and we get an `IndexError`.
 Performing such simple analysis of a for-loop is often a good way to reveal the source of the error
 and give an idea of how it can be fixed.
-
-# #if FORMAT != 'ipynb'
-[^plot]: Notice that we pass a single array as argument to `plt.plot`, while in earlier examples
-we sent two; representing the $x$- and $y$-coordinates of the points we wanted
-to plot. When only one array of numbers is sent to 'plot', these are automatically
-interpreted as the $y$-coordinates. The $x$-coordinates will simply be the indices
-of the array, in this case the numbers from 0 to $N$.
-# #endif
 
 === Solving a difference equation without using arrays. ===
 The program above stored the sequence as an array,
@@ -370,9 +365,9 @@ plt.xlabel('years')
 plt.ylabel('amount')
 plt.show()
 !ec
-Note that the logistic growth model is more commonly formulated as an
-ordinary differential equation (ODE), and we will consider this formulation in
-the next chapter. For certain choices of numerical method and discretization
+Note that the logistic growth model is more commonly formulated as an ODE, 
+which we considered in Chapter ref{ch:ode_intro}
+For certain choices of numerical method and discretization
 parameters, the program for solving the ODE is identical to the program
 for the difference equation considered here.
 
@@ -556,13 +551,9 @@ plt.ylabel('Population')
 plt.legend()
 plt.show()
 !ec
-We 
-
-
-
-
 
 ======= Taylor Series and Approximations =======
+label{sec:diffeq_taylor}
 idx{Taylor series}
 One extremely important use of sequences and series is for approximating
 functions. For instance, commonly used functions such as
@@ -629,9 +620,9 @@ These approximations are obviously not very accurate for large $x$,
 but close to $x=0$ they are sufficiently accurate for many
 applications. Taylor series approximations for other functions can be constructed by similar arguments.
 Consider, for instance, $sin(x)$, where the derivatives follow the repetitive pattern
-$sin'(x) = cos(x), sin''(x) = -sin(x), sin'''(x) = -cos(x), \dots...$. We also have $sin(0)=0, cos(0)=1$,
+$\sin'(x) = \cos(x), \sin''(x) = -sin(x), \sin'''(x) = -\cos(x), \dots...$. We also have $\sin(0)=0, \cos(0)=1$,
 so in general we have 
-$d^k sin(0)/dx^k = (-1)^k mod(k,2)$, where $mod(k,2)$ is zero for $k$ even and
+$d^k \sin(0)/dx^k = (-1)^k mod(k,2)$, where $mod(k,2)$ is zero for $k$ even and
 #one for $k$ odd. Inserting this expression into (ref{taylor0}), we get
 !bt
 \[ \sin x = \sum_{k=0}^\infty (-1)^k\frac{x^{2k+1}}{(2k+1)!} .\]

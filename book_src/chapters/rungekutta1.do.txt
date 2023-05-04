@@ -69,23 +69,24 @@ integration, and has also been used to derive accurate ODE solvers. Two main ide
 have been explored for constructing the polynomial approximation of $f(t,u)$, and have
 led to two important classes of ODE solvers. The first approach is to approximate $f(t,u)$ 
 by a polynomial which interpolates $f$ in previous time points, i.e., 
-$f(t_{n-1}), u_{n-1}, f(t_{n-2}, u_{n-2}),\ldots $. This method gives rise to the so-called
+$f(t_{n-1}, u_{n-1}), f(t_{n-2}, u_{n-2}),\ldots $. This method gives rise to the so-called
 *multistep* methods, which are widely used for solving ODEs. We will not consider multistep
-methods in these notes, but the interested reader is referred to, for instance, cite{ODEI,AscherPetzold}.
+methods in this book, but the interested reader is referred to, for instance, cite{ODEI,AscherPetzold}.
 The second approach is to compute a number of intermediate approximations of $f(t,u)$ on the
 interval $t_n < t < t_{n+1}$, and use these values to define the polynomial approximation of $f$.
 This idea is similar to how classical quadrature rules for numerical integration are derived, 
 and gives rise to a class of ODE solvers known as Runge-Kutta methods. Runge-Kutta methods come in
-many forms, with very different accuracy and stability properties, and will be the main topic of the
-remaining chapters. 
+many forms, with very different accuracy and stability properties, and will be the main topic of 
+chapters ref{ch:runge_kutta}-ref{ch:adaptive}.
 
 
 ======= Explicit Runge-Kutta methods =======
 idx{Runge-Kutta method !explicit}
-An intuitive way to improve the accuracy of the approximate integral is
+An intuitive way to improve the accuracy of the approximate integral in
+(ref{ode_integral0}) is
 to compute a number of intermediate approximations of $f(t_*, u_*)$ for
  $t_n \leq t_* \leq t_{n+1}$, and compute the integral as a weighted sum of
-these $u_*$ values. This approach builds on standard techniques of numerical
+these values. This approach builds on standard techniques of numerical
 integration, and gives rise to a very popular class of ODE solvers
 known as *Runge-Kutta methods*. The simplest example of a Runge-Kutta method
 is in fact the FE method, which is an example of a one-stage, first-order,
@@ -122,9 +123,15 @@ u_{n+1} &= u_n + \Delta t\, k_2 . \label{midpoint2}
 This method is known as the explicit midpoint method or the modified Euler method.
 The first step is identical to that of the FE method, but instead
 of using the stage derivate $k_1$ to advance the solution to the next step,
-we use it to compute a new stage derivative $k_2$, which is an
-approximation of the derivative of $u$ at time $t_n+\Delta t/2$. Finally,
-we use this midpoint derivative to advance the solution to $t_{n+1}$.
+we use it to compute an intermediate midpoint solution 
+!bt
+\[
+    u_{n+1/2} = u_n+\frac{\Delta t}{2} k_1 .
+\]
+!et
+This solution is then used to compute the corresponding stage derivative $k_2$, 
+which becomes an approximation to the derivative of $u$ at time $t_n+\Delta t/2$. 
+Finally, we use this midpoint derivative to advance the solution to $t_{n+1}$. 
 
 idx{Heun's method}idx{trapezoidal method !explicit}
 An alternative second order method is Heun's method,
@@ -159,10 +166,10 @@ in this form, and a method is uniquely determined by the
 number of stages $s$ and the values of the coefficients. 
 idx{Runge-Kutta method !general formula}
 
-As mentioned above there exists a wide variety of Runge-Kutta methods
-exist, where the coefficients are typically chosen to optimize the accuracy for
+As mentioned above there exists a wide variety of Runge-Kutta methods, 
+where the coefficients are typically chosen to optimize the accuracy for
 a given number of stages. It can be shown that the $b_i$ coefficients must be chosen to satisfy
-$\sum_{i=1}^s b_i = 1$ in order to have a consistent method. This condition follows quite
+$\sum_{i=1}^s b_i = 1$ in order to have a convergent method. This condition follows quite
 naturally from our motivation for Runge-Kutta methods as numerical integrators 
 applied to (ref{ode_integral0}). When approximating the integral as a weighted sum, the sum of the weights must
 obviously be one. Another common constraint on the coefficients is to 
@@ -174,7 +181,7 @@ It is possible to derive general *order conditions* that the coefficients must s
 to be of a given order, see, for instance, cite{AscherPetzold,ODEI} for details. 
 In this chapter we only consider explicit Runge-Kutta methods, which means that $a_{ij} = 0$
 for $j\geq i$. It can be shown that the order $p$ of an explicit Runge-Kutta method with $s$ 
-stages satisfies $p\leq s$, and for $p \geq 5$ we must have $s\geq s+1$. However, it is not known
+stages satisfies $p\leq s$, and for $p \geq 5$ the bound is $p\leq s-1$. However, it is not known
 whether the last bound is sharp, and it may be even stricter for methods of very high order. For 
 instance, all known methods with $p=8$ have at least eleven stages, and it is not known whether eight-order methods
 with nine or ten stages exist. 
@@ -182,7 +189,7 @@ with nine or ten stages exist.
 idx{Butcher tableau}
 In the ODE literature the method coefficients are often specified in the
 form of a *Butcher tableau*, which offers a compact definition of any Runge-Kutta method.
-Te Butcher tableau is simply a specification of all the method coefficients, and
+The Butcher tableau is simply a specification of all the method coefficients, and
 for a general Runge-Kutta method it is written as
 !bt
 \[
@@ -257,6 +264,7 @@ for certain classes of ODEs. We will consider implicit Runge-Kutta methods in
 Chapter ref{ch:stiff}.
 
 ======= A class hierarchy of Runge-Kutta methods =======
+label{sec:rk_hierarchy}
 idx{class ! hierarchy} idx{class !superclass/base class} 
 We now want to implement Runge-Kutta methods as classes,
 similar to the FE classes introduced above. When inspecting the `ForwardEuler`
@@ -324,12 +332,12 @@ class ODESolver:
 Notice that the `ODESolver` is meant to be a pure superclass, and the implementation of the
 `advance` method is left for subclasses. Trying to use `ODESolver` as a stand-alone solver
 will give an error message in the line `self.u[n+1] = self.advance()`. It should be noted
-that there are ways in Python to make the abstract nature of the `ODESolver` class explicit, 
+that there are ways in Python to make explicit the abstract nature of the `ODESolver` class, 
 for instance using the module `abc` (for "Abstract Base Class"). This would improve the
 readability of the code and would give more informative error messages if the class is
 not used as intended. However, we have decided not to use this module here, in the interest of
 keeping the code simple and compact. 
-!idx{class !abstract base class}
+idx{class !abstract base class}
 
 With the superclass at hand, the implementation of a `ForwardEuler` subclass
 becomes very simple:
@@ -359,10 +367,10 @@ class RungeKutta4(ODESolver):
         u, f, n, t = self.u, self.f, self.n, self.t
         dt = self.dt
         dt2 = dt/2.0
-        k1 = f(t[n], u[n],)
-        k2 = f(t[n] + dt2, u[n] + dt2*k1, )
-        k3 = f(t[n] + dt2, u[n] + dt2*k2, )
-        k4 = f(t[n] + dt,  u[n] + dt*k3, )
+        k1 = f(t[n], u[n])
+        k2 = f(t[n] + dt2, u[n] + dt2*k1)
+        k3 = f(t[n] + dt2, u[n] + dt2*k2)
+        k4 = f(t[n] + dt,  u[n] + dt*k3)
         unew = u[n] + (dt/6.0)*(k1 + 2*k2 + 2*k3 + k4)
         return unew
 !ec

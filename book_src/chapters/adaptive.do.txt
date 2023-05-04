@@ -53,11 +53,15 @@ carefully selected based on the characteristics of the problem at hand.
 
 ======= Choosing the time step based on the local error =======
 The goal of an adaptive time stepping method is to control the error in the solution, and it is natural to 
-base the step selection on some form of error estimate. In Chapter ref{ch:ode_intro} we
-computed the global error in the solution, which may of course also be useful for selecting the
-time step. If the global error is too large, we simply redo the computation with a smaller time step. 
-However, the goal for the adaptive time step methods is to select the time step dynamically 
-as the solution progresses, to ensure that the final solution satisfies a given error tolerance. 
+base the step selection on some form of error estimate. In Section ref{sec:error_taylor} we
+computed the error at the end of the solution interval, and used it to confirm the 
+theoretical convergence of the method. Such a global error could, in principle, 
+also be useful for selecting the time step, since we could can simply redo the calculation
+with a smaller time step if the error is too large. However, for interesting ODE problems
+the analytical solution is not available, which complicates this form of error estimate. 
+Furthermore, the goal for the adaptive time 
+step methods is to select the time step dynamically as the solution progresses, to ensure that 
+the final solution satisfies a given error tolerance. 
 This goal requires a different approach, which is based on estimates of the local error for each 
 step rather than the global error. 
 
@@ -119,7 +123,7 @@ while if $e_n \approx tol$ we get $\Delta t_{n+1} \approx \Delta t_n$. In practi
 the formula is usually modified with a safety factor, i.e., we set
 !bt
 \begin{equation}
-\Delta t_{n+1} = \eta \left( \frac{tol}{e_n} \Delta t_n^{p+1}  \right)^{-(p+1)} .
+\Delta t_{n+1} = \eta \left( \frac{tol}{e_n} \Delta t_n^{p+1}  \right)^{1/(p+1)} .
 \label{step_size0}\end{equation}
 !et
 for some $\eta < 1$. The exact same formula can be used to choose a new step size $\Delta t_n$ 
@@ -138,8 +142,7 @@ The inequality (ref{error0}) and formula (ref{step_size0}) gives the necessary t
 step based on the local error $e_n$. The remaining task is to come up with a method to estimate this
 error. It is, of course, not possible to compute it directly since the analytical solution is
 not available, but it can instead be estimated based on two numerical solution of different accuracy.
-We described in Chapter ref{ch:ode_intro} how the global error could be estimated in this way, and
-the idea is exactly the same for the local error. We simply advance the solution
+The idea is simply to advance the solution
 from $t_{n-1}$ to $t_{n}$ twice, using two methods of different accuracy, giving us our regular
 solution $u_{n}$ and a more accurate one $\hat{u}_{n}$. The difference $|\hat{u}_{n}-u_{n}|$ can 
 then be used to estimate the local error for the solution $u_{n}$. The more accurate 
@@ -487,9 +490,9 @@ Implicit RK methods can also be equipped with embedded methods. The fundamental 
 for explicit methods, although the step size selection tends to be more challenging for stiff problems. 
 The most obvious constraint is that for stiff problems, both the main method and the error estimator need to have good
 stability properties. Stiff problems are also known to be more challenging for the error control algorithms, and
-simple algorithms such as (ref{step_size0}) often suffer from large fluctuations in step size and local error. 
-
-Implicit RK methods can also be equipped with time step control based on embedded error estimators. For instance, the
+simple algorithms such as (ref{step_size0}) often suffer from large fluctuations in step size and local error. We refer
+to, for instance, cite{AscherPetzold,ODEII} for a detailed discussion of these challenges, and here mainly present 
+a selection of well known methods. For instance, the
 TR-BDF2 method in (ref{butcher-tr-bdf2}) can be extended to include a third order method for error estimation. 
 The extended Butcher tableau is
 !bt
@@ -522,7 +525,6 @@ be reused directly from the `ImplicitRK` classes. A convenient way to reuse
 functionality from two different classes is to use *multiple inheritance*, where
 we define a new class a subclass of two different base classes. For instance, a base class
 for adaptive ESDIRK methods may look like 
-a class may look like
 !bc pycod
 class AdaptiveESDIRK(AdaptiveODESolver,ESDIRK):
 !ec
@@ -600,7 +602,6 @@ class TR_BDF2_Adaptive(AdaptiveESDIRK):
 To illustrate the use of this solver class, we may return to the Hodgkin-Huxley model considered at the 
 start of this chapter. Assuming that we have implemented the model as a class in a file `hodgkinhuxley.py`, 
 the following code solves the model and plots the transmembrane potential:
-'' class implementation of this model may look like
 !bc pycod
 from AdaptiveImplicitRK import *
 from hodgkinhuxley import *

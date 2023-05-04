@@ -5,9 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def ForwardEuler(f, u0, T, N):
+def forward_euler(f, u0, T, N):
     """Solve u'=f(u,t), u(0)=U0, with n steps until t=T."""
-    import numpy as np
     t = np.zeros(N + 1)
     u = np.zeros(N + 1)  # u[n] is the solution at time t[n]
 

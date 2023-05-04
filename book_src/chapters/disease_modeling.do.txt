@@ -59,7 +59,10 @@ between susceptible and infected individuals. We make the following assumptions:
   to $I/N$, with $N=S+I+R$.
 Based on these assumptions, the probability that a single susceptible person
 gets infected is proportional to $\Delta t I/N$. The total number of
-infections can be written as $\beta SI/N$, for some constant $\beta$. The infection
+infections can be written as $\beta SI/N$, for some constant $\beta$, which represents 
+the probability that an infected person meets and infects a susceptible person. The value
+of $\beta$ depends both on the infectiousness of the disease and the behavior of the population,
+as will be discussed in more detail below. The infection
 of new individuals represents a reduction in $S$ and a corresponding gain in $I$: , so we have
 !bt
 \begin{align*}
@@ -253,7 +256,7 @@ class SIR:
         return [dS,dI,dR]
 
 !ec
-As for the models considered in earlier chapter, the use of the class is very similar to 
+As for the models considered in earlier chapters, the use of the class is very similar to 
 the use of the `SIR_model` function above. We create an instance of the class with given 
 values of `beta` and `nu`, and then this instance can be passed to the ODE solver 
 just as any regular Python function. 
@@ -403,7 +406,7 @@ and deterministic epidemiology models.
 An important characteristic of Covid19 is that people may be infected, and able to infect others, 
 even if they experience no symptoms. This property obviously has a massive impact on 
 the disease spread, since people are unaware that they are infected and therefore take no 
-precautions against infecting others. To separate groups of asymptomatic yet infectious people
+precautions against infecting others. Two separate groups of asymptomatic yet infectious people
 have been identified:
  * A certain number of people are infected, but never develop any symptoms, or the symptoms are so 
    mild that they are mistaken for other mild airway infections. These asymptomatic
@@ -420,7 +423,7 @@ and an asymptomatic $I_a$. The flux from $S$ to $E_1$ will be similar to the SEI
 people will follow one of two possible trajectories. Some will move on to $E_2$ and then
 into $I$ and finally $R$, while others move directly into $I_a$ and then to $R$.
 The model is illustrated in Figure ref{fig:covid19}. Since there are two different $E$-categories
-and two different $i$-categories, we refer to the model as a SEEIIR model. 
+and two different $I$-categories, we refer to the model as a SEEIIR model. 
 
 FIGURE: [../chapters/figs_ch5/SEEIIR.pdf, width=800 frac=0.8] Illustration of the Covid19 epidemic model, with two alternative disease trajectories. label{fig:covid19}
 
@@ -538,8 +541,8 @@ develop symptoms, which is reflected in the low value of $r_{ia}$.
 
 The parameters $\mu, \lambda_1$, and $\lambda_2$ are given in units of days$^{-1}$,
 so the mean duration of the symptomatic disease period is five days ($1/\mu$),
-the non-infectious incubation period lasts three days on average, while the
-mean duration of the infectious incubation period ($E_2$) is two days. In the present model, 
+the non-infectious incubation period lasts three days on average ($1/\lambda_1$), while the
+mean duration of the infectious incubation period ($E_2$) is two days ($1/\lambda_2$). In the present model, 
 which has multiple infectious categories, the basic reproduction number is given by
 \[
 R = r_{e2}\beta/\lambda_2 + r_{ia}\beta/\mu + \beta/\mu,
