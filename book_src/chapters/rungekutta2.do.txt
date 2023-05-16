@@ -69,6 +69,7 @@ from choosing a solver that is more stable than the ERK methods considered so fa
 FIGURE: [../chapters/figs_ch3/vanderpol1.pdf, width=600 frac=1] Solutions of the Van der Pol model for different values of $\mu$. label{fig:vanderpol}
 
 idx{Dahlquist test equation}
+Before introducing more stable solvers, it is useful to examine the observed stability problems in a bit more detail. 
 Why does the solution of the Van der Pol model fail so badly for large values of $\mu$? And, more generally,
 what are the properties of an ODE system that makes it stiff? To answer these questions, it is useful to 
 start with a simpler problem than the Van der Pol model.  
@@ -78,11 +79,15 @@ Consider, for instance, a simple IVP known as the Dahlquist test equation;
 u' &= \lambda u, \quad u(0) = 1,  label{linear} 
 \end{align}
 !et
-where $\lambda$ may be a complex number. With $\lambda = 1$ this is the simple exponential growth 
+where $\lambda$ may be a complex number.[^complex] With $\lambda = 1$ this is the simple exponential growth 
 problem considered earlier, but in this chapter we are primarily interested in $\lambda$ with negative
 real part, i.e., either real or complex $\lambda$ that satisfy $\Re(\lambda) < 0$. 
 In such cases the solution of (ref{linear}) decays over time and is completely stable, 
 but we shall see that the numerical solutions do not always retain this property.
+
+[^complex]: Note that the implementation of the solvers in this book does not support solving this ODE for 
+complex $\lambda$. Allowing complex values in the stability analysis is still relevant, since for systems
+of ODEs the relevant values are the *eigenvalues* of the right hand side, and these may be complex. 
 
 idx{stiff ODEs}idx{eigenvalues}
 Following the definition in cite{AscherPetzold}, we say that problem (ref{linear}) is stiff for an interval
@@ -101,21 +106,30 @@ and the problem is stiff for an interval $[0,b]$ if
 \[
 b\min_{i}\Re(\lambda_i) \ll -1.
 \]
+These definitions show that the stiffness of a problem is not only a function of the ODE itself,
+but also of the length of the solution interval ($b$), which may be a bit surprising. 
+We can get an understanding of why the interval of interest is important by looking
+at (ref{linear}). If $\lambda$ is large and negative, we need to choose 
+a small $\Delta t$ to maintain stability of explicit solvers, as will be discussed 
+in detail below. However, 
+if we are only interested in solving the equation over a very small time interval, 
+i.e., $b$ is small, using a small $\Delta t$ is not really a problem, and by the 
+definition above the problem will no longer be stiff.  
 In the ODE literature one will also find more pragmatic definitions
 of stiffness, for instance that an equation is stiff if the 
 time step needed to maintain stability of an explicit
 method is much smaller than the time step dictated by the accuracy
-requirements cite{Curtiss52,AscherPetzold}. These definitions indicate that
-the stiffness of a problem is not only a function of the ODE itself,
-but also of the interval of integration and of the chosen accuracy requirement. A
+requirements cite{Curtiss52,AscherPetzold}. A
 detailed discussion of stiff ODE systems can be found in, for instance,
 cite{AscherPetzold,ODEII}.
+
+
 
 idx{linear stability analysis}idx{numerical instabilities}
 Eq. (ref{linear}) is the foundation for *linear stability analysis*, which is a very
 useful technique for analyzing and understanding the stability of ODE solvers. 
 The solution to the equation is $u(t) = e^{\lambda t}$, which obviously grows
-very rapidly if $\lambda$ with a positive real part. We are therefore primarily 
+very rapidly if $\lambda$ has a positive real part. We are therefore primarily 
 interested in the case $\Re(\lambda) < 0$, for which the analytical solution is stable, but 
 our choice of solver may introduce *numerical instabilities*. The
 Forward Euler method applied to (ref{linear}) gives the update formula
@@ -127,7 +141,7 @@ Forward Euler method applied to (ref{linear}) gives the update formula
 and for the first step, since we have $u(0) = 1$, we have
 !bt
 \begin{align}
-    u_1 &= u(\Delta t) =  1+\Delta t \lambda . label{linear_euler1}
+    u_1 &=  1+\Delta t \lambda . label{linear_euler1}
 \end{align}
 !et
 The analytical solution decays exponentially for $\Re(\lambda) < 0$, and it is natural to 
@@ -148,7 +162,7 @@ about the stability of the FE method. This expression is often called the
     R(z) = 1+z .
 \]
 !et
-The FE method is stable for all values $\lambda \Delta t$ which give $\|R(\lambda \Delta t)\| <1$,
+The FE method is stable for all values $\lambda \Delta t$ which give $|R(\lambda \Delta t)| <1$,
 and this region of $\lambda \Delta t$ values in the complex plane is referred to as the method's
 *region of absolute stability*, or simply its *stability region*. 
 The stability region for the FE method is shown in the left panel of Figure ref{fig:stab_erk}. The stability
@@ -199,8 +213,9 @@ Therefore, there are no A-stable explicit RK methods.
 An even  stronger stability requirement can be motivated 
 by the fact that for $\lambda \ll 0$, the solution to (ref{linear}) decays very rapidly. It is natural to expect the same
 behavior of the numerical solution, by requiring $|R(z)|\rightarrow 0$ as $z\rightarrow -\infty$. This property is 
-referred to as *stiff decay*, and an A-stable method that also has stiff decay is called an *L-stable* method. 
-
+referred to as *stiff decay*, and an A-stable method that also has stiff decay is called an *L-stable* method,
+see, for instance, cite{AscherPetzold,ODEII} for more details. 
+ 
 idx{backward Euler method}idx{Euler method! implicit}
 The simplest implicit RK method is the backward Euler (BE) method, which can be derived in exactly the same way 
 as the FE method, by approximating the derivative with a simple finite difference. The only difference
@@ -261,18 +276,18 @@ to introduce a stage derivative and make it obvious that the BE method is part o
     u_{n+1} &= u_n + \Delta t k_1 . \label{backward_euler1}
 \end{align}
 
-idx{midpoint method !implicit} 
-idx{trapezoidal method ! implicit} 
-idx{Crank-Nicolson method}
+
 The explicit midpoint and
 trapezoidal methods mentioned above also have their implicit counterparts. The implicit midpoint method
 is given by
+idx{midpoint method !implicit}
 \begin{align}
     k_1 &= f(t_n+\Delta t/2,u_n + k_1 \Delta t/2), \label{imp_midpoint0} \\
     u_{n+1} &= u_n + \Delta t k_1, \label{imp_midpoint1}
 \end{align}
 !et
 while the implicit trapezoidal rule, or Crank-Nicolson method, is given by 
+idx{trapezoidal method ! implicit} idx{Crank-Nicolson method}
 !bt
 \begin{align}
 k_1 &= f(t_n,u_n), \label{cn_0}\\
@@ -336,7 +351,7 @@ how we can implement the methods introduced so far.
 label{sec:irk_simple_impl}
 In the previous section we have demonstrated the superior stability of the implicit methods,
 and also mentioned that the accuracy is generally higher, for a fixed number of stages. 
-So why are not implicit Runge-Kutta solvers the natural choice for all ODE problem? The
+So why are not IRK solvers the natural choice for all ODE problem? The
 answer to this question is of course the fact that they are implicit, so the stage derivatives
 are defined in terms of non-linear equations rather than explicit formulae. This fact complicates
 the implementation of the methods and makes each time step far more computationally
@@ -400,8 +415,10 @@ stage derivative. The method takes
 the stage derivative `k` as input and returns the residual of (ref{backward_euler0}), which makes it
 suitable for use with SciPy non-linear equation solvers. The actual solution of the stage derivate equation
 is handled in the `solve_stage` method, which first computes an initial guess `k0` for the stage
-derivative, and then passes this guess and the function `stage_eq` to SciPy's `root` method for 
-solving the equation. The `root` function returns an object of the class `OptimizeResult`, which includes
+derivative, and then passes this guess and the function `stage_eq` to SciPy's `root` function for 
+solving the equation. The `root` function is a general tool for solving non-linear equations on the
+form $g(x) = 0$, which we apply to solve the stage equation $k_1 - f(t_n+\Delta t,u_n+\Delta t k_1) = 0$.  
+It returns an object of the class `OptimizeResult`, which includes
 the solution as an attribute `x`, as well as numerous other attributes containing information about the 
 solution process. We refer to the SciPy documentation for further details on the `OptimizeResult` and the
 `root` function.
@@ -418,7 +435,11 @@ panel shows the solution from backward Euler with $\Delta t = 0.04$, which is ob
 but still quite different from the reference solution in the top panel. With the backward Euler method, 
 increasing the time step further will still give a stable solution, but it does not look like the
 exact solution at all. This little experiment illustrates the need to consider both accuracy and stability 
-when solving challenging ODEs systems.
+when solving challenging ODEs systems.[^ software_ref]
+
+[^ software_ref]:Note that the accompanying source code for the book includes a script to produce Figure ref{fig:vdp2},
+as well as many of the other figures in the book. It is a good exercise to run these scripts on your own and
+adjust the time step and other parameters, to get a better understanding of how the solvers work. 
 
 Just as we did for the explicit methods in Chapter ref{ch:runge_kutta}, it is possible to reuse code from 
 the `BackwardEuler` class to implement other solvers. Extensive code reuse for a large group of implicit
@@ -550,7 +571,7 @@ Euler method, while two- and three-stage versions are given by
 \]
 !et
 The Radau IIA methods have order $2s-1$, and their stability functions are $(s-1,s)$ Padé approximations
-to the exponential function cite{ODEII}. For the two- and three-stage methods
+to the exponential function, see cite{ODEII} for details. For the two- and three-stage methods
 above, the stability functions are
 !bt
 \begin{align*}
@@ -689,42 +710,43 @@ hard-coded into the mathematical expressions, typically inside the `advance` met
 it is natural to define them as class attributes in the constructor. A general base class for implicit RK
 methods may look as follows:
 !bc pycod
+from ODESolver import *
+from scipy.optimize import root
+
 class ImplicitRK(ODESolver):
     def solve_stages(self):
         u, f, n, t = self.u, self.f, self.n, self.t
-        neq = self.neq
         s = self.stages
-        k0 = f(t[n],u[n]) 
-        k0 = np.hstack([k0 for i in range(s)])
-        
-        sol = root(self.stage_eq,k0) 
+        k0 = f(t[n], u[n])
+        k0 = np.tile(k0,s) 
 
-        return np.split(sol.x,s)
+        sol = root(self.stage_eq, k0)
 
-    def stage_eq(self,k_all):
-        a,c = self.a, self.c 
+        return np.split(sol.x, s)
+
+    def stage_eq(self, k_all):
+        a, c = self.a, self.c
         s, neq = self.stages, self.neq
 
         u, f, n, t = self.u, self.f, self.n, self.t
         dt = self.dt
 
         res = np.zeros_like(k_all)
-        k = np.split(k_all,s)
+        k = np.split(k_all, s)
         for i in range(s):
-            fi = f(t[n]+c[i]*dt, 
-                   u[n]+dt*sum([a[i,j]*k[j] for j in range(s)]))
-            res[i*neq:(i+1)*neq] = k[i] - fi 
-                                            
+            fi = f(t[n] + c[i] * dt, u[n] + dt *
+                   sum([a[i, j] * k[j] for j in range(s)]))
+            res[i * neq:(i + 1) * neq] = k[i] - fi
+
         return res
 
     def advance(self):
-        b = self.b 
+        b = self.b
         u, n, t = self.u, self.n, self.t
         dt = self.dt
         k = self.solve_stages()
-        
-        return u[n]+dt*sum(b_*k_ for b_,k_ in zip(b,k)) 
 
+        return u[n] + dt * sum(b_ * k_ for b_, k_ in zip(b, k))
 !ec
 Note that we assume that the method parameters are assumed to be held in NumPy arrays 
 `self.a, self.b, self.c`, which need to be defined in subclasses. The `ImplicitRK` class
@@ -741,9 +763,9 @@ the methods rely on a bit of NumPy magic:
   lines are quite similar and should be self-explanatory. However, be aware that we are now implementing a general
   IRK method with $s$ stages, and we solve a single system of non-linear equations to determine all $s$ stage
   derivatives at once. The solution of this system is a one-dimensional array of length 
-  `self.stages * self.neq`, which contains all the stage derivatives. The line `k0 = np.hstack([k0 for i in range(s)])`
+  `self.stages * self.neq`, which contains all the stage derivatives. The line `k0 = np.tile(k0,s)`
   takes an initial guess `k0` for a single stage, and simply stacks it after itself $s$ times to create the initial guess
-  for all the stages, using NumPy's `hstack` function and a list comprehension. 
+  for all the stages, using NumPy's `tile` function.
 * The `stage_eq` method is also a pure generalization of the `BackwardEuler` version, and performs the same tasks. 
   The first few lines should be self-explanatory, while the `res = np.zeros_like(k_all)` defines an array of the 
   correct length to hold the residual of the equation. Then, for convenience, the line `k = np.split(k_all,s)` 
@@ -758,38 +780,38 @@ With the general base class at hand, we can easily implement new solvers, simply
 that define the method coefficients. The following code implements the implicit midpoint and the two- and
 three-stage Radau methods:
 !bc pycod
-class ImpMidpoint(ImplicitRK):
-    def __init__(self,f):
+class ImplicitMidpoint(ImplicitRK):
+    def __init__(self, f):
         super().__init__(f)
         self.stages = 1
-        self.a = np.array([[1/2]])
-        self.c = np.array([1/2])
+        self.a = np.array([[1 / 2]])
+        self.c = np.array([1 / 2])
         self.b = np.array([1])
 
 
-class Radau2(ImplicitRK):      
-    def __init__(self,f):
+class Radau2(ImplicitRK):
+    def __init__(self, f):
         super().__init__(f)
         self.stages = 2
-        self.a = np.array([[5/12,-1/12],[3/4,1/4]])
-        self.c = np.array([1/3,1])
-        self.b = np.array([3/4, 1/4])
+        self.a = np.array([[5 / 12, -1 / 12], [3 / 4, 1 / 4]])
+        self.c = np.array([1 / 3, 1])
+        self.b = np.array([3 / 4, 1 / 4])
 
 
 class Radau3(ImplicitRK):
-    def __init__(self,f):
+    def __init__(self, f):
         super().__init__(f)
         self.stages = 3
         sq6 = np.sqrt(6)
-        self.a = np.array([ [(88-7*sq6)/360,
-                            (296-169*sq6)/1800,
-                            (-2+3*sq6)/(225)],
-                            [(296+169*sq6)/1800, 
-                            (88+7*sq6)/360,
-                            (-2-3*sq6)/(225)],
-                            [(16-sq6)/36, (16+sq6)/36,1/9]])
-        self.c = np.array([(4-sq6)/10,(4+sq6)/10,1])
-        self.b = np.array([(16-sq6)/36, (16+sq6)/36,1/9])
+        self.a = np.array([[(88 - 7 * sq6) / 360,
+                            (296 - 169 * sq6) / 1800,
+                            (-2 + 3 * sq6) / (225)],
+                           [(296 + 169 * sq6) / 1800,
+                            (88 + 7 * sq6) / 360,
+                            (-2 - 3 * sq6) / (225)],
+                           [(16 - sq6) / 36, (16 + sq6) / 36, 1 / 9]])
+        self.c = np.array([(4 - sq6) / 10, (4 + sq6) / 10, 1])
+        self.b = np.array([(16 - sq6) / 36, (16 + sq6) / 36, 1 / 9])
 !ec 
 Notice that we always define the method coefficients as NumPy arrays, even for the
 implicit midpoint method where they all contain a single number. This definition is
@@ -953,7 +975,7 @@ them up could make the code more difficult to read and understand, and would als
 less computationally efficient. The latter should always be a consideration when implementing numerical methods, 
 although it is not a strong focus of the present text. 
 
-Another choice that can be questioned in the `ESDIRK` classis that we retain the 
+Another choice that can be questioned in the `ESDIRK` class is that we retain the 
 dimensions of the `self.a` coefficient array, and simply set the entire first row to zero. Storing these zeros is obviously 
 not needed, and we could have omitted them and adjusted the for-loop in `solve_stages` accordingly. However, this choice
 would make the link between the code and the mathematical formulation of RK methods less obvious, and the benefits would 

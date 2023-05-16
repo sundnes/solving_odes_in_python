@@ -29,12 +29,18 @@ programs and code examples are written in a simple and
 compact Python style, and generally avoid the use of advanced tools and features. 
 Experienced Python programmers will therefore surely find more elegant
 and modern solutions to many of the examples, including, for instance, abstract base
-classes, type hints and data classes, to mention a few. However, the main goal of
+classes, type hints, and data classes, to mention a few. However, the main goal of
 the book is to introduce the fundamentals of ODE solvers and OOP as part of an
 introductory programming course, and we believe this purpose is best served by 
-focusing on the basics. 
+focusing on the basics. Readers familiar with scientific computing or numerical
+software will probably also miss a discussion of computational performance. While 
+performance is clearly relevant when solving ODEs, optimizing the performance of
+a Python based solver easily becomes quite technical, and requires features like 
+just-in-time compilers (e.g., Numba) or mixed-language programming. The solvers in this
+book only use fairly basic features of Python and NumPy, which sacrifices some performance
+but enhances understanding of the solver properties and their implementation. 
 
-The chapters of the text are organized as follows. Chapter ref{ch:ode_intro} introduces the forward Euler method,
+The book is organized as follows. Chapter ref{ch:ode_intro} introduces the forward Euler method,
 and uses this simple method to introduce the fundamental ideas and principles that
 underpin all the methods considered later. The chapter introduces the notation and general
 mathematical formulation used throughout the book, both for scalar ODEs and systems of ODEs, 

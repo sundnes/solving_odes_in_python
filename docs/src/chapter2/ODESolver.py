@@ -33,6 +33,9 @@ class ODESolver:
         else:
             self.u = np.zeros((N + 1, self.neq))
 
+        msg = "Please set initial condition before calling solve"
+        assert hasattr(self, "u0"), msg
+
         self.t[0] = t0
         self.u[0] = self.u0
 
@@ -41,6 +44,10 @@ class ODESolver:
             self.t[n + 1] = self.t[n] + self.dt
             self.u[n + 1] = self.advance()
         return self.t, self.u
+
+    def advance(self):
+        raise NotImplementedError("Advance method is not implemented in the base class")
+
 
 
 class ForwardEuler(ODESolver):
@@ -92,7 +99,7 @@ def test_exact_numerical_solution():
     b = 3
 
     def f(t, u):
-        return a  # + (u - u_exact(t))**5
+        return a  
 
     def u_exact(t):
         """Exact u(t) corresponding to f above."""

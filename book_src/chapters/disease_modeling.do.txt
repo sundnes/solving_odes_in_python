@@ -63,7 +63,7 @@ infections can be written as $\beta SI/N$, for some constant $\beta$, which repr
 the probability that an infected person meets and infects a susceptible person. The value
 of $\beta$ depends both on the infectiousness of the disease and the behavior of the population,
 as will be discussed in more detail below. The infection
-of new individuals represents a reduction in $S$ and a corresponding gain in $I$: , so we have
+of new individuals represents a reduction in $S$ and a corresponding gain in $I$, so we have
 !bt
 \begin{align*}
 S(t+\Delta t) &= S(t) - \Delta t \beta \frac{S(t)I(t)}{N} ,\\

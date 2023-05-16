@@ -324,6 +324,9 @@ class ODESolver:
         else:
             self.u = np.zeros((N + 1, self.neq))
 
+        msg = "Please set initial condition before calling solve"
+        assert hasattr(self, "u0"), msg
+
         self.t[0] = t0
         self.u[0] = self.u0
 
@@ -332,16 +335,27 @@ class ODESolver:
             self.t[n + 1] = self.t[n] + self.dt
             self.u[n + 1] = self.advance()
         return self.t, self.u
+
+    def advance(self):
+        raise NotImplementedError("Advance method is not implemented in the base class")
 !ec
 Notice that the `ODESolver` is meant to be a pure superclass, and the implementation of the
-`advance` method is left for subclasses. Trying to use `ODESolver` as a stand-alone solver
-will give an error message in the line `self.u[n+1] = self.advance()`. It should be noted
-that there are ways in Python to make explicit the abstract nature of the `ODESolver` class, 
-for instance using the module `abc` (for "Abstract Base Class"). This would improve the
-readability of the code and would give more informative error messages if the class is
-not used as intended. However, we have decided not to use this module here, in the interest of
+`advance` method is left for subclasses. In order to make this abstract nature of the
+class explicit, we have implemented an `advance` method that will simply raise 
+a `NotImplementedError` when it is called. If we try to make an instance of `ODESolver` and
+use it as a stand-alone solver, we will get an error in the 
+line `self.u[n + 1] = self.advance()`. If we had left 
+out the definition of `advance` completely we would get an error from the same line, but
+it would be a less informative `AttributeError`. Raising the `NotImplementedError` makes
+it clear to anyone reading or using the code that this behavior is intentional, and that
+the functionality is to be implemented in subclasses. 
+It should be noted that there are alternative ways in Python to make explicit the abstract nature of the `ODESolver` class, 
+for instance using the module `abc`, for "Abstract Base Class". However, while this
+solution may be considered more modern, we have decided to not use it here, in the interest of
 keeping the code simple and compact. 
 idx{class !abstract base class}
+
+It is also worth commenting on the `solve` method, 
 
 With the superclass at hand, the implementation of a `ForwardEuler` subclass
 becomes very simple:
@@ -420,3 +434,6 @@ in the same window, as shown in Figure ref{fig:simplecompare}. We set `N = 6`, w
 a very large time step ($\Delta t = 0.5$), to highlight the difference in accuracy between the methods.
 
 FIGURE: [../chapters/figs_ch2/ch2_simplecompare.pdf, width=600 frac=1] Numerical solutions of the exponential growth problem, computed with `ForwardEuler`, `ImplicitMidpoint` and `RungeKutta4`. All the solvers use $\Delta t = 0.5$, to highlight the difference in accuracy. label{fig:simplecompare}
+
+
+======= Testing the solvers??? =======

@@ -22,6 +22,9 @@ class ForwardEuler:
         self.t = np.zeros(N + 1)
         self.u = np.zeros((N + 1, self.neq))
 
+        msg = "Please set initial condition before calling solve"
+        assert hasattr(self, "u0"), msg
+
         self.t[0] = t0
         self.u[0] = self.u0
 

@@ -21,6 +21,9 @@ class ForwardEuler_v0:
         self.t = np.zeros(N + 1)  # N steps ~ N+1 time points
         self.u = np.zeros(N + 1)
 
+        msg = "Please set initial condition before calling solve"
+        assert hasattr(self, "u0"), msg
+
         self.t[0] = t0
         self.u[0] = self.u0
 

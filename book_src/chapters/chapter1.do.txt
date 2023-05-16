@@ -297,6 +297,9 @@ class ForwardEuler_v0:
         self.t = np.zeros(N + 1)  # N steps ~ N+1 time points
         self.u = np.zeros(N + 1)
 
+        msg = "Please set initial condition before calling solve"
+        assert hasattr(self, "u0"), msg
+
         self.t[0] = t0
         self.u[0] = self.u0
 
@@ -319,6 +322,11 @@ and the main advantage of the class implementation is
 the increased flexibility that comes with the `advance` method. As we shall see
 later, implementing a different numerical method typically only requires
 implementing a new version of this method, while all other code can be left unchanged.
+Notice also that we have added an `assert` statement inside the `solve` method, which 
+checks that the user has called `set_initial_condition` before calling `solve`. 
+Forgetting to do so is a very likely error for users of the code, and this
+`assert` statement ensures that we get a useful error message rather than a 
+less informative `AttributeError`. 
 
 We can also use a class to hold the right-hand side $f(t,u)$, which is
 particularly convenient for functions with parameters.
@@ -540,6 +548,9 @@ class ForwardEuler:
             self.u = np.zeros(N + 1)
         else:
             self.u = np.zeros((N + 1, self.neq))
+
+        msg = "Please set initial condition before calling solve"
+        assert hasattr(self, "u0"), msg
 
         self.t[0] = t0
         self.u[0] = self.u0

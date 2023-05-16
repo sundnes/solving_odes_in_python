@@ -104,36 +104,6 @@ solution on the $y$-axis. When only one array of numbers is sent to `plot`, thes
 interpreted as the $y$-coordinates of the points, and the $x$-coordinates will simply be the indices
 of the array, in this case the numbers from 0 to $N$.
 
-An alternative
-formulation of the for-loop would be
-!bc pycod-t
-for n in range(N):
-    x[n+1] = x[n] + (p/100.0)*x[n]
-!ec
-Here `n` runs from 0 to 3, and all the indices inside the loop have been increased by one so that the
-end result is the same. In this case it is easy to verify that the two loops give the same result,
-but mixing up the two formulations will easily lead to a loop that runs out of bounds (an `IndexError`)
-or a loop where some of the sequence elements are never computed. Such mistakes are probably the
-most common type of programming error when solving difference
-equations, and it is a good habit to always examine the loop formulation carefully.
-If an `IndexError` (or another suspected loop error)
-occurs, a good debugging strategy is to look at the loop definition to find the lower and upper
-value of the loop variable (here `n`), and insert both by hand into
-the formulas inside the loop to check that they make sense. As an example, consider the deliberately wrong code
-!bc pycod-t
-for n in range(1,N+1):
-    x[n+1] = x[n] + (p/100.0)*x[n]
-!ec
-Assuming that the rest of the code is unchanged from the example above,
-the loop variable `n` will run from 1 to 4. If we first insert the lower bound `n=1`
-into the formula, we find that the first pass of the loop
-will try to compute `x[2]` from `x[1]`. However, we have only initialized `x[0]`,
-so `x[1]` is zero, and therefore `x[2]` and all subsequent values will be
-set to zero. Furthermore, if we insert the upper bound `n=4` we see that the formula will
-try to access `x[5]`, but this does not exist and we get an `IndexError`.
-Performing such simple analysis of a for-loop is often a good way to reveal the source of the error
-and give an idea of how it can be fixed.
-
 === Solving a difference equation without using arrays. ===
 The program above stored the sequence as an array,
 which is a convenient way to program the solver and enables us to plot the
@@ -279,10 +249,12 @@ for n in range(2, N+1):
     x[n] = x[n-1] + x[n-2]
     print(n, x[n])
 !ec
-Notice that in this case we need to initialize both `x[0]` and `x[1]` before starting
+We use the builtin list `sys.argv` from the `sys` model in order to provide the
+input `N` as a command line argument. See, for instance, cite{sundnes2020introduction}
+for an explanation. Notice that in this case we need to initialize both `x[0]` and `x[1]` before starting
 the loop, since the update formula involves both `x[n-1]` and `x[n-2]`. This is the
 main difference between this second order equation and the programs for first order
-equations considered above.
+equations considered above. 
 The Fibonacci numbers grow quickly and running this program for large $N$ will
 lead to problems with overflow (try for instance $N = 100$).
 The NumPy `int` type supports up to 9223372036854775807, which is almost
@@ -504,7 +476,7 @@ plt.show()
 !ec
 
 As another example of a system of difference equations, we may consider an extension of the
-logistic growth model considered earlier. While the logistic model describes the growth
+logistic growth model considered above. While the logistic model describes the growth
 of a single population in the absence of predators, the famous Lotke-Volterra model
 describes the interaction of two species, a predator and a prey, in the same ecosystem.
 If we let $x_n$ be the number of prey and $y_n$ the number of predators on day $n$,

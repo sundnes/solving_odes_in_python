@@ -37,7 +37,7 @@ class TR_BDF2_Adaptive(AdaptiveESDIRK):
 
 
 if __name__ == '__main__':
-    from hodgkinhuxley import *
+    from hodgkinhuxley import HodgkinHuxley
     import matplotlib.pyplot as plt
 
     model = HodgkinHuxley()

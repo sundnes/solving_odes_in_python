@@ -86,7 +86,8 @@ We first assume, for simplicity of notation, that step $n$ was accepted with a t
 $\Delta t$ and a local error estimate $e_n < tol$. Our aim is now to choose $\Delta t_{n+1}$
 so that (ref{error0}) is satisfied as sharply as possible to avoid wasting
 computations, so we want to choose $\Delta t_{n+1}$ so that $e_{n+1} \lessapprox tol$. 
-For a method of order $p$, the local error is of order $p+1$, so we have
+Recall from ref{sec:error_taylor} that for a method of global order $p$, the local error 
+is of order $p+1$, so we have
 !bt
 \begin{align}
 e_n &\approx C (\Delta t_n)^{p+1}  \label{error_0}\\
@@ -147,7 +148,7 @@ from $t_{n-1}$ to $t_{n}$ twice, using two methods of different accuracy, giving
 solution $u_{n}$ and a more accurate one $\hat{u}_{n}$. The difference $|\hat{u}_{n}-u_{n}|$ can 
 then be used to estimate the local error for the solution $u_{n}$. The more accurate 
 solution $\hat{u}_{n}$ can be computed in two ways; either by taking several "internal" time steps to advance
-from $t_n$ to $t_{n}$, or by using a method with higher order of accuracy. The first approach is
+from $t_n$ to $t_{n+1}$, or by using a method with higher order of accuracy. The first approach is
 the foundation for a technique referred to as *step doubling*, where the solution $\hat{u}_{n+1}$
 is computed with the same method used for $u_{n+1}$, but using two steps of length $\Delta t/2$
 instead of one step $\Delta t$. This obviously makes $\hat{u}_{n+1}$ more accurate than $u_{n+1}$,
@@ -585,7 +586,7 @@ implemented as
 !bc pycod
 class TR_BDF2_Adaptive(AdaptiveESDIRK):
     def __init__(self,f,eta=0.9):
-        super().__init__(f,eta) #calls AdaptiveODESolver.__init__
+        super().__init__(f,eta) 
         self.stages = 3
         self.order = 2
         gamma = 1-np.sqrt(2)/2
@@ -603,8 +604,8 @@ To illustrate the use of this solver class, we may return to the Hodgkin-Huxley 
 start of this chapter. Assuming that we have implemented the model as a class in a file `hodgkinhuxley.py`, 
 the following code solves the model and plots the transmembrane potential:
 !bc pycod
-from AdaptiveImplicitRK import *
-from hodgkinhuxley import *
+from AdaptiveImplicitRK import TR_BDF2_Adaptive
+from hodgkinhuxley import HodgkinHuxley
 import matplotlib.pyplot as plt
 
 model = HodgkinHuxley()

@@ -5,10 +5,9 @@ from scipy.optimize import root
 class ImplicitRK(ODESolver):
     def solve_stages(self):
         u, f, n, t = self.u, self.f, self.n, self.t
-        neq = self.neq
         s = self.stages
         k0 = f(t[n], u[n])
-        k0 = np.hstack([k0 for i in range(s)])
+        k0 = np.tile(k0,s) 
 
         sol = root(self.stage_eq, k0)
 
@@ -48,7 +47,7 @@ class BackwardEuler(ImplicitRK):
         self.b = np.array([1])
 
 
-class ImpMidpoint(ImplicitRK):
+class ImplicitMidpoint(ImplicitRK):
     def __init__(self, f):
         super().__init__(f)
         self.stages = 1
@@ -100,13 +99,8 @@ class SDIRK(ImplicitRK):
         k_all = []
         for i in range(s):
             k_sum = sum(a_ * k_ for a_, k_ in zip(a[i, :i], k_all))
-            #print("k_sum = ", k_sum)
-            # print(k)
             k = root(self.stage_eq, k, args=(c[i], k_sum)).x
-            # print(k)
             k_all.append(k)
-
-        #print(f'SDIRK n = {self.n}: {k_all}')
         return k_all
 
 
@@ -136,8 +130,6 @@ class ESDIRK(SDIRK):
             k = root(self.stage_eq, k, args=(c[i], k_sum)).x
             k_all.append(k)
 
-        #print(f'ESDIRK n = {self.n}: {k_all}')
-
         return k_all
 
 
@@ -157,5 +149,5 @@ class TR_BDF2(ESDIRK):
 
 if __name__ == "__main__":
     registered_solver_classes.extend(
-        [BackwardEuler, ImpMidpoint, Radau2, Radau3, SDIRK2, TR_BDF2])
+        [BackwardEuler, ImplicitMidpoint, Radau2, Radau3, SDIRK2, TR_BDF2])
     test_exact_numerical_solution()
