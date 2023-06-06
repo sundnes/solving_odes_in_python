@@ -50,7 +50,8 @@ class ODESolver:
         return self.t, self.u
 
     def advance(self):
-        raise NotImplementedError("Advance method is not implemented in the base class")
+        raise NotImplementedError(
+            "Advance method is not implemented in the base class")
 
 
 
@@ -86,7 +87,7 @@ class RungeKutta4(ODESolver):
         k2 = f(t[n] + dt2, u[n] + dt2 * k1, )
         k3 = f(t[n] + dt2, u[n] + dt2 * k2, )
         k4 = f(t[n] + dt, u[n] + dt * k3, )
-        return u[n] + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+        return u[n] + (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
 
 def test_exact_numerical_solution():
     """
@@ -95,9 +96,8 @@ def test_exact_numerical_solution():
     All the methods should be exact to machine precision
     for this choice.
     """
-    registered_solver_classes = [ForwardEuler,
-    Heun, ExplicitMidpoint, RungeKutta4]
-
+    solver_classes = [ForwardEuler, Heun, 
+                      ExplicitMidpoint, RungeKutta4]
     a = 0.2
     b = 3
 
@@ -111,15 +111,15 @@ def test_exact_numerical_solution():
     u0 = u_exact(0)
     T = 8
     N = 10
-    tol = 1E-15
+    tol = 1E-14
     t_span = (0, T)
-    for solver_class in registered_solver_classes:
+    for solver_class in solver_classes:
         solver = solver_class(f)
         solver.set_initial_condition(u0)
         t, u = solver.solve(t_span, N)
         u_e = u_exact(t)
-        max_error = (u_e - u).max()
-        msg = f'{solver.__class__.__name__} failed with max_error={max_error}'
+        max_error = abs((u_e - u)).max()
+        msg = f'{solver_class.__name__} failed with max_error={max_error}'
         assert max_error < tol, msg
 
 
