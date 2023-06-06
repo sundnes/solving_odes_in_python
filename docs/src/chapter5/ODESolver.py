@@ -23,8 +23,12 @@ class ODESolver:
         self.u0 = u0
 
     def solve(self, t_span, N):
-        """Compute solution for t_span[0] <= t <= t_span[1],
-        using N steps."""
+        """Compute solution for
+        t_span[0] <= t <= t_span[1],
+        using N steps.
+        Returns the solution and the 
+        time points as arrays. 
+        """
         t0, T = t_span
         self.dt = (T - t0) / N
         self.t = np.zeros(N + 1)  # N steps ~ N+1 time points
@@ -32,6 +36,9 @@ class ODESolver:
             self.u = np.zeros(N + 1)
         else:
             self.u = np.zeros((N + 1, self.neq))
+
+        msg = "Please set initial condition before calling solve"
+        assert hasattr(self, "u0"), msg
 
         self.t[0] = t0
         self.u[0] = self.u0
@@ -43,7 +50,7 @@ class ODESolver:
         return self.t, self.u
 
     def advance(self):
-        raise NotImplementedError
+        raise NotImplementedError("Advance method is not implemented in the base class")
 
 
 
@@ -81,10 +88,6 @@ class RungeKutta4(ODESolver):
         k4 = f(t[n] + dt, u[n] + dt * k3, )
         return u[n] + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
 
-registered_solver_classes = [
-    ForwardEuler, ExplicitMidpoint, RungeKutta4]
-
-
 def test_exact_numerical_solution():
     """
     Test the different methods for a problem
@@ -92,11 +95,14 @@ def test_exact_numerical_solution():
     All the methods should be exact to machine precision
     for this choice.
     """
+    registered_solver_classes = [ForwardEuler,
+    Heun, ExplicitMidpoint, RungeKutta4]
+
     a = 0.2
     b = 3
 
     def f(t, u):
-        return a  # + (u - u_exact(t))**5
+        return a  
 
     def u_exact(t):
         """Exact u(t) corresponding to f above."""
@@ -106,7 +112,6 @@ def test_exact_numerical_solution():
     T = 8
     N = 10
     tol = 1E-15
-    #t_points = np.linspace(0, T, N)
     t_span = (0, T)
     for solver_class in registered_solver_classes:
         solver = solver_class(f)

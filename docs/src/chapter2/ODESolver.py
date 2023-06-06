@@ -23,8 +23,12 @@ class ODESolver:
         self.u0 = u0
 
     def solve(self, t_span, N):
-        """Compute solution for t_span[0] <= t <= t_span[1],
-        using N steps."""
+        """Compute solution for
+        t_span[0] <= t <= t_span[1],
+        using N steps.
+        Returns the solution and the 
+        time points as arrays. 
+        """
         t0, T = t_span
         self.dt = (T - t0) / N
         self.t = np.zeros(N + 1)  # N steps ~ N+1 time points
@@ -46,7 +50,8 @@ class ODESolver:
         return self.t, self.u
 
     def advance(self):
-        raise NotImplementedError("Advance method is not implemented in the base class")
+        raise NotImplementedError(
+            "Advance method is not implemented in the base class")
 
 
 
@@ -82,11 +87,7 @@ class RungeKutta4(ODESolver):
         k2 = f(t[n] + dt2, u[n] + dt2 * k1, )
         k3 = f(t[n] + dt2, u[n] + dt2 * k2, )
         k4 = f(t[n] + dt, u[n] + dt * k3, )
-        return u[n] + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
-
-registered_solver_classes = [
-    ForwardEuler, ExplicitMidpoint, RungeKutta4]
-
+        return u[n] + (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
 
 def test_exact_numerical_solution():
     """
@@ -95,6 +96,8 @@ def test_exact_numerical_solution():
     All the methods should be exact to machine precision
     for this choice.
     """
+    solver_classes = [ForwardEuler, Heun, 
+                      ExplicitMidpoint, RungeKutta4]
     a = 0.2
     b = 3
 
@@ -108,16 +111,15 @@ def test_exact_numerical_solution():
     u0 = u_exact(0)
     T = 8
     N = 10
-    tol = 1E-15
-    #t_points = np.linspace(0, T, N)
+    tol = 1E-14
     t_span = (0, T)
-    for solver_class in registered_solver_classes:
+    for solver_class in solver_classes:
         solver = solver_class(f)
         solver.set_initial_condition(u0)
         t, u = solver.solve(t_span, N)
         u_e = u_exact(t)
-        max_error = (u_e - u).max()
-        msg = f'{solver.__class__.__name__} failed with max_error={max_error}'
+        max_error = abs((u_e - u)).max()
+        msg = f'{solver_class.__name__} failed with max_error={max_error}'
         assert max_error < tol, msg
 
 

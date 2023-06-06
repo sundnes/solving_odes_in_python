@@ -40,7 +40,6 @@ class ForwardEuler_v0:
         u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
 
         return u[n] + dt * f(t[n], u[n])
-        
 
 
 class Logistic:

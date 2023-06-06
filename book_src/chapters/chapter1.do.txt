@@ -155,6 +155,18 @@ The solution is shown in Figure ref{fig:ode0}, for two different choices of the 
 approximate solution improves as $\Delta t$ is reduced, although both the solutions are quite inaccurate. However, reducing the
 time step further will easily create a solution that cannot be distinguished from the exact solution.
 
+The for-loop in the example above could also be implemented differently, for instance
+!bc pycod-t
+for n in range(1, N+1):
+    t[n] = t[n - 1] + dt
+    u[n] = (1 + dt) * u[n - 1]
+!ec
+Here `n` runs from 1 to `N`, and all the indices inside the loop have been decreased by one so that the
+end result is the same. In this simple case it is easy to verify that the two loops give the same result,
+but mixing up the two formulations will easily lead to a loop that runs out of bounds (an `IndexError`),
+or a loop where the last elements of `t` and `u` are never computed. While seemingly trivial, such errors
+are very common when programming with for-loops, and it is a good habit to always examine the loop formulation carefully.
+
 FIGURE: [../chapters/figs_ch1/FE_n_10_20, width=600 frac=1] Solution of $u' = u, u(0) = 1$ with $\Delta t = 0.4$ ($N=10$) and $\Delta t=0.2$ ($N=20$). label{fig:ode0}
 
 === Extending the solver to the general ODE. ===
@@ -191,7 +203,11 @@ This simple function can solve any ODE written on the form (ref{ode0}). The righ
 side function $f(t,u)$ needs to be implemented as a Python function, which is
 then passed as an argument to `forward_euler` together with the initial condition `u0`, the
 stop time `T` and the number of time steps `N`. The two latter arguments are then used
-to calculate the time step `dt` inside the function.
+to calculate the time step `dt` inside the function.[^source1]
+
+[^source1]: The source code for this function, as well as all subsequent solvers and 
+examples, can be found here: 
+https://sundnes.github.io/solving\_odes\_in\_python/
 
 To illustrate how the function is used, let us apply it to solve the same problem as above;
 $u'=u$, $u(0)=1$, for $t\in [0,4]$. The following code uses the `forward_euler` function to solve this problem:
@@ -745,7 +761,7 @@ as predicted by the theory. For simplicity, we will apply an even simpler error 
 we simply compute the error at the final time $T$, given by $e = |u_N-\hat{u}(t_N)|$. Using the `ForwardEuler`
 class introduced above, the complete code for checking the convergence may look as follows:
 !bc pycod
-from forward_euler_class_v1 import *
+from forward_euler_class_v1 import ForwardEuler
 import numpy as np
 
 def rhs(t, u):

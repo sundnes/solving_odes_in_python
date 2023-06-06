@@ -7,16 +7,23 @@ import numpy as np
 
 class ForwardEuler:
     def __init__(self, f):
+        """Initialize the right-hand side function f """
         self.f = lambda t, u: np.asarray(f(t, u), float)
 
     def set_initial_condition(self, u0):
+        """Store the initial condition as 
+        an instance attribute. 
+        """
         self.u0 = np.asarray(u0)
         self.neq = self.u0.size
 
     def solve(self, t_span, N):
         """Compute solution for
         t_span[0] <= t <= t_span[1],
-        using N steps."""
+        using N steps.
+        Returns the solution and the 
+        time points as arrays. 
+        """
         t0, T = t_span
         self.dt = (T - t0) / N
         self.t = np.zeros(N + 1)
@@ -37,7 +44,8 @@ class ForwardEuler:
     def advance(self):
         """Advance the solution one time step."""
         u, dt, f, n, t = self.u, self.dt, self.f, self.n, self.t
-        return  u[n] + dt * f(t[n], u[n])
+        return u[n] + dt * f(t[n], u[n])
+
 
 class Logistic:
     def __init__(self, alpha, R):

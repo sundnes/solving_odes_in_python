@@ -87,7 +87,7 @@ but we shall see that the numerical solutions do not always retain this property
 
 [^complex]: Note that the implementation of the solvers in this book does not support solving this ODE for 
 complex $\lambda$. Allowing complex values in the stability analysis is still relevant, since for systems
-of ODEs the relevant values are the *eigenvalues* of the right hand side, and these may be complex. 
+of ODEs the relevant values are the *eigenvalues* of the right-hand side, and these may be complex. 
 
 idx{stiff ODEs}idx{eigenvalues}
 Following the definition in cite{AscherPetzold}, we say that problem (ref{linear}) is stiff for an interval
@@ -466,7 +466,7 @@ and is convenient for code reuse, it is not a correct representation of the rela
 numerical methods. The Crank-Nicolson method is not a special case of the backward Euler, but, as noted above, 
 both methods belong to the group of implicit RK solvers. In the following sections we will 
 describe an alternative class hierarchy which is based on this relationship, and enables a compact 
-implementation of RK methods by utilizing the general formulation in (ref{genrk0})-(ref{genrk1})
+implementation of RK methods by utilizing the general formulation in (ref{genrk0})-(ref{genrk1}).
 
 
 ======= Implicit methods of higher order =======
@@ -644,9 +644,48 @@ are identical, we have $a_{11}=a_{22}=\gamma$. This choice is very common in DIR
 methods, and methods of this kind are usually referred to as *singly diagonally
 implicit* RK (SDIRK) methods. The main benefit of this structure is that 
 the non-linear equations for each stage derivative become very similar, which
-we can take advantage of when solving the equations with quasi-Newton methods.
-In particular, the systems will have the same Jacobian matrix, which can 
-then be reused for all stages. 
+can be utilized when solving the equations with quasi-Newton methods. This benefit
+may not be very obvious for the examples in this book, since we rely on the 
+generic `root` function from `scipy.optimize` to solve all the non-linear equations.
+However, if we wanted to improve the computational performance of the solvers, a natural
+place to start would be to implement our own quasi-Newton solver, which takes advantage of
+the particular structure of the non-linear equations. We will not go into the
+details of such an implementation here, but it is worth commenting on some aspects in 
+order to understand the popularity of the SDIRK methods. The central point is that 
+when applying Newton's method to solve a general non-linear system $g(u) = 0$,
+each iteration involves solving linear systems on the form $J_g\Delta u = -g(u^k)$, where $\Delta u$ is
+the increment to the solution, $u^k$ is the solution value at the previous iteration,
+and $J_g$ is the Jacobian matrix of $g$, defined by
+!bt
+\[
+J_g = \frac{\partial g_i}{\partial u_j}  .  
+\]
+!et
+For a general DIRK method, the non-linear equation to compute stage derivative
+$k_i$ is given by
+!bt
+\[
+    k_i = f(t_n+c_i \Delta t,u_n+\Delta\sum_{j=1}^{i}a_{ij} k_j),    
+\]
+!et
+which we can write on the form $g(k_i) = 0$, with
+!bt
+\[
+g(k_i) = k_i - f(t_n+c_i \Delta t,u_n+\Delta\left(\sum_{j=1}^{i-1}a_{ij}k_j + a_{ii} k_i)\right) .
+\]
+!et
+Note that we have split the sum over the stage derivatives, to highlight the fact that when solving 
+for $k_i$, the values $k_j$ for $j<i$ are known. The Jacobian $J_g$ is found by differentiating
+$g$ with respect to $k_i$, to get
+!bt 
+\[
+    J_g =  I - \Delta t a_{ii} J_f,
+    \]
+!et 
+where $J_f$ is the Jacobian of the right-hand side function $f$. We 
+observe that if we have $a_{ii} = \gamma$ for all stages, the Jacobian matrices will also 
+be identical, which can be utilized to optimize the solution of the linear systems. We refer to,
+for instance, cite{ODEII} for a detailed overview of solving non-linear equations arising in SDIRK mehtods.  
 idx{SDIRK method} idx{ESDIRK method}
 
 
@@ -686,6 +725,8 @@ application of the trapezoidal method and a popular multistep solver called BDF2
 to as the TR-BDF2 method. It is second order accurate, just as the trapezoidal rule, but it 
 is also L-stable and therefore suitable for stiff problems. 
 idx{TR-BDF2 method}
+
+
 
 ======= Implementing higher order IRK methods =======
 label{sec:irk_implementation}

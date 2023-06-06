@@ -150,13 +150,16 @@ change with time, so $\beta$ must usually be adapted to different regions and di
 phases of the disease outbreak.
 
 idx{reproduction number}
-Epidemiologists often refer to the reproduction number $R$ of an epidemic,
+Epidemiologists often refer to the basic reproduction number $R0$ of an epidemic,
 which is the average number of new persons that an infected person infects.
-The critical number is $R = 1$, since if $R < 1$ the epidemic will decline,
-while for $R > 1$ it will grow exponentially. In the simple model considered here,
-the relationship between $R$ and $\beta$ is $R = \beta/\nu$, since $\beta$ measures
+The critical number is $R0 = 1$, since if $R0 < 1$ the epidemic will decline,
+while for $R0 > 1$ it will grow exponentially. In the simple model considered here,
+the relationship between $R0$ and $\beta$ is $R0 = \beta/\nu$, since $\beta$ measures
 the number of disease transmissions per time, and  $1/\nu$ is the
-mean duration of the infectious period. 
+mean duration of the infectious period. Be aware of the potential confusion between the
+$R$ category of the SIR, in particular its initial value $R(0)$, and the basic reproduction
+number $R0$. These quantities are not directly related, and the notation is obviously not optimal, 
+but we use it here since it is very established in the field.
 
 # #if FORMAT != 'ipynb'
 [^sir0]: A simpler version of the SIR model is also quite common, where the disease transmission term
@@ -181,7 +184,10 @@ I(t) = I_0 e^{(\beta -\nu)} .
 Such an approximate formula may be very useful, in particular for estimating the
 parameters of the model. In the early phase of an epidemic the number of infected
 people typically follows an exponential curve, and we can fit the parameters of the model
-so that (ref{sir_exp0}) fits the observed dynamics. However, if we want to describe the
+so that (ref{sir_exp0}) fits the observed dynamics. We can also relate the behavior of
+this simple model to the basic reproduction number $R0$ introduced above. We have 
+$R0=\beta/\nu$, and therefore $R0>1$ makes the exponent of (ref{sir_exp0}) positive, while
+for $R0<1$ the exponent is negative and $I(t)$ declines. However, if we want to describe the
 full dynamics of the epidemic we need to solve the complete system of ODEs, and
 then we need numerical solvers like the ones developed in the previous chapters. 
 
@@ -545,22 +551,26 @@ the non-infectious incubation period lasts three days on average ($1/\lambda_1$)
 mean duration of the infectious incubation period ($E_2$) is two days ($1/\lambda_2$). In the present model, 
 which has multiple infectious categories, the basic reproduction number is given by
 \[
-R = r_{e2}\beta/\lambda_2 + r_{ia}\beta/\mu + \beta/\mu,
+R0 = r_{e2}\beta/\lambda_2 + r_{ia}\beta/\mu + \beta/\mu,
 \]
 since the mean durations of the $E_2$ period is $1/\lambda_2$ and the mean duration
-of both $I$ and $Ia$ is $1/\mu$. The parameter choices listed above gives $R \approx 2.62$, which
+of both $I$ and $Ia$ is $1/\mu$. The parameter choices listed above gives $R0 \approx 2.62$, which
 is the value used by the Institute of Public Health (FHI) to model the early
 stage of the outbreak in Norway, from mid-February to mid-March 2020. 
+
+
+FIGURE: [../chapters/figs_ch5/seir_fig0, width=800 frac=0.8] Solution of the SEEIIR model with the default parameter values, which are similar to the values used by Norwegian health authorities during the early phase of the Covid19 pandemic. label{fig:seeiir0}
 
 idx{SEEIIR model ! class implementation}
 Although the present model is somewhat more complex than the previous ones, the 
 implementation is not very different. A class implementation may look as follows:
 !bc pycod
 class SEEIIR:
-    def __init__(self, beta=0.33, r_ia = 0.1, 
-                r_e2=1.25, lmbda_1=0.33, 
-                lmbda_2=0.5, p_a=0.4, mu=0.2):
-        
+    def __init__(self, beta=0.33, r_ia=0.1,
+                 r_e2=1.25, lmbda_1=0.33,
+                 lmbda_2=0.5, p_a=0.4, mu=0.2):
+
+        self.beta = beta
         self.r_ia = r_ia
         self.r_e2 = r_e2
         self.lmbda_1 = lmbda_1
@@ -568,28 +578,44 @@ class SEEIIR:
         self.p_a = p_a
         self.mu = mu
 
-    def __call__(self,t,u):
-        beta = self.beta; r_ia = self.r_ia; r_e2 = self.r_e2;
-        lmbda_1 = self.lmbda_1; lmbda_2 = self.lmbda_2;
-        p_a = self.p_a; mu = self.mu;
+    def __call__(self, t, u):
+        beta = self.beta
+        r_ia = self.r_ia
+        r_e2 = self.r_e2
+        lmbda_1 = self.lmbda_1
+        lmbda_2 = self.lmbda_2
+        p_a = self.p_a
+        mu = self.mu
 
         S, E1, E2, I, Ia, R = u
         N = sum(u)
-        dS  = -beta*S*I/N - r_ia*beta*S*Ia/N - r_e2*beta*S*E2/N
-        dE1 = beta*S*I/N + r_ia*beta*S*Ia/N + r_e2*beta*S*E2/N - lmbda_1*E1
-        dE2 = lmbda_1*(1-p_a)*E1 - lmbda_2*E2
-        dI  = lmbda_2*E2 - mu*I
-        dIa = lmbda_1*p_a*E1 - mu*Ia
-        dR  = mu*(I + Ia)
+        dS = -beta * S * I / N - r_ia * beta * S * Ia / N \
+            - r_e2 * beta * S * E2 / N
+        dE1 = beta * S * I / N + r_ia * beta * S * Ia / N \
+            + r_e2 * beta * S * E2 / N - lmbda_1 * E1
+        dE2 = lmbda_1 * (1 - p_a) * E1 - lmbda_2 * E2
+        dI = lmbda_2 * E2 - mu * I
+        dIa = lmbda_1 * p_a * E1 - mu * Ia
+        dR = mu * (I + Ia)
         return [dS, dE1, dE2, dI, dIa, dR]
 !ec
-The model can be solved with the methods in the `ODESolver` hierarchy, just as the
-simpler models considered earlier. Since the parameters listed above are based on the
-very first stage of the pandemic, when no restrictions were in place, the solution 
+The model can be solved with any of the methods in the `ODESolver` hierarchy, just as the
+simpler models considered earlier. An example solution with the default parameter values
+is shown in Figure ref{fig:seeiir0}. Since the parameters listed above are based on the
+very first stage of the pandemic, when no restrictions were in place, this solution 
 may be interpreted as a potential worst case scenario for the pandemic in Norway
-if no restrictions were imposed by the government. As we all know by now, severe restrictions
-were put in place from March 2020, which makes it impossible to know whether this 
-worst case scenario would ever materialize. If we want to match the actual dynamics of the pandemic
+if no restrictions were imposed by the government. While the plot for the $I$ category does 
+not look too dramatic, a closer inspection reveals that the peak is at just above 140,000 
+people. Considering what was known, and, more importantly, what was not known, about the
+severity of Covid19 at that stage, it is not surprising that a scenario of 140,000
+people being infected simultaneously caused some alarm with the health authorities. 
+Another interesting observation from the curve is that the $S$ category flattens out
+well below the total population number. This behavior is an example of so-called herd immunity,
+that when a sufficient number of people are immune to the disease, it will effectively stop spreading
+even if a large number of people are still susceptible. As we all know, severe restrictions were 
+put in place in most countries during the early spring of 2020, which makes it impossible to 
+know whether this worst case scenario would ever materialize. 
+If we want to match the actual dynamics of the pandemic
 in Norway, we would need to incorporate the effect of societal changes and altered infectiousness
 by making the $\beta$ parameter a function of time. For instance, we can define it as
-a piecewise constant function to match the $R$-numbers estimated and published by the health authorities.
+a piecewise constant function to match the reproduction numbers estimated and published by the health authorities.

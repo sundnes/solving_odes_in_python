@@ -2,6 +2,7 @@ from math import sin
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 class Pendulum:
     def __init__(self, L, g=9.81):
         self.L = L

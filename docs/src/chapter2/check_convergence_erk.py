@@ -1,16 +1,18 @@
-from ImplicitRK import BackwardEuler,Radau2, Radau3
+from ODESolver import *
 import numpy as np
+
 
 def rhs(t, u):
     return u
 
+
 def exact(t):
     return np.exp(t)
 
-solver_classes = [(BackwardEuler, 1),
-                  (Radau2, 3), (Radau3, 5)]
+solver_classes = [(ForwardEuler,1), (Heun,2), 
+                  (ExplicitMidpoint,2), (RungeKutta4,4)]
 
-for solver_class, order in solver_classes: 
+for solver_class, order in solver_classes:
     solver = solver_class(rhs)
     solver.set_initial_condition(1.0)
 

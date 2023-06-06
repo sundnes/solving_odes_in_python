@@ -38,7 +38,11 @@ performance is clearly relevant when solving ODEs, optimizing the performance of
 a Python based solver easily becomes quite technical, and requires features like 
 just-in-time compilers (e.g., Numba) or mixed-language programming. The solvers in this
 book only use fairly basic features of Python and NumPy, which sacrifices some performance
-but enhances understanding of the solver properties and their implementation. 
+but enhances understanding of the solver properties and their implementation.[^source0] 
+
+[^source0]: Complete 
+source code for all the solvers and examples in the book can be found here: 
+https://sundnes.github.io/solving\_odes\_in\_python/
 
 The book is organized as follows. Chapter ref{ch:ode_intro} introduces the forward Euler method,
 and uses this simple method to introduce the fundamental ideas and principles that
@@ -90,7 +94,7 @@ go straight to the ODEs and leave Appendix ref{ch:diff_eq} for later.
 ## Just dump native latex
 \noindent
 \ \\
-{\it April 2023}  \hfill  {\it Joakim Sundnes}
+{\it May 2023}  \hfill  {\it Joakim Sundnes}
 # #else
-*Joakim Sundnes*, April 2023
+*Joakim Sundnes*, May 2023
 # #endif
