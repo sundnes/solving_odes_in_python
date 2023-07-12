@@ -1,7 +1,7 @@
 This book was based on a set of lecture notes written for the book *A Primer on Scientific Programming with Python* by
 Hans Petter Langtangen cite{langtangen2012primer}, mainly covering topics from Appendix A, C,
 and E. The original notes have been extended with more material on implicit solvers and
-automatic time-stepping methods, to provide a more complete and balanced
+automatic time stepping methods, to provide a more complete and balanced
 overview of state-of-the-art solvers for ordinary differential equations (ODEs). The 
 main purpose of the notes is to serve as a brief and gentle introduction to solving
 differential equations in Python, for use in the course
@@ -21,7 +21,7 @@ and provide an excellent example of how object-oriented programming (OOP) can be
 used to maximize code reuse and minimize duplication.
 
 The presentation style of the book is compact and pragmatic, and includes
-a large number of code examples to illustrate how the various ODE solvers can 
+numerous code examples to illustrate how the various ODE solvers can 
 be implemented and applied in practice. The complete source code for all examples,
 as well as Jupyter notebooks for all the chapters, is provided in the online resources 
 accompanying this book. All the

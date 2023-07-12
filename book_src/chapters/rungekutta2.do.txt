@@ -993,7 +993,7 @@ The second is that the for-loop for computing the remaining stages starts at `i=
 
 With the ESDIRK base class at hand, we can implement individual ESDIRK methods simply by defining the
 constructor, for instance
-!bc
+!bc pycod
 class BDF_TR2(ESDIRK):
     def __init__(self,f):
         super().__init__(f)

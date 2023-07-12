@@ -75,22 +75,22 @@ methods in this book, but the interested reader is referred to, for instance, ci
 The second approach is to compute a number of intermediate approximations of $f(t,u)$ on the
 interval $t_n < t < t_{n+1}$, and use these values to define the polynomial approximation of $f$.
 This idea is similar to how classical quadrature rules for numerical integration are derived, 
-and gives rise to a class of ODE solvers known as Runge-Kutta methods. Runge-Kutta methods come in
+and gives rise to a class of ODE solvers known as Runge-Kutta methods. RK methods come in
 many forms, with very different accuracy and stability properties, and will be the main topic of 
 chapters ref{ch:runge_kutta}-ref{ch:adaptive}.
 
 
 ======= Explicit Runge-Kutta methods =======
 idx{Runge-Kutta method !explicit}
-An intuitive way to improve the accuracy of the approximate integral in
+As noted above, an intuitive way to improve the accuracy of the approximate integral in
 (ref{ode_integral0}) is
 to compute a number of intermediate approximations of $f(t_*, u_*)$ for
  $t_n \leq t_* \leq t_{n+1}$, and compute the integral as a weighted sum of
 these values. This approach builds on standard techniques of numerical
 integration, and gives rise to a very popular class of ODE solvers
-known as *Runge-Kutta methods*. The simplest example of a Runge-Kutta method
-is in fact the FE method, which is an example of a one-stage, first-order,
-explicit Runge-Kutta method. An alternative formulation of the FE method is
+known as *Runge-Kutta (RK) methods*. The simplest example of an RK method
+is in fact the Forward Euler (FE) method considered earlier, which is an example of a one-stage, first-order,
+explicit RK method. An alternative formulation of the FE method is
 !bt
 \begin{align*}
 k_1 &= f(t_n, u_n), \\
@@ -100,7 +100,7 @@ u_{n+1} &= u_n + \Delta t k_1 .
 It can easily be verified that this is the same formula as introduced
 above, and there is no real benefit from writing the formula in two lines
 rather than one. However, this second formulation is more in line with
-how Runge-Kutta methods are usually written, and it makes it easy to see the
+how RK methods are usually written, and it makes it easy to see the
 relation between the FE method and more advanced solvers. The intermediate
 value $k_1$ is often referred to as a *stage derivative* in the
 ODE literature.
@@ -149,10 +149,10 @@ formula for $k_2$ we see that it approximates the derivative at $t_{n+1}$ rather
 than at the midpoint $t_{n}+\Delta t/2$. The solution is then advanced from
 $t_n$ to $t_{n+1}$ using the mean value of $k_1$ and $k_2$.
 
-All Runge-Kutta methods follow the same recipe as the two second-order methods considered
+All RK methods follow the same recipe as the two second-order methods considered
 above; we compute one or more intermediate values (i.e., stage derivatives), and then advance the
 solution using a combination of these stage derivatives. The accuracy of the method can
-be improved by adding more stages. A general Runge-Kutta method with $s$ stages
+be improved by adding more stages. A general RK method with $s$ stages
 can be written as
 !bt
 \begin{align}
@@ -161,18 +161,18 @@ u_{n+1} &= u_n + \Delta t \sum_{i=1}^s b_i k_i .\label{genrk1}
 \end{align}
 !et
 Here $c_i, b_i, a_{ij}$, for $i,j, = 1,\ldots ,s$ are
-method-specific coefficients. All Runge-Kutta methods can be written
+method-specific coefficients. All RK methods can be written
 in this form, and a method is uniquely determined by the
 number of stages $s$ and the values of the coefficients. 
  idx{Runge-Kutta method !general formula}
 
-As mentioned above, there exists a wide variety of Runge-Kutta methods, 
+As mentioned above, there exists a wide variety of RK methods, 
 where the coefficients are typically chosen to optimize the accuracy for
 a given number of stages. We will not dive into the details of how the
 methods are constructed here, but some of the principles can be quite useful to know about.
 For instance, it can be shown that the $b_i$ coefficients must be chosen to satisfy
 $\sum_{i=1}^s b_i = 1$ in order to have a convergent method. This condition follows quite
-naturally from our motivation for Runge-Kutta methods as numerical integrators 
+naturally from our motivation for RK methods as numerical integrators 
 applied to (ref{ode_integral0}). When approximating the integral as a weighted sum, the sum of the weights must
 obviously be one. Another common constraint on the coefficients is to 
 set $c_i = \sum_{j=1}^s a_{ij}$. While this constraint
@@ -183,8 +183,8 @@ new solver it is very easy to introduce errors in the coefficient values, and it
 include tests to verify that the most fundamental conditions on the coefficients are satisfied.
 It is possible to derive general *order conditions* that the coefficients must satisfy for a method
 to be of a given order, see, for instance, cite{AscherPetzold,ODEI} for details. 
-In this chapter we only consider explicit Runge-Kutta methods, which means that $a_{ij} = 0$
-for $j\geq i$. It can be shown that the order $p$ of an explicit Runge-Kutta method with $s$ 
+In this chapter we only consider explicit Runge-Kutta (ERK) methods, which means that $a_{ij} = 0$
+for $j\geq i$. It can be shown that the order $p$ of an ERK method with $s$ 
 stages satisfies $p\leq s$, and for $p \geq 5$ the bound is $p\leq s-1$. However, it is not known
 whether the last bound is sharp, and it may be even stricter for methods of very high order. For 
 instance, all known methods with $p=8$ have at least eleven stages, and it is not known whether eight-order methods
@@ -192,9 +192,9 @@ with nine or ten stages exist.
 
 idx{Butcher tableau}
 In the ODE literature the method coefficients are often specified in the
-form of a *Butcher tableau*, which offers a compact definition of any Runge-Kutta method.
+form of a *Butcher tableau*, which offers a compact definition of any RK method.
 The Butcher tableau is simply a specification of all the method coefficients, and
-for a general Runge-Kutta method it is written as
+for a general RK method it is written as
 !bt
 \[
 \begin{array}{c|ccc}
@@ -255,22 +255,22 @@ explicit methods, which means that $a_{ij} = 0$ for $j \geq i$. As may be observ
 (ref{rk4_0})-(ref{rk4_5}), or from a more careful inspection of the general formula (ref{genrk0}),
 this means that the expression for computing each stage derivative $k_i$ only includes
 previously computed stage derivatives. Therefore, all $k_i$ can be computed sequentially
-using explicit formulae. For implicit Runge-Kutta methods, on the other hand,
+using explicit formulae. For implicit RK methods, on the other hand,
 we have $a_{ij} \neq 0$ for some $j\geq i$. We see from
 (ref{genrk0}) that the formula for computing $k_i$ will then include $k_i$
 on the right-hand side, as part of the argument to the function $f$. We
 therefore need to solve equations to compute the stage derivatives, and since
 $f$ is typically non-linear we need to solve these equations with an iterative solver
 such as Newton's method. These steps make implicit
-Runge-Kutta methods more complex to implement and more computationally expensive per time step,
+RK methods more complex to implement and more computationally expensive per time step,
 but they are also more stable than explicit methods and perform much better
-for certain classes of ODEs. We will consider implicit Runge-Kutta methods in
+for certain classes of ODEs. We will consider implicit RK methods in
 Chapter ref{ch:stiff}.
 
 ======= A class hierarchy of Runge-Kutta methods =======
 label{sec:rk_hierarchy}
 idx{class ! hierarchy} idx{class !superclass/base class} 
-We now want to implement Runge-Kutta methods as classes,
+We now want to implement RK methods as classes,
 similar to the FE classes introduced above. When inspecting the `ForwardEuler`
 class, we quickly observe that most of the code is common to all ODE solvers, and
 not specific to the FE method. For instance, we
@@ -356,8 +356,6 @@ solution may be considered more modern, we have decided to not use it here, in t
 keeping the code simple and compact. 
 idx{class !abstract base class}
 
-It is also worth commenting on the `solve` method, 
-
 With the superclass at hand, the implementation of a `ForwardEuler` subclass
 becomes very simple:
 !bc pycod
@@ -367,7 +365,7 @@ class ForwardEuler(ODESolver):
         dt = self.dt
         return u[n] + dt * f(t[n], u[n])
 !ec
-Similarly, the explicit midpoint method and the fourth-order Runge-Kutta method can be subclasses, each
+Similarly, the explicit midpoint method and the fourth-order RK method can be subclasses, each
 implementing a single method:
 !bc pycod
 class ExplicitMidpoint(ODESolver):
@@ -486,8 +484,8 @@ time step $\Delta t$, the error $e$ at time $t=3.0$, and finally $e/\Delta t^p$,
 order of the method. For the two first methods the output is exactly as expected, and it is
 therefore not shown here. The numbers in the rightmost column are approximately constant, 
 confirming that the error is in fact proportional to $\Delta t^p$.  
-However, the last part of the output, for the forth order Runge-Kutta method, looks like this:
-!bc
+However, the last part of the output, for the forth order RK method, looks like this:
+!bc dat
 RungeKutta4 order = 4
 Time step (dt)   Error (e)     e/dt**4
 0.1000000        0.0000462     0.4620
@@ -551,7 +549,7 @@ some limitations. The most important one is that they both solve very simple ODE
 and it is entirely possible to introduce errors in the code that will only present themselves 
 for more complex problems. However, they have the advantage of being simple and
 completely general, and can easily be applied to any newly implemented ODE solver class.
-Many common implementation errors, for instance getting a single parameter wrong in 
-Runge-Kutta method, will often show up even for this simple problems. They can therefore
+Many common implementation errors, for instance getting a single parameter wrong in an
+RK method, will often show up even for this simple problems. They can therefore
 provide a good initial indication that the implementation is correct, which 
 can be followed by more extensive tests if needed. 

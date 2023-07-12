@@ -9,7 +9,7 @@ set -x
 
 name=ode_book
 #name=test
-encoding="--encoding=utf-8"
+#encoding="--encoding=utf-8"
 
 CHAPTER=chapter
 BOOK=book
@@ -36,7 +36,7 @@ fi
 
 opt="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX"
 
-system doconce format pdflatex $name $opt $encoding --device=paper --exercise_numbering=chapter   --latex_style=Springer_sv --latex_title_layout=std --latex_list_of_exercises=none --latex_admon=mdfbox --latex_admon_color=1,1,1 --latex_table_format=left --latex_admon_title_no_period --latex_no_program_footnotelink --allow_refs_to_external_docs "--latex_code_style=default:lst[style=blue1]@pypro:lst[style=blue1bar]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt]" #--latex_index_in_margin
+system doconce format pdflatex $name $opt --device=paper --exercise_numbering=chapter   --latex_style=Springer_sv --latex_title_layout=std --latex_list_of_exercises=none --latex_admon=mdfbox --latex_admon_color=1,1,1 --latex_table_format=left --latex_admon_title_no_period --latex_no_program_footnotelink --allow_refs_to_external_docs "--latex_code_style=default:lst[style=blue1]@pypro:lst[style=blue1bar]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt]" #--latex_index_in_margin
 
 # Auto edits
 #doconce replace 'linecolor=black,' 'linecolor=darkblue,' $name.tex

@@ -54,12 +54,12 @@ class ODESolver:
             "Advance method is not implemented in the base class")
 
 
-
 class ForwardEuler(ODESolver):
     def advance(self):
         u, f, n, t = self.u, self.f, self.n, self.t
         dt = self.dt
         return u[n] + dt * f(t[n], u[n])
+
 
 class Heun(ODESolver):
     def advance(self):
@@ -69,6 +69,7 @@ class Heun(ODESolver):
         k2 = f(t[n] + dt, u[n] + dt * k1)
         return u[n] + dt / 2 * (k1 + k2)
 
+
 class ExplicitMidpoint(ODESolver):
     def advance(self):
         u, f, n, t = self.u, self.f, self.n, self.t
@@ -77,6 +78,7 @@ class ExplicitMidpoint(ODESolver):
         k1 = f(t[n], u[n])
         k2 = f(t[n] + dt2, u[n] + dt2 * k1)
         return u[n] + dt * k2
+
 
 class RungeKutta4(ODESolver):
     def advance(self):
@@ -89,6 +91,7 @@ class RungeKutta4(ODESolver):
         k4 = f(t[n] + dt, u[n] + dt * k3, )
         return u[n] + (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
 
+
 def test_exact_numerical_solution():
     """
     Test the different methods for a problem
@@ -96,13 +99,13 @@ def test_exact_numerical_solution():
     All the methods should be exact to machine precision
     for this choice.
     """
-    solver_classes = [ForwardEuler, Heun, 
+    solver_classes = [ForwardEuler, Heun,
                       ExplicitMidpoint, RungeKutta4]
     a = 0.2
     b = 3
 
     def f(t, u):
-        return a  
+        return a
 
     def u_exact(t):
         """Exact u(t) corresponding to f above."""

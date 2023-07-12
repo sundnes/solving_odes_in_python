@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def SIR_model(u, t):
+def SIR_model(t, u):
     beta = 0.001
     nu = 1 / 7.0
     S, I, R = u[0], u[1], u[2]
@@ -19,8 +19,8 @@ R0 = 0
 
 solver = RungeKutta4(SIR_model)
 solver.set_initial_condition([S0, I0, R0])
-time_points = np.linspace(0, 100, 101)
-u, t = solver.solve(time_points)
+t_span = (0, 100)
+t, u = solver.solve(t_span, N=101)
 S = u[:, 0]
 I = u[:, 1]
 R = u[:, 2]

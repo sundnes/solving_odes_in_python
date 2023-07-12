@@ -186,7 +186,7 @@ difference equation, on the other hand, only minor changes are
 needed in the program to handle a varying interest rate.
 The simplest approach is to let `p` be an array of the same length as the number of days, and fill
 it with the correct interest rates for each day. The modifications to the program above may look like this:
-!bc pycod-t
+!bc pycod
 p = np.zeros(len(index_set))
 # fill p[n] with correct values
 
@@ -206,7 +206,7 @@ handled quite easily. For instance, say the interest rate
 is piecewise constant and increases from 4.0% to 5.0% on a given date.
 Code for filling the array with values may then
 look like this
-!bc pycod-t
+!bc pycod
 date0 = datetime.date(2017, 9, 29)
 date1 = datetime.date(2018, 2, 6)
 date2 = datetime.date(2018, 8, 4)
@@ -309,11 +309,11 @@ The distinction between linear and non-linear equations is very important for
 mathematical analysis of the equations, but it does not make much difference when solving the equation
 in a program. To modify the interest rate program above to describe logistic growth, we can simply replace
 the line
-!bc pycod-t
+!bc pycod
 x[n] = x[n-1] + (p/100.0)*x[n-1]
 !ec
 by
-!bc pycod-t
+!bc pycod
 x[n] = x[n-1] + (rho/100)*x[n-1]*(1 - x[n-1]/R)
 !ec
 A complete program may look like
@@ -659,7 +659,8 @@ print(f'Exact: exp({x}) = {np.exp(x)}')
 for n in index_set[1:]:
     e[n] = e[n-1] + a[n-1]
     a[n] = x/n*a[n-1]
-    print(f'n = {n}, approx. {e[n]}, error = {np.abs(e[n]-np.exp(x)):4.5f}')
+    error = np.abs(e[n]-np.exp(x))
+    print(f'n = {n}, approx. {e[n]}, error = {error:4.5f}')
 !ec
 
 # #if FORMAT != 'ipynb'

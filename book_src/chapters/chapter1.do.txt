@@ -793,7 +793,7 @@ specifiers is to output the numbers as vertically aligned columns, which improve
 may be important for visually inspecting the convergence. See, for instance, cite{sundnes2020introduction} for
 a brief introduction to f-strings and format specifiers. 
 The program will produce the following output:
-!bc 
+!bc dat
 Time step (dt)   Error (e)      e/dt
 0.1000000        2.6361347      26.3613
 0.0500000        1.4063510      28.1270
