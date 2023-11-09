@@ -29,7 +29,7 @@ def f(t, u):
 
 U0 = 1
 T = 4
-N in 20
+N = 20
 t, u = forward_euler(f, U0, T, N)
 plt.plot(t, u, label=f'$\\Delta t$ = {T/N}')
 plt.plot(t, np.exp(t), label='Exact')
