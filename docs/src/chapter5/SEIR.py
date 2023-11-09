@@ -2,7 +2,6 @@ from ODESolver import RungeKutta4
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 class SEIR:
     def __init__(self, beta, mu, nu, gamma):
         self.beta = beta

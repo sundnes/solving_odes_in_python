@@ -116,10 +116,12 @@ class RKF45(AdaptiveODESolver):
         k5 = f(t[-1] + c5 * dt, u[-1] + dt *
                (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
         k6 = f(t[-1] + c6 * dt, u[-1] +
-               dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5))
+               dt * (a61 * k1 + a62 * k2 + a63 * k3 
+                     + a64 * k4 + a65 * k5))
 
         low = dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5)
-        high = dt * (bh1 * k1 + bh3 * k3 + bh4 * k4 + bh5 * k5 + bh6 * k6)
+        high = dt * (bh1 * k1 + bh3 * k3 + bh4 * k4 
+                     + bh5 * k5 + bh6 * k6)
 
         unew = u[-1] + low
         error = np.linalg.norm(high - low)
